@@ -4,14 +4,14 @@
 
 **Dependencies:** [SEC-001–025 plan](https://github.com/suhaylx/EDR/pull/110), [SEC-026–050 plan](https://github.com/suhaylx/EDR/pull/116), [integrated lab candidate PR #49](https://github.com/suhaylx/EDR/pull/49). First resolve existing P0 blocks, source auth and privacy regressions. Do not start novel feature work to inflate completed counts while a release-blocking control remains untested.
 
-**Status truth:** Every entry below starts `PLANNED`, even when a closely related draft PR exists. Existing partial work must be linked and verified before changing status. No production EDR, cryptographic chain-of-custody, signed updates or real scanner acceptance is implied by this assignment.
+**Status truth:** Milestones start `PLANNED` and move only when exact code evidence exists. SEC-051/052 now have a **partial draft security implementation**, not accepted delivery. No production EDR, cryptographic chain-of-custody, signed updates or real scanner acceptance is implied by this assignment.
 
 ## Next 25 security functionality work orders
 
 | Milestone | Priority | Functional deliverable and explicit acceptance gate | Target design/code/test evidence | Status |
 | --- | --- | --- | --- | --- |
-| SEC-051 | P0 | Strict environment separation: production agent transport must reject shared development bearer token, public HTTP and test-only enrollment fallback; negative auth tests. | docs/security/prod-vs-lab-agent-auth.md; backend/internal/edr/agent_transport_security_test.go | PLANNED |
-| SEC-052 | P0 | End-to-end tenant+device principal derived from verified client cert on all agent POST/GET/stream and scan actions; reject device ID spoofing. | docs/security/agent-identity-binding.md; backend/internal/edr/agent_identity_contract_test.go | PLANNED |
+| SEC-051 | P0 | Strict environment separation: production agent transport must reject shared development bearer token, public HTTP and test-only enrollment fallback; negative auth tests. | docs/security/prod-vs-lab-agent-auth.md; backend/internal/edr/agent_transport_security_test.go | IN PROGRESS — [partial code PR #126](https://github.com/suhaylx/EDR/pull/126), CI pending |
+| SEC-052 | P0 | End-to-end tenant+device principal derived from verified client cert on all agent POST/GET/stream and scan actions; reject device ID spoofing. | docs/security/agent-identity-binding.md; backend/internal/edr/agent_identity_contract_test.go | IN PROGRESS — [partial code PR #126](https://github.com/suhaylx/EDR/pull/126), CI pending; verified cert binding existed in base |
 | SEC-053 | P0 | Cert lifecycle on active connections: expiry/revocation/rotation boundary checks, session cancellation and no cached stale identity beyond policy TTL. | docs/security/agent-cert-revocation-streams.md; backend/internal/edr/certificate_session_test.go | PLANNED |
 | SEC-054 | P0 | Signed response command envelope with tenant/device/action/expiry/nonce and least-privilege scope; reject unauthorized replay and cross-device execution. | docs/security/response-command-v1.md; backend/internal/edr/response_command_signature_test.go | PLANNED |
 | SEC-055 | P0 | Central RBAC + two-person approval for destructive actions, including tenant-bound immutable audit of approve/deny and revoke; no auto deletion. | docs/security/response-approval-policy.md; backend/internal/edr/response_approval_test.go | PLANNED |
