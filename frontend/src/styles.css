@@ -64,3 +64,34 @@
 .inventory-filters select{width:100%;min-height:44px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:10px}
 .inventory-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 @media(max-width:760px){.inventory-filters{grid-template-columns:1fr}}
+
+
+/* TuranSec SOC source-evidence workbench: original, responsive, accessible. */
+.telemetry-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}
+.telemetry-summary>div{min-width:0;display:flex;flex-direction:column;gap:6px;padding:17px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+.telemetry-summary strong{font-size:clamp(1.5rem,2.5vw,2.2rem);font-variant-numeric:tabular-nums;color:var(--ink)}
+.telemetry-summary span{font-size:.82rem;color:var(--muted);line-height:1.5}
+.telemetry-filters{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:14px;align-items:end}
+.telemetry-filters .field{min-width:0;display:grid;gap:8px}
+.telemetry-filters .field>label{font-size:.86rem}
+.telemetry-filters input,.telemetry-filters select{width:100%;min-width:0;max-width:none;min-height:44px;padding:10px;color:var(--ink);background:var(--panel);border:1px solid var(--border);border-radius:9px}
+.telemetry-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.event-coverage-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.event-coverage-item{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:6px 11px;min-height:108px;text-align:left;min-width:0;padding:13px;border-radius:11px;background:var(--bg);border:1px solid var(--border);color:var(--ink);font-weight:500}
+.event-coverage-item:hover:not(:disabled){background:var(--panel);border-color:var(--focus)}
+.event-coverage-item[aria-pressed=true]{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+.event-class-id{display:grid;place-items:center;min-width:30px;min-height:30px;padding:0 6px;background:var(--panel);border:1px solid var(--border);border-radius:8px;font-weight:800;font-size:.83rem;font-variant-numeric:tabular-nums}
+.event-class-name{font-size:.83rem;line-height:1.35;font-weight:750;overflow-wrap:anywhere}
+.event-class-count{grid-column:2;font-size:.72rem;line-height:1.4;color:var(--muted)}
+.event-field-details{margin-top:8px;max-width:330px}
+.event-field-details>summary{cursor:pointer;min-height:32px;font-weight:700;color:var(--ink)}
+.event-field-details>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.event-field-details dl{display:grid;gap:7px;font-size:.79rem;line-height:1.4;margin:8px 0}
+.event-field-details dl>div{border-left:2px solid var(--border);padding-left:9px;overflow-wrap:anywhere}
+.event-field-details dt{color:var(--muted);font-weight:700}
+.event-field-details dd{margin:0;color:var(--ink)}
+.telemetry-page .table-scroll table{min-width:980px}
+@media(max-width:1200px){.event-coverage-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:870px){.event-coverage-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.telemetry-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.telemetry-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.event-coverage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.telemetry-filters,.event-coverage-grid{grid-template-columns:1fr}}
