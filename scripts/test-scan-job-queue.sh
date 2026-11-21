@@ -3,6 +3,11 @@
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Set a disposable PostgreSQL connection URL}"
 command -v psql >/dev/null
+existing="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_class WHERE relname IN ('edr_tenants','edr_agents','edr_agent_certificates','edr_scan_jobs') AND relkind='r'")"
+if [[ "$existing" != "0" ]]; then
+  echo "Refusing to run: EDR tables already exist; use an empty disposable database" >&2
+  exit 2
+fi
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0001_agent_enrollment.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0005_scan_job_queue.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
@@ -55,6 +60,41 @@ BEGIN
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',30)) THEN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
 END $$;
+-- An active lease does not bypass subsequent principal revocation.
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantA','revoked-agent','linux'),('tenantA','disabled-agent','linux');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES ('33333333-3333-4333-8333-333333333333','tenantA','revoked-agent','/tmp/test'),
+       ('44444444-4444-4444-8444-444444444444','tenantA','disabled-agent','/tmp/test');
+DO $revoked_agent$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','revoked-agent','test',
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',30);
+  IF leased.job_id IS DISTINCT FROM '33333333-3333-4333-8333-333333333333'::uuid
+    THEN RAISE EXCEPTION 'revocation fixture claim failed'; END IF;
+  UPDATE edr_agents SET revoked_at=CURRENT_TIMESTAMP
+    WHERE tenant_id='tenantA' AND agent_id='revoked-agent';
+  IF edr_complete_scan_job('tenantA','revoked-agent',leased.job_id,
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',true)
+    THEN RAISE EXCEPTION 'revoked agent completed job'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=leased.job_id) <> 'leased'
+    THEN RAISE EXCEPTION 'failed completion changed leased job'; END IF;
+END $revoked_agent$;
+DO $disabled_tenant$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','disabled-agent','test',
+    'ffffffff-ffff-4fff-8fff-ffffffffffff',30);
+  IF leased.job_id IS DISTINCT FROM '44444444-4444-4444-8444-444444444444'::uuid
+    THEN RAISE EXCEPTION 'disable fixture claim failed'; END IF;
+  UPDATE edr_tenants SET disabled_at=CURRENT_TIMESTAMP WHERE tenant_id='tenantA';
+  IF edr_complete_scan_job('tenantA','disabled-agent',leased.job_id,
+    'ffffffff-ffff-4fff-8fff-ffffffffffff',true)
+    THEN RAISE EXCEPTION 'disabled tenant completed job'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=leased.job_id) <> 'leased'
+    THEN RAISE EXCEPTION 'failed completion changed leased job'; END IF;
+END $disabled_tenant$;
 ROLLBACK;
 SQL
 echo "Durable scan-job queue integration passed"
