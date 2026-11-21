@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -135,6 +136,34 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 200, job)
+		case r.URL.Path == "/api/investigations" && r.Method == "GET":
+			depth, maxNodes := 4, 250
+			if v := r.URL.Query().Get("depth"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid depth", 400)
+					return
+				}
+				depth = n
+			}
+			if v := r.URL.Query().Get("max_nodes"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid max_nodes", 400)
+					return
+				}
+				maxNodes = n
+			}
+			snapshot := s.Store.Snapshot()
+			graph, err := BuildProcessInvestigation(snapshot.Events, DetectSuspiciousDLLLoads(snapshot.Events), r.URL.Query().Get("device_id"), r.URL.Query().Get("process_guid"), r.URL.Query().Get("detection_id"), depth, maxNodes)
+			if errors.Is(err, ErrInvestigationNotFound) {
+				http.Error(w, "investigation seed not found", 404)
+				return
+			}
+			if fail(w, err) {
+				return
+			}
+			reply(w, 200, graph)
 		case r.URL.Path == "/api/overview" && r.Method == "GET":
 			days := 7
 			switch r.URL.Query().Get("days") {
