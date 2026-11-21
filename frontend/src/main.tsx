@@ -111,19 +111,21 @@ function Alerts({detections, generatedAt, days, onInvestigate}: {
     {visible.length === 0 ? <p className="empty">No matching retained alerts. This is not evidence the fleet is safe.</p>
       : <div className="table-scroll"><table>
         <caption>Retained detection evidence. Investigate actions navigate to a prefilled, read-only evidence query.</caption>
-        <thead><tr><th scope="col">Observed UTC</th><th scope="col">Severity / confidence</th><th scope="col">Endpoint</th><th scope="col">Rule</th><th scope="col">Observed module</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead>
+        <thead><tr><th scope="col">Observed UTC</th><th scope="col">Severity / confidence</th><th scope="col">Endpoint</th><th scope="col">Rule</th><th scope="col">Observed object</th><th scope="col">Source evidence</th><th scope="col">Action</th></tr></thead>
         <tbody>{visible.map(d=><tr key={d.id}>
           <td>{d.observed_at}</td>
           <td>{d.severity} / {d.confidence}</td>
           <td>{d.device_id}<span className="minor">Process: {d.process_guid}</span></td>
           <td>{d.rule_id}<span className="minor">{d.category}</span></td>
-          <td>{d.module_path}<span className="minor">Host image: {d.process_image}</span></td>
-          <td>{d.load_event_id}{d.file_create_event_id && <span className="minor">Separate file-create event: {d.file_create_event_id}</span>}</td>
-          <td><button className="source-button" type="button" onClick={()=>onInvestigate(seedForDetection(d))}
-            aria-label={'Investigate evidence for '+d.rule_id+' on '+d.device_id}>Investigate evidence</button></td>
+          <td>{d.target_object || d.module_path || "No object path reported"}<span className="minor">Host image: {d.process_image || "Not reported"}</span></td>
+          <td>{d.evidence_event_id || d.load_event_id}<span className="minor">{d.evidence_source_event_id ? "Reported Sysmon ID " + d.evidence_source_event_id : "Event ID not reported"}</span>{d.file_create_event_id && <span className="minor">Separate file-create event: {d.file_create_event_id}</span>}</td>
+          <td>{d.process_guid
+            ? <button className="source-button" type="button" onClick={()=>onInvestigate(seedForDetection(d))}
+                aria-label={'Investigate process evidence for '+d.rule_id+' on '+d.device_id}>Inspect process</button>
+            : <span className="subtle">No process GUID · inspect source event instead</span>}</td>
         </tr>)}</tbody>
       </table></div>}
-    <p className="minor">A DLL file-create observation is separate from a module-load event. Analyst review is required; no blocking or quarantine occurs here.</p>
+    <p className="minor">A file write does not prove module execution. Agent 1 behavioral rules report evidence, not confirmed compromise. All response actions require separate authorization.</p>
   </section>;
 }
 
