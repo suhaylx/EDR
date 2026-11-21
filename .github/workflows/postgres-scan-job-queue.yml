@@ -9,6 +9,7 @@ on:
       - "scripts/test-scan-job-replay-exhaustion.sh"
       - "scripts/test-scan-job-db-restart.sh"
       - "scripts/test-scan-job-claim-revocation-race.sh"
+      - "scripts/test-scan-job-completion-revocation-race.sh"
       - ".github/workflows/postgres-scan-job-queue.yml"
   workflow_dispatch:
 permissions:
@@ -46,6 +47,7 @@ jobs:
           EDR_QA_DISPOSABLE_DB=yes bash scripts/test-scan-job-concurrent-claims.sh
           EDR_QA_DISPOSABLE_DB=yes bash scripts/test-scan-job-replay-exhaustion.sh
           EDR_QA_DISPOSABLE_DB=yes bash scripts/test-scan-job-claim-revocation-race.sh
+          EDR_QA_DISPOSABLE_DB=yes bash scripts/test-scan-job-completion-revocation-race.sh
       - name: Seed queue rows before disposable database restart
         env:
           EDR_TEST_DATABASE_URL: postgresql://edr_queue_ci:disposable-ci-only@127.0.0.1:5432/edr_queue_test?sslmode=disable
