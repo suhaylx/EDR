@@ -5,6 +5,7 @@ import { describeScan, scanEngineEvidence } from './scan-state.js';
 import { filterScanHistory, type ScanHistoryFilter } from './scan-history.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
+import { PolicyEvidenceView } from './PolicyEvidenceView.js';
 import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
 import type { InvestigationSeed } from './investigation.js';
 import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
@@ -196,7 +197,7 @@ function App() {
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'scans' | 'investigations' | 'policies'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -307,6 +308,7 @@ function App() {
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
+        <button type="button" aria-current={view === 'policies' ? 'page' : undefined} onClick={() => setView('policies')}>Policy evidence</button>
       </nav>
       {view === 'overview' ? <>
         <section className="panel field compact-window">
@@ -326,6 +328,9 @@ function App() {
           ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
             onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}} />
           : <section className="panel"><p className="empty">Connect and refresh to retrieve retained lab detection evidence.</p></section>)
+        : view === 'policies'
+        ? (status === 'ready' && overview ? <PolicyEvidenceView overview={overview} /> :
+          <section className="panel"><p className="empty">Connect and refresh to view reported policy acknowledgements. No enforcement status is inferred while disconnected.</p></section>)
         : view === 'investigations'
         ? (status === 'ready' ? <InvestigationView token={token} initialSeed={investigationSeed} /> :
           <section className="panel"><p className="empty">Connect to the development API before requesting retained investigation evidence.</p></section>)
