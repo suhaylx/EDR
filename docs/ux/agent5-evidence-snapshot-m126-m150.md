@@ -23,9 +23,9 @@ write operation, or endpoint command is added.
   the overview have different limits; counts are not directly
   comparable or proof of event loss, complete collection,
   policy coverage or a clean endpoint.
-- Telemetry event time chosen from Go receipt time if available,
-  else sender time (explicitly labeled as untrusted), else
-  unknown. Future timestamps relative to overview generation
+- Go overview-compatible event windows use sender-reported event `time`;
+  Go `received_at` is separately shown as provenance and checked for
+  future clock differences. Missing event time is unknown. Future timestamps relative to overview generation
   are flagged as possible clock/request timing differences,
   **not verified manipulation**.
 - Windows Sysmon reports, Linux reports and other reports
