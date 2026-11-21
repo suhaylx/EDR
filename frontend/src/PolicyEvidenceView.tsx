@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import type { LabSOCOverview } from './overview.js';
 import { heartbeatLabel } from './overview.js';
-import { policyEvidenceState, summarizePolicyEvidence } from './policy-evidence.js';
+import { filterPolicyEndpoints, policyEvidenceState, summarizePolicyEvidence, type PolicyEvidenceFilter } from './policy-evidence.js';
 
 /** Read-only policy evidence: the untrusted lab API cannot prove enforcement. */
 export function PolicyEvidenceView({ overview }: { overview: LabSOCOverview }) {
+  const [filter, setFilter] = useState<PolicyEvidenceFilter>('attention');
+  const [query, setQuery] = useState('');
+  const visibleEndpoints = filterPolicyEndpoints(overview.endpoints, filter, query);
   const summary = summarizePolicyEvidence(overview);
   const metrics = [
     ['Enrolled records', summary.total],
@@ -50,12 +54,32 @@ export function PolicyEvidenceView({ overview }: { overview: LabSOCOverview }) {
     <section className="panel" aria-labelledby="policy-endpoint-title">
       <h2 id="policy-endpoint-title">Endpoint-level policy evidence</h2>
       <p>Policy values and errors are agent-supplied claims; only the heartbeat state is calculated by the server.</p>
+      <div className="inventory-filters">
+        <div className="field">
+          <label htmlFor="policy-filter">Reported evidence filter</label>
+          <select id="policy-filter" value={filter} onChange={event => setFilter(event.target.value as PolicyEvidenceFilter)}>
+            <option value="attention">Needs analyst attention</option>
+            <option value="all">All returned endpoints</option>
+            <option value="offline_unknown">Offline or unknown heartbeat</option>
+            <option value="reported_error">Reported policy error</option>
+            <option value="missing_id">No policy ID reported</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="policy-search">Search returned endpoint or policy evidence</label>
+          <input id="policy-search" type="search" autoComplete="off" maxLength={200}
+            value={query} onChange={event => setQuery(event.target.value)} />
+        </div>
+      </div>
+      <p role="status" aria-live="polite">{visibleEndpoints.length} of {overview.endpoints.length} lab endpoint record(s) shown. Local filter only; no endpoint command sent.</p>
       {overview.endpoints.length === 0
         ? <p className="empty">No enrolled lab endpoints were returned. Actual deployed coverage is unknown.</p>
+        : visibleEndpoints.length === 0
+        ? <p className="empty">No returned endpoint records match this local filter. This does not establish policy enforcement or protection.</p>
         : <div className="table-scroll"><table>
-            <caption>Read-only policy evidence, including missing and stale records</caption>
+            <caption>Locally filtered policy evidence, with reported errors and missing policy IDs first</caption>
             <thead><tr><th scope="col">Endpoint</th><th scope="col">OS / group</th><th scope="col">Heartbeat</th><th scope="col">Reported policy / revision</th><th scope="col">Reported error</th><th scope="col">Interpretation</th></tr></thead>
-            <tbody>{overview.endpoints.map(e=><tr key={e.id}>
+            <tbody>{visibleEndpoints.map(e=><tr key={e.id}>
               <th scope="row">{e.id}</th>
               <td>{e.platform}<span className="minor">{e.group || 'No group reported'}</span></td>
               <td>{e.status}<span className="minor">{heartbeatLabel(e)}</span></td>
