@@ -91,3 +91,44 @@ func TestCrossPlatformAssignmentRejected(t *testing.T) {
 		t.Fatal("cross-platform policy accepted")
 	}
 }
+
+
+func TestPolicyAckRejectsUnassignedStaleAndOverriddenPolicies(t *testing.T) {
+	s := NewStore()
+	if _, err := s.CheckIn(Agent{ID: "win-ack", Platform: "windows", Group: "finance"}); err != nil {
+		t.Fatal(err)
+	}
+	base, err := s.CreatePolicy("base ack", "windows", sampleXML)
+	if err != nil { t.Fatal(err) }
+	group, err := s.CreatePolicy("group ack", "windows", sampleXML)
+	if err != nil { t.Fatal(err) }
+	device, err := s.CreatePolicy("device ack", "windows", sampleXML)
+	if err != nil { t.Fatal(err) }
+
+	// A valid-looking report cannot invent an assignment.
+	if err := s.Ack("win-ack", base.ID, base.Revision, true, ""); err == nil {
+		t.Fatal("unassigned policy was acknowledged")
+	}
+	if err := s.Assign(Assignment{TargetType: "default", Platform: "windows", PolicyID: base.ID}); err != nil { t.Fatal(err) }
+	if err := s.Ack("win-ack", base.ID, base.Revision, true, ""); err != nil { t.Fatal(err) }
+
+	if err := s.Assign(Assignment{TargetType: "group", TargetID: "finance", Platform: "windows", PolicyID: group.ID}); err != nil { t.Fatal(err) }
+	if err := s.Ack("win-ack", base.ID, base.Revision, true, ""); err == nil {
+		t.Fatal("old default policy was accepted after group override")
+	}
+	if err := s.Ack("win-ack", group.ID, group.Revision, true, ""); err != nil { t.Fatal(err) }
+
+	if err := s.Assign(Assignment{TargetType: "agent", TargetID: "win-ack", Platform: "windows", PolicyID: device.ID}); err != nil { t.Fatal(err) }
+	before := s.Snapshot().Agents[0]
+	if err := s.Ack("win-ack", group.ID, group.Revision, false, "stale error"); err == nil {
+		t.Fatal("stale group failure was allowed to mutate agent state")
+	}
+	if after := s.Snapshot().Agents[0]; after.AppliedPolicyID != before.AppliedPolicyID ||
+		after.AppliedRevision != before.AppliedRevision || after.LastPolicyError != before.LastPolicyError {
+		t.Fatal("stale policy acknowledgement changed recorded agent state")
+	}
+	if err := s.Ack("win-ack", device.ID, device.Revision, true, ""); err != nil { t.Fatal(err) }
+	if got := s.Snapshot().Agents[0]; got.AppliedPolicyID != device.ID {
+		t.Fatal("current device policy acknowledgement was not recorded")
+	}
+}
