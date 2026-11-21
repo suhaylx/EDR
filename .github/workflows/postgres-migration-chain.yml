@@ -11,6 +11,9 @@ on:
       - "scripts/test-soc-alerts.sql"
       - "scripts/test-soc-case-audit.sql"
       - "scripts/test-soc-endpoint-inventory-sql.sh"
+      - "scripts/test-soc-inventory-preflight.sh"
+      - "backend/internal/edr/soc_endpoint_inventory.go"
+      - "backend/internal/edr/agent_heartbeat_postgres.go"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:
@@ -35,6 +38,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Validate disposable inventory target guard without database connection
+        run: bash scripts/test-soc-inventory-preflight.sh
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update -qq
