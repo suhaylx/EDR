@@ -57,7 +57,7 @@ AND o.revoked_at IS NULL AND t.disabled_at IS NULL`
 func verifySOCOperator(ctx context.Context,st *tls.ConnectionState,db *sql.DB,
  now time.Time)(SOCOperatorPrincipal,error){
  var deny SOCOperatorPrincipal
- if st==nil||db==nil||len(st.PeerCertificates)!=1||
+ if st==nil||db==nil||len(st.PeerCertificates)==0||
   len(st.VerifiedChains)==0||len(st.VerifiedChains[0])==0{return deny,errSOCNotAuthorized}
  cert:=st.PeerCertificates[0]
  if cert==nil||cert.IsCA||len(cert.Raw)==0||
