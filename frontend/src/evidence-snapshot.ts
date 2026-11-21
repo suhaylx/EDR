@@ -1,3 +1,4 @@
+import {backendUTCWindow,withinBackendUTCWindow} from './backend-utc-window.js';
 /**
  * One-read-only-frontend-refresh overview of four independently fetched Go lab
  * endpoints. No atomic backend transaction, signed device origin, durable
@@ -73,8 +74,7 @@ export function evidenceEventTime(event:LabTelemetryEvent):EvidenceEventTime {
 /** Use an inclusive, server-reported UTC duration, never the browser clock. */
 export function isInOverviewWindow(timestamp:number|null,generated:number,days:DayWindow):boolean {
   if(!Number.isFinite(generated)||![1,7,30].includes(days))return false;
-  return timestamp!==null && Number.isFinite(timestamp) &&
-    timestamp>=generated-days*24*60*60*1000 && timestamp<=generated;
+  return withinBackendUTCWindow(timestamp,backendUTCWindow(new Date(generated).toISOString(),days));
 }
 const isSysmon=(e:LabTelemetryEvent):boolean=>
   e.platform==='windows' && e.source==='sysmon' &&
