@@ -6,7 +6,7 @@ const job = {id:'j1',agent_id:'win-lab',status:'completed',verdict:'clean_by_sig
 test('decodes exact lab scan fields without deriving protection', () => {
   const value = decodeScanJobs([job])[0];
   assert.deepEqual({...value}, {id:'j1', agent_id:'win-lab', status:'completed', verdict:'clean_by_signature',
-    scan_type:undefined,created_at:undefined,engine:undefined,engine_version:undefined,database_version:undefined,threat_name:undefined,detail:undefined});
+    scan_type:undefined,created_at:undefined,expires_at:undefined,lease_until:undefined,completed_at:undefined,engine:undefined,engine_version:undefined,database_version:undefined,threat_name:undefined,detail:undefined});
 });
 test('invalid outer payload, oversized list and bad records fail closed', () => {
   assert.throws(() => decodeScanJobs({data: [job]}), /expected a list/);
