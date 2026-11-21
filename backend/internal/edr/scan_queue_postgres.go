@@ -77,6 +77,40 @@ func (q PostgresScanJobQueue) Complete(ctx context.Context,tenantID,agentID,jobI
     return completed,nil
 }
 
+
+const completeScanResultSQL = `SELECT edr_complete_scan_job_with_result($1,$2,$3::uuid,$4::uuid,$5,$6,$7)`
+
+func validScanResult(verdict,threat,detail string)bool{
+    switch verdict {
+    case "clean_by_signature","error","unscanned":
+        if threat!="" {return false}
+    case "malicious":
+        if threat=="" {return false}
+    default:
+        return false
+    }
+    return len(threat)<=256 && len(detail)<=1024 &&
+        !strings.ContainsRune(threat,0) && !strings.ContainsRune(detail,0)
+}
+
+// CompleteWithResult consumes the authenticated, nonexpired lease and stores
+// the actual clamd outcome atomically. A malware detection is a successful
+// *scan*, not a clean verdict. Never use the old boolean-only endpoint for
+// EDR malware detection reporting.
+func(q PostgresScanJobQueue) CompleteWithResult(ctx context.Context,
+    tenantID,agentID,jobID,leaseToken,verdict,threat,detail string)(bool,error){
+    if !validQueueIdentity(tenantID,agentID)||!validUUID(jobID)||
+        !validUUID(leaseToken)||!validScanResult(verdict,threat,detail){
+        return false,ErrInvalidScanQueueRequest
+    }
+    if q.DB==nil{return false,ErrScanQueueUnavailable}
+    var saved bool
+    err:=q.DB.QueryRowContext(ctx,completeScanResultSQL,
+        tenantID,agentID,jobID,leaseToken,verdict,threat,detail).Scan(&saved)
+    if err!=nil{return false,fmt.Errorf("%w: result completion failed",ErrScanQueueUnavailable)}
+    return saved,nil
+}
+
 // RecoverExpired is an administrative/worker operation, never an agent route.
 func (q PostgresScanJobQueue) RecoverExpired(ctx context.Context,limit int)(int,error){
     if limit<1 || limit>1000 { return 0,ErrInvalidScanQueueRequest }
