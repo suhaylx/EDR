@@ -49,6 +49,15 @@ BEGIN
     '88888888-8888-4888-8888-888888888888',30) THEN
     RAISE EXCEPTION 'disabled tenant renewed lease'; END IF;
   UPDATE edr_tenants SET disabled_at=NULL WHERE tenant_id='renewA';
+  IF NOT edr_complete_scan_job('renewA','device',claimed.job_id,
+      '88888888-8888-4888-8888-888888888888',true) THEN
+    RAISE EXCEPTION 'completion precondition failed'; END IF;
+  IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
+      '88888888-8888-4888-8888-888888888888',30) THEN
+    RAISE EXCEPTION 'completed job renewed'; END IF;
+  UPDATE edr_scan_jobs SET state='leased',lease_owner='worker1',
+    lease_token='88888888-8888-4888-8888-888888888888',
+    lease_expires_at=now()+interval '30 seconds' WHERE job_id=claimed.job_id;
   UPDATE edr_scan_jobs SET lease_expires_at=now()-interval '1 second'
     WHERE job_id=claimed.job_id;
   IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
