@@ -79,3 +79,35 @@ desktop bundle, native IPC host, single-binary agent, or deployed product.
 Agent 2 must approve and implement authenticated, authorized local transport;
 Agent 3 must run real browser/AT + platform testing and confirm any future
 companion remains unprivileged and crash-isolated from Rust before release.
+
+## Retained alert triage (Agent 5)
+
+`src/AlertsTriageView.tsx` now renders the **Security alerts** view from real
+`GET /api/detections` records decoded by `src/detections.ts`. The
+`detectionsInWindow` filter runs first using the Go overview's
+`generated_at` timestamp and the selected 1/7/30-day window. The
+`src/alert-triage.ts` pure presentation layer then filters already returned
+records by severity, case-insensitive endpoint/rule/process/source search, and
+whether the detection record includes a *linked file-create source ID*. An
+unlinked ID is **not** evidence that a FileCreate event did not occur.
+Unrecognized severities remain visible in Other/unclassified rather than
+being silently dropped.
+
+Counts are only for retained records in the selected window; heuristic
+detections are **not** confirmed incidents, infections or complete security
+coverage. Each retained record preserves the evidence-only investigation
+button, which opens a prefilled investigation query and never invokes
+quarantine, network isolation, killing a process, or changing policy.
+The table renders API values using React text escaping, not HTML insertion.
+Local filters never call the backend, never mutate server evidence, and have
+a working Clear local filters action. The view has semantic labels, table
+headers/caption, an aria-live result count, focus-visible controls and
+responsive system light/dark support.
+
+`tests/alert-triage.test.mjs` checks count bucketing, source linkage, query,
+immutability, and UTC-window ordering. `tests/alert-triage-render.test.mjs`
+checks server-rendered semantic labels, controls, empty state and escaping of
+untrusted strings. SSR and CI are **not** substitutes for Agent 3 real-browser
+NVDA/Orca, keyboard, zoom or forced-colors manual tests. No production
+tenant-scoped alert triage queue, dismissal, incident state or response API is
+implemented.
