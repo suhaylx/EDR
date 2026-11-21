@@ -269,7 +269,7 @@ function App() {
   return <div className="layout">
     <header className="masthead">
       <div><div className="eyebrow">TURANSEC / SOC LAB</div><h1>SOC overview and scan history</h1><p>Read-only React + TypeScript evaluation surface. Does not replace the existing Go-served SOC console.</p></div>
-      <div className="lab-indicator" aria-label="Laboratory environment">LAB ONLY</div>
+      <div className="lab-indicator">LAB ONLY</div>
     </header>
     <main>
       <section className="panel" aria-labelledby="connection-title">

@@ -470,6 +470,7 @@ try {
     assert.equal(new Set(observedLab.map(x => x.path)).size, 6);
     assert.ok(observedLab.every(x => x.method === 'GET'));
     await accessibility(page, 'Original local SOC overview');
+    assert.equal(report.accessibility.at(-1).incomplete.length, 0, 'Original local SOC overview must have no incomplete accessibility checks');
     for (const name of ['Policy evidence', 'Endpoints', 'Security alerts', 'Sysmon & telemetry', 'Scan history', 'Evidence snapshot']) {
       await page.getByRole('button', { name, exact: true }).click();
       assert.equal(await page.getByRole('button', { name, exact: true }).getAttribute('aria-current'), 'page');
