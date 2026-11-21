@@ -220,3 +220,29 @@
   .detection-audit-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.detection-audit-summary,.detection-audit-filters{grid-template-columns:1fr}}
 @media(forced-colors:active){.detection-audit-disclosure,.detection-audit-summary>div{border-color:CanvasText}}
+
+/* Agent 5: response-scoped SOC evidence snapshot, not endpoint protection status. */
+.snapshot-review h3{font-size:1rem;margin:14px 0 10px}
+.snapshot-review-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0}
+.snapshot-review-columns>section{min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:18px}
+.snapshot-review-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 20px}
+.snapshot-review-metrics>div{min-width:0;padding:14px;border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
+.snapshot-review-metrics dt{font-size:.82rem;line-height:1.45;color:var(--muted)}
+.snapshot-review-metrics dd{font-weight:750;font-size:1.55rem;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.snapshot-review-columns .snapshot-review-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+.snapshot-limits{margin:18px 0;padding:18px;border-radius:12px;border:1px dashed var(--border);background:var(--bg)}
+.snapshot-limits ul{margin:10px 0 20px;padding-left:24px;line-height:1.6}
+.snapshot-limits li{padding:4px 0;overflow-wrap:anywhere}
+.snapshot-review-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}
+.snapshot-review-filters .field{min-width:0;display:grid;gap:8px}
+.snapshot-review-filters select{min-width:0;width:100%;min-height:44px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--ink);padding:10px}
+.snapshot-review-filters input{min-width:0;max-width:100%}
+.snapshot-review-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.snapshot-sysmon{margin:14px 0;padding:12px;border:1px solid var(--border);border-radius:10px}
+.snapshot-sysmon>summary{cursor:pointer;font-weight:750;min-height:44px;padding:11px 4px}
+.snapshot-sysmon>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.snapshot-endpoint-table{min-width:900px}
+@media(max-width:1020px){.snapshot-review-metrics,.snapshot-review-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.snapshot-review-columns{grid-template-columns:1fr}}
+@media(max-width:540px){.snapshot-review-metrics,.snapshot-review-columns .snapshot-review-metrics,.snapshot-review-filters{grid-template-columns:1fr}}
+@media(forced-colors:active){.snapshot-review-columns>section,.snapshot-review-metrics>div,.snapshot-limits,.snapshot-sysmon{border-color:CanvasText}}
