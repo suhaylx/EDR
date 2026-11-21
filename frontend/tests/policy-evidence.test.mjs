@@ -42,3 +42,26 @@ test('policy evidence descriptions never claim protection even when online', () 
   assert.match(policyEvidenceState(ep('c','online','')), /UNKNOWN/);
   assert.match(policyEvidenceState(ep('d','online','p1','error')), /error reported/i);
 });
+
+import { filterPolicyEndpoints } from '../.test-dist/policy-evidence.js';
+
+test('attention filter excludes online acknowledgement only, puts errors before missing IDs', () => {
+  const endpoints = [ep('ok','online','p1'), ep('offline','offline','p1'),
+    ep('missing','online',''), ep('error','online','p1','failed')];
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'attention', '').map(e => e.id),
+    ['error', 'missing', 'offline']);
+  assert.deepEqual(endpoints.map(e => e.id), ['ok','offline','missing','error']);
+});
+test('policy evidence filter distinguishes error, missing ID, and offline/unknown', () => {
+  const endpoints = [ep('a','online','p1'), ep('b','unknown','p1'),ep('c','online',''),ep('d','offline','p2','error')];
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'reported_error', '').map(e=>e.id),['d']);
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'missing_id', '').map(e=>e.id),['c']);
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'offline_unknown', '').map(e=>e.id),['d','b']);
+});
+test('search is case insensitive and cannot change source endpoint data', () => {
+  const endpoints = [ep('LINUX-12','online','policy-alpha'), ep('win-1','online','policy-beta','Scanner FAILED')];
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'all', 'linux').map(e=>e.id),['LINUX-12']);
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'all', 'FAILED').map(e=>e.id),['win-1']);
+  assert.deepEqual(filterPolicyEndpoints(endpoints, 'all', ' no match '),[]);
+  assert.equal(endpoints.length,2);
+});
