@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { observedSysmonCounts, SYSMON_EVENT_NAMES, type LabTelemetryEvent } from './telemetry.js';
+import { observedSysmonCounts, reportedReceiptGap, SYSMON_EVENT_NAMES, type LabTelemetryEvent } from './telemetry.js';
 import type { InvestigationSeed } from './investigation.js';
 
 /** Read-only SOC evidence view. No inferred infection edges or coverage claims. */
@@ -83,7 +83,8 @@ export function SysmonCoverage({events,onInvestigate}:{
               ? e.source_event_id ? 'ID '+e.source_event_id+' · '+(SYSMON_EVENT_NAMES[e.source_event_id]||e.type) : 'Legacy Sysmon · '+e.type
               : e.type}</strong>
               <span className="minor">Reported: {e.time||'unknown'}</span>
-              <span className="minor">Received: {e.received_at||'unknown'}</span></td>
+              <span className="minor">Received: {e.received_at||'unknown'}</span>
+              {reportedReceiptGap(e) && <span className="minor telemetry-time-gap" role="note">{reportedReceiptGap(e)}</span>}</td>
             <td><strong>{e.device_id}</strong><span className="minor">{e.platform} / {e.source||'source unknown'}</span></td>
             <td><span className="minor">RecordID: {e.source_record_id||'not reported'}</span>
               <span className="minor">Provider: {e.source_provider||'not reported (legacy)'}</span>

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeLabTelemetry,observedSysmonCounts,SYSMON_EVENT_NAMES,fetchLabTelemetry} from '../.test-dist/telemetry.js';
+import {decodeLabTelemetry,observedSysmonCounts,SYSMON_EVENT_NAMES,fetchLabTelemetry,reportedReceiptGap} from '../.test-dist/telemetry.js';
 
 const event=(changes={})=>({
   id:'ev1',device_id:'win-lab-01',platform:'windows',source:'sysmon',
@@ -86,4 +86,20 @@ test('SEC-076: Sysmon provider and channel remain explicitly sender-reported',()
     source:'procfs',platform:'linux',source_event_id:0,source_fields:{},
     source_provider:'Microsoft-Windows-Sysmon',source_channel:'Microsoft-Windows-Sysmon/Operational'
   })]),/provider\/channel mismatch/);
+});
+
+test('Day 5 timing hint preserves uncertainty about queue delay versus clock drift',()=>{
+  const e=decodeLabTelemetry([event({
+    time:'2026-11-21T12:00:00Z',
+    received_at:'2026-11-21T12:06:00Z',
+    time_origin:'sender_reported_unverified'
+  })])[0];
+  assert.match(reportedReceiptGap(e),/6 minute/);
+  assert.match(reportedReceiptGap(e),/queue delay, clock drift, or sender error/);
+  assert.equal(reportedReceiptGap({...e,received_at:'2026-11-21T12:02:00Z'}),'');
+  assert.equal(reportedReceiptGap({...e,time_origin:'server_received'}),'');
+  assert.equal(reportedReceiptGap({...e,time:''}),'');
+  assert.equal(reportedReceiptGap({...e,received_at:''}),'');
+  assert.equal(reportedReceiptGap({...e,received_at:'2026-11-19T12:00:00Z'}).includes('day(s)'),true);
+  assert.equal(reportedReceiptGap({...e,time:'2026-11-21T12:06:00Z',received_at:'2026-11-21T12:00:00Z'}).includes('6 minute(s)'),true);
 });

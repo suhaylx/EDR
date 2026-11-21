@@ -31,6 +31,7 @@ struct SysmonEvent {
     parent_process_guid: String,
     #[serde(default)] file_path: String,
     #[serde(default)] fields: BTreeMap<String, String>,
+    #[serde(default)] boot_id: String,
 }
 
 fn error(kind: io::ErrorKind, reason: impl Into<String>) -> io::Error {
@@ -98,6 +99,7 @@ fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
             || !(10..=64).contains(&e.time.len()) || !e.time.contains('T')
             || e.image.len()>1024 || e.file_path.len()>1024
             || e.process_guid.len()>128 || e.parent_process_guid.len()>128
+            || e.boot_id.len()>128 || e.boot_id.chars().any(char::is_control)
             || e.fields.len()>SAFE_FIELDS.len()
             || e.fields.iter().any(|(k,v)| !SAFE_FIELDS.contains(&k.as_str())
                 || v.len()>512 || v.chars().any(char::is_control))
@@ -132,6 +134,9 @@ fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
       payload["parent_process_guid"]=json!(e.parent_process_guid);
     }
     if !e.fields.is_empty(){payload["source_fields"]=json!(e.fields);}
+    // Sender-reported OS boot marker is accepted only for events observed
+    // within the current Windows boot interval; not endpoint attestation.
+    if !e.boot_id.is_empty(){payload["boot_id"]=json!(e.boot_id);}
     payload
 }
 
@@ -180,6 +185,19 @@ try {
   if ($_.FullyQualifiedErrorId -match 'NoMatchingEventsFound|NoEventsFound') { $records=@() }
   else { throw }
 }
+# LastBootUpTime comes from Windows CIM (same machine), not from the API.
+# A record from an earlier boot is intentionally left unscoped. If the OS
+# identity cannot be read, no boot label is sent and related rules fail closed.
+$bootUtc=$null;$bootMarker=''
+try {
+  $operatingSystem=Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop
+  if ($operatingSystem -and $operatingSystem.LastBootUpTime) {
+    $bootUtc=$operatingSystem.LastBootUpTime.ToUniversalTime()
+    $bootMarker='winboot:'+$bootUtc.ToString('o')
+  }
+} catch {
+  $bootUtc=$null;$bootMarker=''
+}
 $names=@{
  RuleName='rule_name';DestinationIp='destination_ip';DestinationPort='destination_port'
  SourceIp='source_ip';SourcePort='source_port';Protocol='protocol'
@@ -196,6 +214,11 @@ $observations=@(
     foreach ($data in @($xml.Event.EventData.Data)) {
       $key=[string]$data.GetAttribute('Name')
       if ($key) { $raw[$key]=[string]$data.'#text' }
+    }
+    $eventUtc=$entry.TimeCreated.ToUniversalTime()
+    $eventBoot=''
+    if ($bootUtc -and $eventUtc -ge $bootUtc -and $eventUtc -le [datetime]::UtcNow.AddMinutes(5)) {
+      $eventBoot=$bootMarker
     }
     $eventId=[int]$entry.Id;$metadata=@{}
     $image='';$filePath='';$guid='';$parent=''
@@ -215,7 +238,8 @@ $observations=@(
     [pscustomobject]@{
       record_id=[long]$entry.RecordId
       event_id=$eventId
-      time=$entry.TimeCreated.ToUniversalTime().ToString('o')
+      time=$eventUtc.ToString('o')
+      boot_id=$eventBoot
       image=$image;file_path=$filePath;process_guid=$guid
       parent_process_guid=$parent;fields=$metadata
     }
@@ -386,6 +410,27 @@ mod tests {
         assert!(records_after(br#"[{"record_id":2,"event_id":24,"time":"2026-11-21T14:00:00Z","fields":{"query_name":"SECRET"}}]"#,0).is_err());
         assert!(records_after(br#"[{"record_id":2,"event_id":22,"time":"2026-11-21T14:00:00Z","fields":{"command_line":"SECRET"}}]"#,0).is_err());
         assert!(records_after(br#"[{"record_id":2,"event_id":30,"time":"2026-11-21T14:00:00Z"}]"#,0).is_err());
+    }
+
+    #[test]
+    fn current_boot_marker_is_sender_reported_and_never_invented() {
+        let bytes=br#"[{"record_id":100,"event_id":3,
+          "time":"2026-11-21T14:00:00Z",
+          "boot_id":"winboot:2026-11-21T10:00:00.0000000Z",
+          "fields":{"destination_ip":"192.0.2.55"}}]"#;
+        let records=records_after(bytes,0).unwrap();
+        assert_eq!(records.len(),1);
+        let payload=event_payload("win-lab-01",&records[0]);
+        assert_eq!(payload["boot_id"],"winboot:2026-11-21T10:00:00.0000000Z");
+        let previous=records_after(OBSERVATIONS.as_bytes(),0).unwrap();
+        assert!(event_payload("win-lab-01",&previous[0]).get("boot_id").is_none());
+        let invalid=br#"[{"record_id":101,"event_id":3,
+          "time":"2026-11-21T14:00:00Z","boot_id":"unsafe\nvalue"}]"#;
+        assert!(records_after(invalid,0).is_err());
+        let oversized=format!(r#"[{{"record_id":101,"event_id":3,
+          "time":"2026-11-21T14:00:00Z","boot_id":"{}"}}]"#,
+          "x".repeat(129));
+        assert!(records_after(oversized.as_bytes(),0).is_err());
     }
 
     #[test]

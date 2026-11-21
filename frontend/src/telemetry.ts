@@ -116,6 +116,27 @@ export function decodeLabTelemetry(raw: unknown): LabTelemetryEvent[] {
   });
 }
 
+/**
+ * Timing quality is descriptive, not a source-authenticity or maliciousness
+ * judgment. A large source/receipt gap can reflect buffering, loss, clock
+ * drift, or deliberately false sender timestamps. Do not guess the cause.
+ */
+export function reportedReceiptGap(event: Pick<LabTelemetryEvent,
+  'time'|'received_at'|'time_origin'>): string {
+  if (event.time_origin !== 'sender_reported_unverified' ||
+      !event.time || !event.received_at) return '';
+  const sender = Date.parse(event.time);
+  const receipt = Date.parse(event.received_at);
+  if (!Number.isFinite(sender) || !Number.isFinite(receipt)) return '';
+  const minutes = Math.floor(Math.abs(sender - receipt) / 60000);
+  if (minutes < 5) return '';
+  const text = minutes < 1440
+    ? String(minutes) + ' minute(s)'
+    : String(Math.floor(minutes / 1440)) + ' day(s)';
+  return 'Source and receipt differ by ' + text +
+    '; possible queue delay, clock drift, or sender error.';
+}
+
 export function observedSysmonCounts(events:readonly LabTelemetryEvent[]): Map<number,number> {
   const counts=new Map<number,number>();
   for (const e of events) {
