@@ -79,6 +79,8 @@ type Event struct {
 	// WMI permanent-subscription identity only; do not retain query or command bodies.
 	WMIFilterName     string    `json:"wmi_filter_name,omitempty"`
 	WMIConsumerName   string    `json:"wmi_consumer_name,omitempty"`
+	// EID25 normalized observed tamper category, never a confirmed injection.
+	TamperType        string    `json:"tamper_type,omitempty"`
 	Detail            string    `json:"detail,omitempty"`
 }
 type Snapshot struct {
@@ -348,6 +350,7 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.RegistryTarget) > 1024 || len(e.RegistryNewName) > 1024 ||
 		len(e.RegistryOperation) > 32 ||
 		len(e.WMIFilterName) > 256 || len(e.WMIConsumerName) > 256 ||
+		len(e.TamperType) > 32 ||
 		e.SysmonEventID < 0 || e.SysmonEventID > 255 ||
 		e.DestinationPort < 0 || e.DestinationPort > 65535 {
 		return Event{}, errors.New("invalid event fields")
@@ -419,6 +422,10 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		}) >= 0 {
 			return Event{}, errors.New("invalid WMI subscription name")
 		}
+	}
+	if e.TamperType != "" && e.TamperType != "image_replaced" &&
+		e.TamperType != "image_locked" && e.TamperType != "other" {
+		return Event{}, errors.New("unsupported process tamper type")
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always
 	// stamp server receipt time and overwrite client-controlled provenance tags.
