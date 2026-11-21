@@ -107,4 +107,51 @@ BEGIN
 END $$;
 ROLLBACK;
 SQL
+# Cross-connection race: tenant disablement holds the tenant row lock.
+# Rotation MUST wait for that transaction to commit and return false, without
+# revoking the previously active leaf or producing spurious audit entries.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO edr_tenants(tenant_id,display_name) VALUES ('raceTenant','Race tenant');
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+  VALUES ('raceTenant','win01','windows');
+INSERT INTO edr_agent_certificates(
+  tenant_id,agent_id,fingerprint_sha256,not_before,not_after)
+  VALUES ('raceTenant','win01',decode(repeat('aa',32),'hex'),
+          now()-interval '1 hour',now()+interval '1 day');
+SQL
+PGAPPNAME=edr-rotation-ci-disable psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL' >/dev/null 2>&1 &
+BEGIN;
+UPDATE edr_tenants SET disabled_at=clock_timestamp()
+WHERE tenant_id='raceTenant';
+SELECT pg_sleep(3);
+COMMIT;
+SQL
+disabler_pid=$!
+ready=0
+for _ in $(seq 1 60); do
+  activity="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_stat_activity WHERE application_name='edr-rotation-ci-disable' AND state='active' AND query LIKE '%pg_sleep(3)%'")"
+  if [[ "$activity" == "1" ]]; then ready=1; break; fi
+  sleep 0.1
+done
+if [[ "$ready" != "1" ]]; then
+  wait "$disabler_pid" || true
+  echo "Failed to establish disablement/rotation race fixture" >&2
+  exit 1
+fi
+rotated="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SET statement_timeout='10s'; SELECT edr_rotate_agent_certificate('raceTenant','win01',decode(repeat('aa',32),'hex'),decode(repeat('bb',32),'hex'),now(),now()+interval '1 day','race-issuer')")"
+wait "$disabler_pid"
+if [[ "$(printf '%s\n' "$rotated" | tail -n 1)" != "f" ]]; then
+  echo "Rotation authorization race: disabled tenant was rotated" >&2
+  exit 1
+fi
+safe="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM edr_agent_certificates WHERE tenant_id='raceTenant' AND agent_id='win01' AND revoked_at IS NULL AND fingerprint_sha256=decode(repeat('aa',32),'hex')")"
+if [[ "$safe" != "1" ]]; then
+  echo "Rotation authorization race: original certificate was altered" >&2
+  exit 1
+fi
+audits="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM edr_enrollment_audit WHERE tenant_id='raceTenant'")"
+if [[ "$audits" != "0" ]]; then
+  echo "Rotation authorization race: denial produced audit records" >&2
+  exit 1
+fi
 echo "PostgreSQL certificate rotation integration passed"
