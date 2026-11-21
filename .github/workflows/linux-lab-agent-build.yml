@@ -25,10 +25,11 @@ jobs:
           uname -a
           rustc --version
           cargo --version
+      # TODO: commit a reviewed Cargo.lock before production or signed releases.
       - name: Rust unit tests
-        run: cargo test --manifest-path agent/Cargo.toml --locked
+        run: cargo test --manifest-path agent/Cargo.toml
       - name: Build native release artifact
-        run: cargo build --manifest-path agent/Cargo.toml --release --locked
+        run: cargo build --manifest-path agent/Cargo.toml --release
       - name: CLI negative smoke tests and stage
         shell: bash
         run: |
