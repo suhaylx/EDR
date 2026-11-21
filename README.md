@@ -69,3 +69,10 @@ When in the project root, adjust the first `cd` above accordingly. E.g., `cd tur
 - [`docs/ROLE_KICKOFF_2026-11-21.md`](docs/ROLE_KICKOFF_2026-11-21.md): verified initial four-role review, P0 assignments and blockers.
 
 GitHub publishing is separate from this local starter. Never push this project into an unrelated repository; only use the authorized private project repository once created.
+
+## Copy-ready two-server installation manuals (development lab)
+
+- [Ubuntu 24.04 dashboard and Go backend (8 GiB RAM)](docs/LAB_UBUNTU_2404_DASHBOARD_INSTALL.md) - includes the requested `0.0.0.0:8080` binding **with public TCP 8080 blocked**, a dedicated systemd unit, smoke tests and SSH-tunneled browser access.
+- [Windows Server 2022 Rust test worker, Sysmon and ClamAV](docs/LAB_WINDOWS_SERVER_2022_AGENT_INSTALL.md) - includes read-only preflight, Rust build/tests, official Sysmon and ClamAV install checkpoints, SSH tunnel, benign scan job and real-test QA boundaries.
+
+The agent still is not an installed persistent Windows protection service or genuine Sysmon event collector. Both hosts require independent on-host verification; development bearer tokens must not be transmitted over public HTTP.
