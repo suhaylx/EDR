@@ -35,6 +35,8 @@ test('audit controls are labeled, table described and result count announced',()
   assert.match(html,/<caption>/);
   assert.match(html,/aria-live="polite"/);
   assert.match(html,/Detection-source integrity audit/);
+  assert.match(html,/Show all audit records and reset filters/);
+  assert.doesNotMatch(html,/<button[^>]*disabled[^>]*>Show all audit records/);
   assert.match(html,/reported values/);
 });
 test('audit with no detections does not claim a protected or clean fleet',()=>{
