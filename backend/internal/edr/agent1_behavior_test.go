@@ -23,6 +23,8 @@ func TestAgentOneBehaviorRulesRequireRealSourceIDsAndBoundedEvidence(t *testing.
     created.Image="C:\\Users\\lab\\Downloads\\agent.exe"
     net:=behaviorEvidence("net","win-1","network_connect",3,now.Add(time.Second))
     net.SourceFields=map[string]string{"destination_ip":"10.20.30.40"}
+    created.BootID="qa-boot-1"
+    net.BootID="qa-boot-1"
     thread:=behaviorEvidence("thread","win-1","create_remote_thread",8,now)
     thread.SourceFields=map[string]string{"source_image":"C:\\Windows\\explorer.exe","target_image":"C:\\Windows\\notepad.exe"}
     lsass:=behaviorEvidence("lsass","win-1","process_access",10,now)
@@ -72,6 +74,21 @@ func TestAgentOneNoCrossDeviceOrBootOrUnverifiedNetworkCorrelation(t *testing.T)
     if got:=DetectBehavioralSignals([]Event{created,net});len(got)!=0 {
         t.Fatalf("cross-device match: %+v",got)
     }
+    // A process GUID match without both boot identities is insufficient:
+    // the same agent can reboot, replay or reuse stale retained telemetry.
+    net.DeviceID="win-a";net.BootID=""
+    if got:=DetectBehavioralSignals([]Event{created,net});len(got)!=0 {
+        t.Fatalf("missing network boot should prevent correlation: %+v",got)
+    }
+    net.BootID="boot-A";created.BootID=""
+    if got:=DetectBehavioralSignals([]Event{created,net});len(got)!=0 {
+        t.Fatalf("missing process boot should prevent correlation: %+v",got)
+    }
+    net.BootID="";created.BootID=""
+    if got:=DetectBehavioralSignals([]Event{created,net});len(got)!=0 {
+        t.Fatalf("both missing boot identities should prevent correlation: %+v",got)
+    }
+    created.BootID="boot-A"
     net.DeviceID="win-a";net.BootID="boot-B"
     if got:=DetectBehavioralSignals([]Event{created,net});len(got)!=0 {
         t.Fatalf("cross-boot match: %+v",got)
