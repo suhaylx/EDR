@@ -16,6 +16,11 @@ const base = (changes = {}) => ({
   policy_coverage: [],
   most_active: [{id: 'win-1', platform: 'windows', status: 'online', last_seen: '2026-11-21T14:59:00Z', events: 8, alerts: 2, inactive_seconds: 0}],
   inactive_machines: [{id: 'win-2', platform: 'windows', status: 'offline', last_seen: '2026-11-20T14:59:00Z', events: 0, alerts: 0, inactive_seconds: 86460}, {id: 'linux-1', platform: 'linux', status: 'unknown', last_seen: '0001-01-01T00:00:00Z', events: 0, alerts: 0, inactive_seconds: 0}],
+  endpoints: [
+    {id:'win-1',platform:'windows',group:'lab',status:'online',last_seen:'2026-11-21T14:59:00Z',events:8,alerts:2,inactive_seconds:0,reported_health:'healthy'},
+    {id:'win-2',platform:'windows',group:'lab',status:'offline',last_seen:'2026-11-20T14:59:00Z',events:0,alerts:0,inactive_seconds:86460,reported_health:'healthy',applied_policy_id:'p1',applied_revision:2,last_policy_error:'pending'},
+    {id:'linux-1',platform:'linux',group:'test',status:'unknown',last_seen:'0001-01-01T00:00:00Z',events:0,alerts:0,inactive_seconds:0,reported_health:''},
+  ],
   unavailable: ['signature_database_freshness', 'tenant_isolation'],
   ...changes
 });
@@ -63,4 +68,20 @@ test('uses read-only 7-day Go API and rejects wrong response shape', async () =>
 test('disallows unsupported windows and short tokens before issuing a request', async () => {
   await assert.rejects(fetchLabOverview('short', 7), /16 characters/);
   await assert.rejects(fetchLabOverview('t'.repeat(16), 14), /Unsupported UTC window/);
+});
+
+test('full inventory reconciles heartbeat and reports policy errors without claiming verified coverage', () => {
+  const o=decodeLabOverview(base(),7);
+  assert.equal(o.endpoints.length,3);
+  assert.equal(o.endpoints[1].status,'offline');
+  assert.equal(o.endpoints[1].reported_health,'healthy');
+  assert.equal(o.endpoints[1].last_policy_error,'pending');
+  assert.equal(o.endpoints[1].applied_revision,2);
+  assert.equal(o.endpoints[2].applied_policy_id,'');
+});
+test('inventory missing records, duplicates and false status totals fail closed', () => {
+  assert.throws(()=>decodeLabOverview(base({endpoints:[]}),7),/inventory does not match/);
+  assert.throws(()=>decodeLabOverview(base({endpoints:[base().endpoints[0],base().endpoints[0],base().endpoints[2]]}),7),/duplicate IDs/);
+  assert.throws(()=>decodeLabOverview(base({endpoints:base().endpoints.map(x=>({...x,status:'online'}))}),7),/status does not reconcile/);
+  assert.throws(()=>decodeLabOverview(base({endpoints:base().endpoints.map((x,i)=>i===0?{...x,applied_revision:-1}:x)}),7),/Invalid overview count/);
 });
