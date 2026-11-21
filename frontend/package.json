@@ -1,0 +1,22 @@
+{
+  "name": "turansec-edr-soc-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc src/scan-state.ts src/scan-history.ts src/lab-api.ts src/overview.ts src/investigation.ts src/detections.ts src/endpoint-inventory.ts src/policy-evidence.ts src/local-companion.ts src/LocalCompanionView.tsx src/alert-triage.ts src/AlertsTriageView.tsx --jsx react-jsx --outDir .test-dist --module Node16 --moduleResolution Node16 --target es2022 --lib es2022,dom --strict --skipLibCheck && node --test tests/*.test.mjs",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.8.3",
+    "vite": "8.3.8"
+  }
+}

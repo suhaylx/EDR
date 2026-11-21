@@ -68,3 +68,24 @@
 .graph-actions{display:flex;gap:10px;flex-wrap:wrap}.graph-actions button{max-width:100%;overflow-wrap:anywhere}
 .graph-search{max-width:860px;grid-template-columns:repeat(2,minmax(0,1fr))}.graph-search button{grid-column:1/-1}
 @media(max-width:650px){.graph-search{grid-template-columns:1fr}.process-tree,.process-tree ul{padding-left:11px}}
+
+/* Investigation disclosure and evidence controls: original, keyboard-first lab UI. */
+.graph-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.graph-controls button{min-height:44px;max-width:100%;white-space:normal}
+.process-branch{min-width:0}
+.process-branch>summary{cursor:pointer;min-height:44px;list-style:none;position:relative;padding-left:34px}
+.process-branch>summary::-webkit-details-marker{display:none}
+.process-branch>summary::before{content:"";position:absolute;left:14px;top:20px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:8px solid #8ecbff}
+.process-branch[open]>summary::before{transform:rotate(90deg)}
+.process-branch>summary:hover{border-color:#6a9bd0;background:#1e3552}
+.process-branch>summary:focus-visible,.graph-controls button:focus-visible,.graph-filter input:focus-visible,.graph-source-link:focus-visible{outline:3px solid #8ecbff;outline-offset:3px}
+.graph-filter{display:grid;gap:7px;margin:12px 0 16px;max-width:820px}
+.graph-filter label{color:#d3e3fa;font-weight:600}
+.graph-filter input{width:100%;max-width:100%;min-height:44px}
+.graph-filter p{font-size:12px;line-height:1.6;margin:0;color:#b1c8e7}
+.graph-source-link{display:inline-block;margin:0 0 12px 14px;color:#8bd4ff;font-weight:600;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.graph-source-link:hover{color:#fff}
+.evidence-timeline li[hidden]{display:none!important}
+.evidence-timeline li:focus{outline:3px solid #8ecbff;outline-offset:3px}
+@media(max-width:650px){.graph-controls{display:grid;grid-template-columns:1fr 1fr}.graph-controls button{font-size:12px;padding:9px}.process-branch>summary{padding-left:32px}.graph-source-link{margin-left:9px}}
+@media(max-width:390px){.graph-controls{grid-template-columns:1fr}}
