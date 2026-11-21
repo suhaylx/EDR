@@ -204,4 +204,60 @@ mod tests {
             assert!(items.iter().any(|p| p.pid == std::process::id()));
         }
     }
+
+    // Day 3 QA: use synthetic kernel-format records only. A procfs snapshot
+    // is observed state, not a process-create event or an authenticated PID.
+    #[test]
+    fn qa_kernel_stat_parser_rejects_malformed_and_reused_pid_ambiguity() {
+        let mut fields = vec!["0"; 20];
+        fields[0] = "S";
+        fields[1] = "9";
+        fields[19] = "1234";
+        let valid = format!("123 (complex ) process name) {}", fields.join(" "));
+        assert_eq!(parse_proc_stat(&valid).unwrap(), (9, 1234));
+
+        for (label, raw) in [
+            ("missing-parentheses", "123 no-comm S 9".to_owned()),
+            ("truncated", "123 (proc) S 9".to_owned()),
+            ("oversized", "a".repeat(8193)),
+        ] {
+            assert!(parse_proc_stat(&raw).is_err(), "accepted {label}");
+        }
+        fields[1] = "-1";
+        assert!(parse_proc_stat(&format!("123 (proc) {}", fields.join(" "))).is_err());
+        fields[1] = "invalid";
+        assert!(parse_proc_stat(&format!("123 (proc) {}", fields.join(" "))).is_err());
+        fields[1] = "9";
+        fields[19] = "0";
+        assert!(parse_proc_stat(&format!("123 (proc) {}", fields.join(" "))).is_err());
+        fields[19] = "NaN";
+        assert!(parse_proc_stat(&format!("123 (proc) {}", fields.join(" "))).is_err());
+    }
+
+    #[test]
+    fn qa_procfs_snapshot_cannot_invent_execution_or_parent_guid() {
+        let first = ProcessObservation {
+            pid: 9001, parent_pid: 7, start_ticks: 100,
+            image: "/usr/bin/true".into(),
+        };
+        let reused_pid = ProcessObservation { start_ticks: 200, ..first.clone() };
+        let a = event_payload("linux-lab-01", &first);
+        let b = event_payload("linux-lab-01", &reused_pid);
+
+        assert_eq!(a["source"], "procfs");
+        assert_eq!(a["platform"], "linux");
+        assert_eq!(a["type"], "process_observed");
+        assert_eq!(a["source_record_id"], "procfs:9001:100");
+        assert_eq!(b["source_record_id"], "procfs:9001:200");
+        assert_ne!(a["source_record_id"], b["source_record_id"],
+            "PID reuse must not merge different starttime identities");
+        for forbidden in [
+            "process_guid", "parent_process_guid",
+            "time", "source_event_id", "malicious", "confirmed_infection",
+        ] {
+            assert!(a.get(forbidden).is_none(), "invented {forbidden} from procfs snapshot");
+        }
+        assert!(a["detail"].as_str().unwrap().contains("not a process creation event"));
+    }
+
 }
