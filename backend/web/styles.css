@@ -94,3 +94,18 @@
 .auth-remember{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#b5c7dd;white-space:nowrap}
 .auth-remember input{width:auto;min-width:0;accent-color:#55a9ec}
 .auth input:disabled,.auth button:disabled{opacity:.55;cursor:not-allowed}
+
+
+/* TuranSec lab: multi-event Sysmon source visibility (observed != enabled). */
+.source-class-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:20px 0}
+.source-class{display:grid;grid-template-columns:auto 1fr;align-content:start;align-items:start;text-align:left;column-gap:10px;row-gap:6px;min-width:0;min-height:104px;padding:13px;background:#192b42;border:1px solid #344966;border-radius:11px;color:#deebff}
+.source-class b{display:grid;place-items:center;min-width:30px;height:30px;padding:0 4px;background:#102236;border:1px solid #45678b;border-radius:8px;font-variant-numeric:tabular-nums}
+.source-class span{overflow-wrap:anywhere;font-size:12px;line-height:1.5;font-weight:700}
+.source-class small{grid-column:2;color:#9cb7d6;font-size:11px}
+.source-class:hover,.source-class.selected{border-color:#74b9f9;background:#24405d}
+.source-class:focus-visible{outline:3px solid #8ecbff;outline-offset:2px}
+.source-class[aria-pressed=true]{box-shadow:inset 0 0 0 1px #70b6ef}
+@media(max-width:1250px){.source-class-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:910px){.source-class-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:590px){.source-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:380px){.source-class-grid{grid-template-columns:1fr}}
