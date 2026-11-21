@@ -17,7 +17,8 @@ for migration in \
   0004_enrollment_challenges \
   0005_scan_job_queue \
   0006_atomic_agent_enrollment \
-  0007_scan_job_lease_renewal; do
+  0007_scan_job_lease_renewal \
+  0008_scan_job_results; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
@@ -75,6 +76,26 @@ BEGIN
     '44444444-4444-4444-8444-444444444444',true);
   IF NOT ok THEN RAISE EXCEPTION 'valid lease completion failed'; END IF;
 
+  -- Malware detection is a completed scan, with durable malicious verdict.
+  INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+  VALUES ('55555555-5555-4555-8555-555555555555','chainA','win01','C:/Lab/fixture');
+  SELECT * INTO claimed FROM edr_claim_scan_job(
+    'chainA','win01','worker','66666666-6666-4666-8666-666666666666',30);
+  IF claimed.job_id IS DISTINCT FROM '55555555-5555-4555-8555-555555555555'::uuid THEN
+    RAISE EXCEPTION 'malware scan lease not claimed'; END IF;
+  ok := edr_complete_scan_job_with_result('chainB','win01',claimed.job_id,
+    '66666666-6666-4666-8666-666666666666','malicious','Lab-Signature','');
+  IF ok THEN RAISE EXCEPTION 'cross-tenant malware completion'; END IF;
+  ok := edr_complete_scan_job_with_result('chainA','win01',claimed.job_id,
+    '66666666-6666-4666-8666-666666666666','malicious','Lab-Signature','');
+  IF NOT ok THEN RAISE EXCEPTION 'valid malware result rejected'; END IF;
+  IF (SELECT verdict FROM edr_scan_job_results WHERE job_id=claimed.job_id)
+     IS DISTINCT FROM 'malicious' THEN
+    RAISE EXCEPTION 'malware result not durably retained'; END IF;
+  ok := edr_complete_scan_job_with_result('chainA','win01',claimed.job_id,
+    '66666666-6666-4666-8666-666666666666','malicious','Lab-Signature','');
+  IF ok THEN RAISE EXCEPTION 'result replay accepted'; END IF;
+
   ok := edr_rotate_agent_certificate(
     'chainA','win01',decode(repeat('cd',32),'hex'),
     decode(repeat('ef',32),'hex'),
@@ -108,4 +129,4 @@ BEGIN
 END $flow$;
 ROLLBACK;
 SQL
-echo "Full PostgreSQL migration chain (0001..0007) integration passed"
+echo "Full PostgreSQL migration chain (0001..0008) integration passed"
