@@ -50,6 +50,8 @@ type Event struct {
 	TimeOrigin        string    `json:"time_origin"`
 	// A sender-reported source record identifier; not an authenticated Sysmon proof.
 	SourceRecordID    string    `json:"source_record_id,omitempty"`
+	// Sender-reported boot/session marker, not cryptographically authenticated.
+	BootID            string    `json:"boot_id,omitempty"`
 	ProcessGUID       string    `json:"process_guid,omitempty"`
 	ParentProcessGUID string    `json:"parent_process_guid,omitempty"`
 	Image             string    `json:"image,omitempty"`
@@ -315,7 +317,7 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		return Event{}, errors.New("invalid device id")
 	}
 	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 ||
-		len(e.Source) > 128 || len(e.ProcessGUID) > 128 ||
+		len(e.Source) > 128 || len(e.BootID) > 128 || len(e.ProcessGUID) > 128 ||
 		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
 		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
