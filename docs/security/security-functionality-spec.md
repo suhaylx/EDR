@@ -62,6 +62,13 @@ mTLS, source authentication, tenant scoping, replay protection, boot/session
 identity or tamper-proof evidence. Detection remains provisional and must not
 be used to trigger automated remediation.
 
+`GET /api/detections` now also exposes `load_source_record_id` (when supplied),
+`load_time_origin`, and `load_received_at` for the originating module-load
+record. These are informational fields: the sender-reported record ID and
+observation time remain untrusted, and the server receipt timestamp is not
+proof of the event's authenticity. Missing optional fields must never be
+presented as validated evidence by the SOC UI.
+
 ### QA acceptance
 
 1. FileCreate without ImageLoad => zero detections.
