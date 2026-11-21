@@ -364,4 +364,47 @@ mod tests {
         assert!(allowed_lab_file(escaped.to_str().unwrap(), &root).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn scoped_open_reads_regular_file_only_inside_configured_root() {
+        use std::io::Read;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "turansec-openat2-{}-{n}", std::process::id()));
+        std::fs::create_dir_all(root.join("nested")).unwrap();
+        let good = root.join("nested").join("benign.txt");
+        std::fs::write(&good, b"openat2-scoped-test").unwrap();
+
+        let mut content = Vec::new();
+        open_scoped_lab_file(good.to_str().unwrap(), &root).unwrap()
+            .read_to_end(&mut content).unwrap();
+        assert_eq!(content, b"openat2-scoped-test");
+        assert!(open_scoped_lab_file(root.to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file("/etc/hosts", &root).is_err());
+
+        let escaped = root.join("escape");
+        std::os::unix::fs::symlink("/etc/hosts", &escaped).unwrap();
+        assert!(open_scoped_lab_file(escaped.to_str().unwrap(), &root).is_err());
+
+        let internal_link = root.join("inside-link");
+        std::os::unix::fs::symlink("nested/benign.txt", &internal_link).unwrap();
+        assert!(open_scoped_lab_file(internal_link.to_str().unwrap(), &root).is_err());
+
+        let intermediate_link = root.join("linked-dir");
+        std::os::unix::fs::symlink("nested", &intermediate_link).unwrap();
+        assert!(open_scoped_lab_file(
+            intermediate_link.join("benign.txt").to_str().unwrap(), &root).is_err());
+
+        assert!(open_scoped_lab_file(
+            root.join("nested/../nested/benign.txt").to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file(
+            root.join("nested/./benign.txt").to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file(
+            root.join("nested").to_str().unwrap(), &root).is_err());
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
 }
