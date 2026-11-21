@@ -170,3 +170,29 @@
 @media(max-width:1000px){.scan-evidence-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.scan-evidence-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:580px){.scan-evidence-filters,.scan-evidence-summary{grid-template-columns:1fr}}
 @media(forced-colors:active){.scan-evidence-summary>div,.scan-evidence-warnings{border-color:CanvasText}}
+
+/* Agent 5: same-host scan-adjacent evidence, no inferred incident or causal edges. */
+.scan-context>h2{margin:22px 0 12px}
+.scan-context>h2:focus{outline:3px solid var(--focus);outline-offset:5px}
+.scan-context-selected,.scan-context section[aria-labelledby="scan-context-sample-title"]{
+  border:1px solid var(--border);border-radius:12px;padding:18px;margin:20px 0;
+  min-width:0;background:var(--bg)}
+.scan-context h3{font-size:1.05rem;margin:0 0 10px}
+.scan-context-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.scan-context-metrics>div{min-width:0;padding:12px;border:1px solid var(--border);border-radius:9px}
+.scan-context-metrics dt{font-size:.82rem;color:var(--muted);font-weight:650;margin-bottom:6px}
+.scan-context-metrics dd{margin:0;overflow-wrap:anywhere;font-weight:750;line-height:1.45}
+.scan-context-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}
+.scan-context-filters .field{display:grid;gap:8px;min-width:0}
+.scan-context-filters select{min-height:44px;width:100%;min-width:0;border:1px solid var(--border);
+  border-radius:9px;background:var(--panel);color:var(--ink);padding:10px}
+.scan-context-filters input{max-width:none;min-width:0}
+.scan-context-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-context-table{min-width:950px}
+.scan-context-flags{margin:10px 0}
+.scan-context-flags>summary{cursor:pointer;min-height:44px;padding:11px 0;font-weight:750}
+.scan-context-flags>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-context-flags li{overflow-wrap:anywhere;margin:6px 0}
+@media(max-width:1000px){.scan-context-filters,.scan-context-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.scan-context-filters,.scan-context-metrics{grid-template-columns:1fr}}
+@media(forced-colors:active){.scan-context-selected,.scan-context-metrics>div{border-color:CanvasText}}
