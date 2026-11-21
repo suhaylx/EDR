@@ -197,3 +197,21 @@ func TestDLLAlertFingerprintSeparatesReportedBootSessions(t *testing.T) {
 		t.Fatalf("duplicate record within one reported boot was not deduplicated: %+v", got)
 	}
 }
+
+func TestDLLAlertFingerprintIsUnambiguousWithDelimiters(t *testing.T) {
+	// Naive pipe-delimited concatenation would make these tuples identical.
+	a := provenanceLoad()
+	a.ProcessGUID = "proc|part"
+	a.FilePath = `C:\Users\Alice\Temp\plugin.dll`
+	b := a
+	b.ProcessGUID = "proc"
+	b.FilePath = `part|C:\Users\Alice\Temp\plugin.dll`
+	// Both paths must still be suspicious and independently reported.
+	if !suspiciousDLLPath(a.FilePath) || !suspiciousDLLPath(b.FilePath) {
+		t.Fatal("test paths must be in heuristic scope")
+	}
+	got := DetectSuspiciousDLLLoads([]Event{a, b})
+	if len(got) != 2 || got[0].ID == got[1].ID {
+		t.Fatalf("distinct tuples collapsed into one alert: %+v", got)
+	}
+}
