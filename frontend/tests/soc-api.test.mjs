@@ -17,6 +17,8 @@ function responseFor(path) {
   if (path.includes('/alerts?') || path.includes('/my-alerts?')) return json(page([alert]));
   if (path.endsWith('/alert-stats')) return json({ open: 1, acknowledged: 0, resolved: 0 });
   if (path.includes('/activity?')) return json(page([]));
+  if (path.includes('/scan-jobs?') || path.includes('/scan-results?')) return json(page([]));
+  if (path.endsWith('/scan-stats')) return json({ total: 0, pending: 0, leased: 0, succeeded: 0, failed: 0, cancelled: 0, malicious: 0 });
   throw new Error('Unexpected test URL');
 }
 const options = fetcher => ({ protocol: 'https:', fetcher });
@@ -48,7 +50,7 @@ test('SOC transport uses same-origin certificate credentials with no token and n
   const snapshot = await loadSOCSnapshot(options(async (path, init) => { calls.push({ path, init }); return responseFor(path); }));
   assert.equal(snapshot.session.operator_id, session.operator_id);
   assert.equal(snapshot.endpoints.items[0].health, 'unseen');
-  assert.equal(calls.length, 7);
+  assert.equal(calls.length, 10);
   for (const { path, init } of calls) {
     assert.match(path, /^\/soc\/v1\/(session|tenants\/tenant-a\/)/);
     assert.equal(init.method, 'GET');
@@ -105,7 +107,7 @@ test('my-alerts cannot accept another operator or resolved assignment', async ()
 
 test('requested page offsets are validated and response offsets cannot silently substitute', async () => {
   let calls = 0;
-  await assert.rejects(loadSOCSnapshot(options(async path => { calls++; return responseFor(path); }), { endpoints: 1, alerts: 0, mine: 0 }), failure('invalid_response'));
+  await assert.rejects(loadSOCSnapshot(options(async path => { calls++; return responseFor(path); }), { endpoints: 1, alerts: 0, mine: 0, jobs: 0, results: 0 }), failure('invalid_response'));
   assert.equal(calls, 0);
   await assert.rejects(loadSOCSnapshot(options(async path => path.includes('/endpoints?') ? json({ ...page([]), offset: 25 }) : responseFor(path))), failure('invalid_response'));
 });

@@ -87,6 +87,7 @@ func TestValidAgentServerKeypair(t *testing.T) {
 		{"not-yet-valid", future},
 		{"CA-leaf", ca},
 		{"non-signing-key", tls.Certificate{Certificate: good.Certificate, PrivateKey: "not a crypto.Signer"}},
+		{"typed-nil-signer", tls.Certificate{Certificate: good.Certificate, PrivateKey: (*ecdsa.PrivateKey)(nil)}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if validAgentServerKeypair(tc.pair) {
@@ -121,6 +122,8 @@ func TestNewAgentMTLSServerRejectsInvalidCredentials(t *testing.T) {
 	}
 	mismatch := good
 	mismatch.PrivateKey = otherKey
+	emptySigner := good
+	emptySigner.PrivateKey = (*ecdsa.PrivateKey)(nil)
 	badLeaf := good
 	badLeaf.Certificate = [][]byte{{0x01}, good.Certificate[1]}
 	client := testAgentServerPair(t, now.Add(-time.Hour), now.Add(time.Hour),
@@ -132,6 +135,7 @@ func TestNewAgentMTLSServerRejectsInvalidCredentials(t *testing.T) {
 		pair tls.Certificate
 	}{
 		{"mismatched-key", mismatch},
+		{"typed-nil-signer", emptySigner},
 		{"unparseable-leaf", badLeaf},
 		{"client-only-EKU", client},
 		{"expired-leaf", expired},

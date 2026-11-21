@@ -1,0 +1,132 @@
+name: release-candidate-files
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Candidate version, for example v0.1.0-rc.1
+        required: true
+        type: string
+      create_draft_release:
+        description: Attach validated files to a draft prerelease after both native builds
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-files-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  EDR_CANDIDATE_SHA: ${{ github.sha }}
+  RELEASE_VERSION: ${{ inputs.version }}
+
+jobs:
+  package:
+    name: Native unsigned ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x86_64
+          - os: windows-latest
+            target: windows-x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    env:
+      PACKAGE_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Validate version and checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]]
+          [[ "$EDR_CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EDR_CANDIDATE_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - if: matrix.target == 'linux-x86_64'
+        run: python scripts/ci/candidate-check.py backend
+      - run: python scripts/ci/candidate-check.py rust
+      - if: matrix.target == 'linux-x86_64'
+        run: python scripts/ci/candidate-check.py release-tools
+      - name: Build committed native package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/release/package-candidate.py build \
+            --candidate-sha "$EDR_CANDIDATE_SHA" --target "$PACKAGE_TARGET" \
+            --output "$RUNNER_TEMP/candidate-packages" --stage-only
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-package-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ runner.temp }}/candidate-packages/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: package-checks-${{ matrix.target }}-${{ github.sha }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  prepare:
+    name: Validate release files and optional draft
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: unsigned-package-*-${{ github.sha }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/release-files
+      - name: Verify both native archives and prepare checksums
+        env:
+          RELEASE_FILES: ${{ runner.temp }}/release-files
+        run: |
+          python scripts/release/prepare-release.py \
+            --directory "$RELEASE_FILES" --version "$RELEASE_VERSION" \
+            --source-sha "$EDR_CANDIDATE_SHA" \
+            --require-target linux-x86_64 --require-target windows-x86_64
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reviewable-release-files-${{ github.sha }}
+          path: ${{ runner.temp }}/release-files/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Create explicitly requested draft prerelease
+        if: inputs.create_draft_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_FILES: ${{ runner.temp }}/release-files
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" "$RELEASE_FILES"/* \
+            --target "$EDR_CANDIDATE_SHA" --draft --prerelease --latest=false \
+            --title "TuranSec EDR $RELEASE_VERSION — unsigned engineering candidate" \
+            --notes-file "$RELEASE_FILES/RELEASE_NOTES.md"

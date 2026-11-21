@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/tls"
 	"crypto/x509"
+	"reflect"
 	"time"
 )
 
@@ -35,6 +36,12 @@ func validAgentServerKeypair(pair tls.Certificate) bool {
 	}
 	signer, ok := pair.PrivateKey.(crypto.Signer)
 	if !ok {
+		return false
+	}
+	// A typed nil key satisfies crypto.Signer but cannot supply a public key.
+	// Reject it before invoking methods, as required by the SEC-052 owner fix.
+	value := reflect.ValueOf(signer)
+	if value.Kind() == reflect.Pointer && value.IsNil() {
 		return false
 	}
 	publicDER, err := x509.MarshalPKIXPublicKey(signer.Public())

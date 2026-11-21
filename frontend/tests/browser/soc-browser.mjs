@@ -19,6 +19,8 @@ const report = {
 };
 let tlsServer, labServer, browser;
 let mode = 'ready';
+let operatorRole = 'viewer';
+let alertState = 'open';
 let labDenied = false;
 let delayedFinished = Promise.resolve();
 let delayedReceived = () => undefined;
@@ -28,6 +30,10 @@ const now = '2026-11-21T18:00:00Z';
 const session = { tenant_id: 'fixture-tenant', operator_id: 'fixture-viewer', role: 'viewer', server_time: now };
 const alertID = '11111111-1111-4111-8111-111111111111';
 const alert = { alert_id: alertID, job_id: '22222222-2222-4222-8222-222222222222', agent_id: 'fixture-linux', category: 'malware_signature', severity: 'high', signature_name: 'Synthetic-browser-test-signature', state: 'open', created_at: now, updated_at: now, assigned_to: session.operator_id };
+const caseFields = { assigned_to: session.operator_id, acknowledged_by: '', resolved_by: '', resolution_note: '' };
+const caseActivity = [{ activity_id: '33333333-3333-4333-8333-333333333333', actor_id: session.operator_id, action: 'note', note: '<script>fixture-untrusted-text</script>', occurred_at: now }];
+let scanJob = null;
+const scanJobID = '55555555-5555-4555-8555-555555555555';
 const endpoints = [
   { agent_id: 'fixture-linux', platform: 'linux', health: 'online', scan_ready: true, last_seen: now, heartbeat_count: 3, agent_version: 'fixture-only', clamav_version: 'fixture-only', signature_version: 'fixture-only' },
   { agent_id: 'fixture-windows', platform: 'windows', health: 'unseen', scan_ready: false, heartbeat_count: 0 },
@@ -36,14 +42,22 @@ const page = (items, url) => ({ items, limit: 25, offset: Number(url.searchParam
 function sendJSON(response, value, code = 200) { response.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); response.end(JSON.stringify(value)); }
 function socReply(url) {
   const empty = mode === 'empty';
-  if (url.pathname === '/soc/v1/session') return session;
+  if (url.pathname === '/soc/v1/session') return { ...session, role: operatorRole };
   if (url.pathname.endsWith('/endpoint-stats')) return empty
     ? { total: 0, windows: 0, linux: 0, online: 0, degraded: 0, stale: 0, unseen: 0, revoked: 0 }
     : { total: 2, windows: 1, linux: 1, online: 1, degraded: 0, stale: 0, unseen: 1, revoked: 0 };
   if (url.pathname.endsWith('/endpoints')) return page(empty ? [] : endpoints, url);
-  if (url.pathname.endsWith('/alert-stats')) return { open: empty ? 0 : 1, acknowledged: 0, resolved: 0 };
-  if (url.pathname.endsWith('/alerts') || url.pathname.endsWith('/my-alerts')) return page(empty ? [] : [alert], url);
-  if (url.pathname.endsWith('/activity')) return page([{ activity_id: '33333333-3333-4333-8333-333333333333', actor_id: 'fixture-viewer', action: 'note', note: '<script>fixture-untrusted-text</script>', occurred_at: now }], url);
+  if (url.pathname.includes('/endpoints/')) return endpoints.find(endpoint => url.pathname.endsWith('/' + endpoint.agent_id));
+  if (url.pathname.endsWith('/alert-stats')) return { open: !empty && alertState === 'open' ? 1 : 0, acknowledged: !empty && alertState === 'acknowledged' ? 1 : 0, resolved: !empty && alertState === 'resolved' ? 1 : 0 };
+  const currentAlert = { ...alert, ...caseFields, state: alertState };
+  if (url.pathname.endsWith('/alerts/' + alertID)) return currentAlert;
+  if (url.pathname.endsWith('/alerts')) return page(empty ? [] : [currentAlert], url);
+  if (url.pathname.endsWith('/my-alerts')) return page(!empty && currentAlert.assigned_to === session.operator_id && alertState !== 'resolved' ? [currentAlert] : [], url);
+  if (url.pathname.endsWith('/activity')) return page(caseActivity, url);
+  if (url.pathname.endsWith('/scan-jobs')) return page(empty || !scanJob ? [] : [scanJob], url);
+  if (url.pathname.endsWith('/scan-results')) return page([], url);
+  if (url.pathname.endsWith('/scan-jobs/' + scanJobID)) return scanJob ?? undefined;
+  if (url.pathname.endsWith('/scan-stats')) return { total: !empty && scanJob ? 1 : 0, pending: !empty && scanJob?.state === 'pending' ? 1 : 0, leased: 0, succeeded: 0, failed: 0, cancelled: !empty && scanJob?.state === 'cancelled' ? 1 : 0, malicious: 0 };
   return undefined;
 }
 const labOverview = days => ({
@@ -60,9 +74,44 @@ async function handler(request, response, secure) {
   response.setHeader('X-Frame-Options', 'DENY');
   response.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
   if (url.pathname.startsWith('/soc/v1/')) {
-    observedSOC.push({ path: url.pathname, method: request.method, authorizedTLS: Boolean(request.socket.authorized), bearerPresent: Boolean(request.headers.authorization) });
+    observedSOC.push({ path: url.pathname, method: request.method, authorizedTLS: Boolean(request.socket.authorized), bearerPresent: Boolean(request.headers.authorization), sameOrigin: request.headers.origin === 'https://' + request.headers.host, fetchSite: request.headers['sec-fetch-site'] });
     if (!secure || !request.socket.authorized) return sendJSON(response, { error: 'denied' }, 401);
     if (mode === 'deny' || mode === 'forbidden' || mode === 'unavailable') return sendJSON(response, { error: 'DO-NOT-RENDER-FIXTURE-ERROR' }, mode === 'deny' ? 401 : mode === 'forbidden' ? 403 : 503);
+    if (request.method === 'POST') {
+      if (operatorRole !== 'scanner' || request.headers.origin !== 'https://' + request.headers.host || request.headers['sec-fetch-site'] !== 'same-origin') return sendJSON(response, { error: 'denied' }, 403);
+      const base = `/soc/v1/tenants/${session.tenant_id}/`;
+      let raw = '';
+      for await (const chunk of request) { raw += chunk; if (Buffer.byteLength(raw) > 8192) return sendJSON(response, { error: 'bad body' }, 400); }
+      let body;
+      try { body = raw ? JSON.parse(raw) : undefined; } catch { return sendJSON(response, { error: 'bad body' }, 400); }
+      if (url.pathname === base + `alerts/${alertID}/ack`) {
+        if (alertState !== 'open') return sendJSON(response, { error: 'state conflict' }, 409);
+        alertState = 'acknowledged'; caseFields.acknowledged_by = session.operator_id;
+        if (mode === 'ack-drop') { request.socket.destroy(); return; }
+      } else if (url.pathname === base + `alerts/${alertID}/notes`) {
+        if (!body?.note || Buffer.byteLength(body.note) > 2048) return sendJSON(response, { error: 'bad note' }, 400);
+        const activity_id = '44444444-4444-4444-8444-444444444444';
+        caseActivity.push({ activity_id, actor_id: session.operator_id, action: 'note', note: body.note, occurred_at: now });
+        return sendJSON(response, { activity_id }, 201);
+      } else if (url.pathname === base + `alerts/${alertID}/assign`) {
+        if (alertState === 'resolved' || typeof body?.operator_id !== 'string') return sendJSON(response, { error: 'state conflict' }, 409);
+        caseFields.assigned_to = body.operator_id;
+      } else if (url.pathname === base + `alerts/${alertID}/resolve`) {
+        if (alertState !== 'acknowledged' || !body?.note) return sendJSON(response, { error: 'state conflict' }, 409);
+        alertState = 'resolved'; caseFields.resolved_by = session.operator_id; caseFields.resolution_note = body.note;
+      } else if (url.pathname === base + `alerts/${alertID}/reopen`) {
+        if (alertState !== 'resolved') return sendJSON(response, { error: 'state conflict' }, 409);
+        alertState = 'open'; caseFields.acknowledged_by = ''; caseFields.resolved_by = ''; caseFields.resolution_note = '';
+      } else if (url.pathname === base + 'scan-jobs') {
+        if (body?.agent_id !== 'fixture-linux' || body?.scan_root !== '/var/data/browser-fixture' || !body?.request_id) return sendJSON(response, { error: 'bad scan' }, 400);
+        scanJob = { job_id: scanJobID, agent_id: body.agent_id, scan_root: body.scan_root, state: 'pending', attempt_count: 0, created_at: now, updated_at: now };
+        return sendJSON(response, { job_id: scanJobID, created: true }, 201);
+      } else if (url.pathname === base + 'scan-jobs/' + scanJobID + '/cancel') {
+        if (scanJob?.state !== 'pending') return sendJSON(response, { error: 'state conflict' }, 409);
+        scanJob.state = 'cancelled';
+      } else return sendJSON(response, { error: 'not found' }, 404);
+      response.writeHead(204); response.end(); return;
+    }
     if (mode === 'delay' && url.pathname === '/soc/v1/session') {
       delayedFinished = new Promise(resolveDelay => setTimeout(() => { sendJSON(response, session); resolveDelay(); }, 250));
       delayedReceived();
@@ -133,14 +182,14 @@ try {
     assert.equal(await page.getByRole('heading', { name: 'Operator SOC', exact: true }).count(), 1);
     assert.equal(await page.locator('input[type=password]').count(), 0);
     assert.match(await page.locator('body').innerText(), /fixture-tenant.*fixture-viewer/s);
-    assert.ok(observedSOC.length >= 7);
+    assert.ok(observedSOC.length >= 10);
     assert.ok(observedSOC.every(x => x.method === 'GET' && x.authorizedTLS && !x.bearerPresent));
     await page.screenshot({ path: join(resultsDir, 'operator-ready.png'), fullPage: true });
     await accessibility(page, 'Operator ready desktop');
   });
   await check('unknown endpoint and readonly case activity stay honest and render untrusted text safely', async () => {
     await waitText(page, 'No server-received heartbeat recorded; current protection unknown');
-    await page.getByRole('button', { name: 'Read activity for alert ' + alertID }).first().click();
+    await page.getByRole('button', { name: 'Read case and activity for alert ' + alertID }).first().click();
     await waitText(page, '<script>fixture-untrusted-text</script>');
     assert.equal(await page.locator('script').count(), 1);
     await accessibility(page, 'Operator case activity desktop');
@@ -148,7 +197,7 @@ try {
   });
   await check('authorization failure during case read clears all previously loaded records', async () => {
     mode = 'forbidden';
-    await page.getByRole('button', { name: 'Read activity for alert ' + alertID }).first().click();
+    await page.getByRole('button', { name: 'Read case and activity for alert ' + alertID }).first().click();
     await waitText(page, 'This operator is not authorized');
     assert.equal(await page.locator('table').count(), 0);
     assert.doesNotMatch(await page.locator('body').innerText(), /fixture-tenant|fixture-viewer|DO-NOT-RENDER/);
@@ -184,6 +233,76 @@ try {
     await waitText(page, 'No records loaded');
     assert.equal(await page.locator('table').count(), 0);
     assert.doesNotMatch(await page.locator('body').innerText(), /fixture-tenant|fixture-viewer/);
+  });
+  await check('scanner can acknowledge one open alert, with same-origin POST and full reload', async () => {
+    mode = 'ready'; operatorRole = 'scanner'; alertState = 'open';
+    await page.getByRole('button', { name: 'Connect to SOC', exact: true }).click();
+    await waitText(page, 'Loaded records for tenant');
+    await page.getByRole('button', { name: 'Acknowledge alert ' + alertID }).first().click();
+    await waitText(page, 'Alert acknowledgement accepted');
+    assert.equal(await page.getByRole('button', { name: 'Acknowledge alert ' + alertID }).count(), 0);
+    const writes = observedSOC.filter(x => x.method === 'POST');
+    assert.equal(writes.length, 1);
+    assert.ok(writes.every(x => x.sameOrigin && x.fetchSite === 'same-origin' && x.authorizedTLS && !x.bearerPresent));
+    await accessibility(page, 'Operator acknowledged case');
+    await page.screenshot({ path: join(resultsDir, 'operator-acknowledged.png'), fullPage: true });
+  });
+  await check('scanner case forms submit notes, assignment, resolution and reopening with keyboard-accessible controls', async () => {
+    await page.getByLabel('Case note', { exact: true }).fill('Synthetic keyboard case note');
+    await page.getByLabel('Case note', { exact: true }).press('Enter');
+    await waitText(page, 'Case note accepted');
+    await waitText(page, 'Synthetic keyboard case note');
+    await page.getByLabel('Scanner operator ID', { exact: true }).fill('fixture-scanner-b');
+    await page.getByRole('button', { name: 'Assign case', exact: true }).click();
+    await waitText(page, 'Case assignment accepted');
+    await waitText(page, 'fixture-scanner-b');
+    await page.getByRole('button', { name: 'Unassign case', exact: true }).click();
+    await waitText(page, 'Case unassignment accepted');
+    await page.getByLabel('Resolution note', { exact: true }).fill('Synthetic analyst decision; endpoint state remains unverified');
+    await page.getByRole('button', { name: 'Resolve case', exact: true }).click();
+    await waitText(page, 'Case resolution accepted');
+    assert.equal(await page.getByRole('button', { name: 'Assign case', exact: true }).count(), 0);
+    await page.getByRole('button', { name: 'Reopen case', exact: true }).click();
+    await waitText(page, 'Case reopening accepted');
+    assert.equal(await page.getByRole('button', { name: 'Resolve case', exact: true }).count(), 0);
+    await accessibility(page, 'Operator case controls mobile');
+    await page.screenshot({ path: join(resultsDir, 'operator-case-workflow.png'), fullPage: true });
+  });
+  await check('path request rejects invalid input, queues once and cancels only pending work without inventing a result', async () => {
+    await page.getByLabel('Endpoint to scan', { exact: true }).selectOption('fixture-linux');
+    await page.getByLabel('Absolute local path', { exact: true }).fill('/');
+    const before = observedSOC.filter(x => x.method === 'POST').length;
+    await page.getByRole('button', { name: 'Queue path scan', exact: true }).click();
+    await waitText(page, 'Enter a normalized, absolute local file or directory path');
+    assert.equal(observedSOC.filter(x => x.method === 'POST').length, before);
+    await page.getByLabel('Absolute local path', { exact: true }).fill('/var/data/browser-fixture');
+    await page.getByLabel('Absolute local path', { exact: true }).press('Enter');
+    await waitText(page, 'Path scan queued');
+    await waitText(page, 'No result has been returned for this job');
+    assert.equal(observedSOC.filter(x => x.method === 'POST').length, before + 1);
+    await page.getByRole('button', { name: 'Cancel this pending scan', exact: true }).click();
+    await waitText(page, 'Pending scan cancellation accepted');
+    assert.equal(await page.getByRole('button', { name: /Cancel (this )?pending scan/ }).count(), 0);
+    await waitText(page, 'scan outcome and endpoint condition are unknown');
+    assert.equal(observedSOC.filter(x => x.method === 'POST').length, before + 2);
+    assert.ok(observedSOC.filter(x => x.method === 'POST').every(x => x.sameOrigin && x.fetchSite === 'same-origin' && x.authorizedTLS && !x.bearerPresent));
+    await accessibility(page, 'Operator scan controls mobile');
+    await page.screenshot({ path: join(resultsDir, 'operator-scan-workflow.png'), fullPage: true });
+  });
+  await check('lost acknowledgement response remains uncertain with no automatic retry', async () => {
+    mode = 'ack-drop'; alertState = 'open';
+    await page.getByRole('button', { name: 'Refresh SOC records', exact: true }).click();
+    await waitText(page, 'Loaded records for tenant');
+    const before = observedSOC.filter(x => x.method === 'POST').length;
+    await page.getByRole('button', { name: 'Acknowledge alert ' + alertID }).first().click();
+    await waitText(page, 'The operation outcome is unknown');
+    assert.equal(await page.locator('table').count(), 0);
+    assert.equal(observedSOC.filter(x => x.method === 'POST').length, before + 1);
+    mode = 'ready';
+    await page.getByRole('button', { name: 'Connect to SOC', exact: true }).click();
+    await waitText(page, 'Loaded records for tenant');
+    assert.equal(await page.getByRole('button', { name: 'Acknowledge alert ' + alertID }).count(), 0);
+    assert.equal(observedSOC.filter(x => x.method === 'POST').length, before + 1);
   });
   await check('HTTP default route refuses SOC fetch without falling back to development tokens', async () => {
     await page.goto(labOrigin);

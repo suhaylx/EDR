@@ -3,7 +3,8 @@
 
 Unsigned staging is explicit. Release signing requires an external signer and
 an independently provisioned public key; no key is generated or self-trusted.
-This tool does not install a service or authorize deployment.
+Linux bundles include a separately invoked service installer. Building a
+package never installs/starts services or authorizes deployment.
 """
 from __future__ import annotations
 
@@ -166,17 +167,28 @@ def build(args: argparse.Namespace) -> dict:
         shutil.copytree(source / "backend" / "migrations", stage / "backend" / "migrations")
         shutil.copytree(source / "backend" / "bootstrap", stage / "backend" / "bootstrap")
         (stage / "config").mkdir()
-        shutil.copy2(source / "config" / "edrd.example.json", stage / "config" / "edrd.example.json")
+        for name in ("edrd.example.json", "agent.example.json", "service-health.example.json"):
+            shutil.copy2(source / "config" / name, stage / "config" / name)
         (stage / "docs" / "backend").mkdir(parents=True)
+        (stage / "docs" / "release").mkdir()
         shutil.copy2(source / "docs" / "INSTALLATION.md", stage / "docs" / "INSTALLATION.md")
         shutil.copy2(source / "docs" / "HOST_ACCEPTANCE.md", stage / "docs" / "HOST_ACCEPTANCE.md")
+        shutil.copy2(source / "docs" / "LINUX_SERVICE_INSTALLATION.md", stage / "docs" / "LINUX_SERVICE_INSTALLATION.md")
+        shutil.copy2(source / "docs" / "release" / "BUILD_RELEASE_FILES.md", stage / "docs" / "release" / "BUILD_RELEASE_FILES.md")
         shutil.copy2(source / "docs" / "backend" / "RUNTIME_DATABASE_ROLES.md", stage / "docs" / "backend" / "RUNTIME_DATABASE_ROLES.md")
-        (stage / "INSTALLATION.md").write_text("# TuranSec engineering candidate\n\nRead [the complete installation and rollback manual](docs/INSTALLATION.md).\n\nThis portable archive does not install services or grant deployment authorization.\n", encoding="utf-8")
+        (stage / "INSTALLATION.md").write_text(
+            "# TuranSec engineering candidate\n\n"
+            "Read [the complete installation and rollback manual](docs/INSTALLATION.md).\n\n"
+            "Linux: use the separately invoked [service installer](docs/LINUX_SERVICE_INSTALLATION.md) "
+            "after package verification and host approval. Building/extracting this archive never starts services.\n\n"
+            "Unsigned candidates require an independently checked manifest digest and explicit lab staging. "
+            "No archive grants deployment authorization.\n", encoding="utf-8")
         (stage / "scripts" / "release").mkdir(parents=True)
         for name in ("collect-host-acceptance.py", "collect-sysmon-acceptance.ps1"):
             shutil.copy2(source / "scripts" / name, stage / "scripts" / name)
-        for name in ("package-candidate.py", "release_switch.py"):
+        for name in ("package-candidate.py", "prepare-release.py", "release_switch.py", "linux_service.py", "systemd_launcher.py"):
             shutil.copy2(source / "scripts" / "release" / name, stage / "scripts" / "release" / name)
+        shutil.copytree(source / "packaging" / "linux", stage / "packaging" / "linux")
         if windows and not args.stage_only:
             for binary in (server, agent):
                 run([str(args.authenticode_hook.resolve()), str(binary)])

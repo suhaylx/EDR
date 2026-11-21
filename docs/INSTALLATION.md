@@ -4,7 +4,7 @@ Updated 22 November 2026, Asia/Samarkand. This is the manual for the integrated 
 
 ## Release state and scope
 
-The candidate provides a runnable Go/PostgreSQL mTLS service, one Rust endpoint scan client, and the original React SOC. The secure SOC is read-only; scan scheduling/case mutation APIs require an enrolled scanner operator. The explicit `/lab/` React UI and old Go dashboard remain development demonstrations with separate authentication and data.
+The candidate provides a runnable Go/PostgreSQL mTLS service, one Rust endpoint scan client, and the original React SOC. The secure SOC supports fleet and scan evidence reads, path-scan scheduling and cancellation, and alert/case workflows. Mutations require an enrolled scanner-role operator; viewer-role access remains read-only. The explicit `/lab/` React UI and old Go dashboard remain development demonstrations with separate authentication and data.
 
 **Deployment is NO-GO until all release gates below have exact-candidate evidence and the deployment owner approves the target and window.** Source, a portable archive, a passing unit test, and a successful TLS heartbeat do not establish endpoint protection or production readiness.
 
@@ -99,7 +99,7 @@ python3 scripts/release/package-candidate.py build \
   --stage-only
 ```
 
-This produces an explicitly **unsigned portable engineering archive** and a SHA-256 manifest. It is not an approved installer. Build Windows packages on a native Windows x86_64 runner with `--target windows-x86_64`.
+This produces an explicitly **unsigned engineering archive** and a SHA-256 manifest. Linux archives include a separately invoked service installer and bounded endpoint timer; package generation does not install/start services or grant approval. See [LINUX_SERVICE_INSTALLATION.md](LINUX_SERVICE_INSTALLATION.md) for verified staging, registration, activation, upgrade and removal. Build Windows packages on a native Windows x86_64 runner with `--target windows-x86_64`.
 
 For a signed package, omit `--stage-only` and supply the existing organizational `--signer-hook` and independently provisioned `--trusted-key`. The hook receives manifest and output-signature paths. Windows also requires `--authenticode-hook` and the approved `--windows-signer-thumbprint`; the packager verifies native Authenticode for both executables. The tool does not generate a replacement signing identity.
 
@@ -131,7 +131,7 @@ Run as a dedicated unprivileged service identity with access to those files:
 
 The default listeners are `127.0.0.1:9443` for endpoints and `127.0.0.1:9444` for operators. Numeric loopback binding is mandatory. Keep PostgreSQL and ClamAV local; do not open public 5432/9443/9444/3310 as an installation shortcut. Remote authorized hosts use a reviewed encrypted tunnel. Certificates must match the client-facing URL even through a tunnel; never disable certificate verification.
 
-For systemd, use the same `ExecStart`, dedicated `User`, `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=yes`, `PrivateTmp=yes`, a closed capability set and read-only credential/package paths. Confirm host-specific compatibility and capture start/stop/restart evidence before enabling autostart. No service installation is performed by building an archive.
+For systemd, use the provided [Linux service workflow](LINUX_SERVICE_INSTALLATION.md). Its units use dynamic service identities, read-only systemd credential delivery, closed capability sets and filesystem/network restrictions. Registration does not start or enable services; activation checks the configured operator identity and the selected executable. The endpoint timer invokes the existing bounded heartbeat/scanner/batch commands. Confirm host compatibility and capture start/stop/restart/reboot evidence before enabling autostart. Direct CLI execution above remains available for an approved diagnostic session.
 
 ## 6. Enroll and verify the single Rust endpoint
 
@@ -160,6 +160,10 @@ Provision the official ClamAV engine and signature databases separately, verify 
 
 Use the approved browser profile with a valid operator client certificate and trusted server CA. Browse the tunneled/direct local HTTPS operator origin on port 9444. `/soc/v1/session` supplies the enrolled tenant/operator/role; JavaScript does not accept a bearer token or choose another tenant.
 
+Connect to SOC and review the enrolled endpoint inventory, scan jobs, alerts and assigned cases. Scanner-role operators can request a bounded path scan, inspect its job/result, cancel a pending job, acknowledge an open alert, add case notes, assign/unassign a case, and resolve/reopen it. Resolve records the analyst's decision; it does not prove endpoint remediation. Quick/full scan profiles and quarantine are not provided by these controls.
+
+Before a mutation, the client refreshes the authenticated session and relevant target state. It sends one mutation request, then reloads authoritative data. If a dispatched request has an ambiguous outcome, the UI requires a fresh read before another attempt; it does not automatically retry or report success. Verify these interruption and permission-change cases during browser acceptance.
+
 Validate keyboard navigation, screen reader labels, responsive layout, 401/403/503 clearing, cancellation and unknown/unseen/stale/revoked/degraded states. Verify that `/lab/` and `/api/` are rejected by the secure listener. The `/lab/` React companion is available only on an explicitly separate loopback development server and must not be presented as native protected IPC.
 
 ## 8. Actual acceptance and rollback
@@ -170,7 +174,7 @@ Before acceptance, independently collect actual Windows Server 2022 and Ubuntu h
 
 Rollback must be rehearsed on the approved hosts. Keep a verified previous package and a tested database backup/restore plan. Stop the candidate, atomically switch the complete binary+UI release directory to the previous verified version, restart, and validate authenticated health and stored data. Record the previous/new manifest hashes, service state, health evidence and operator decision. Do not blindly apply reverse SQL migrations or assume an old binary supports a newer schema.
 
-`scripts/release/release_switch.py` provides a tested POSIX switching primitive with failure recovery; its fixture tests do not prove systemd or Windows Service rollback. Native service and database-restore rehearsal remain required. If rollback health fails, retain the failure record and stop rollout.
+`scripts/release/linux_service.py` applies the tested POSIX switching primitive to versioned systemd installations and rechecks authenticated health after restoration. Its filesystem/service-manager fixture tests do not prove native systemd or Windows Service rollback. Native service and database-restore rehearsal remain required. If rollback health fails, retain the failure record and stop rollout.
 
 ## 9. Approval record
 

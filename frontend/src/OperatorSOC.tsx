@@ -1,56 +1,59 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { operatorHealthLabel } from './soc-operator-endpoints.js';
 import {
-  firstSOCPages, loadSOCActivity, loadSOCSnapshot, socFailure, socFailureMessages, socPageSize,
-  type SOCActivity, type SOCAlert, type SOCFailure, type SOCOffsets, type SOCSnapshot,
+  runSOCMutation, SOCMutationRefreshError, mutationReceiptLabel,
+  firstSOCPages, loadSOCCase, loadSOCScanDetail, loadSOCSnapshot, socFailure, socFailureMessages,
+  type SOCCaseDetail, type SOCAlert, type SOCFailure, type SOCMutationCommand, type SOCMutationReceipt, type SOCOffsets, type SOCSnapshot,
 } from './soc-api.js';
 import type { SOCPage } from './soc-contract.js';
+import type { SOCScanDetail } from './soc-scans.js';
+import { SOCPaging as Paging, SOCCaseControls, SOCScanWorkspace, SOCScanDetailView, socUTC as utc } from './SOCControls.js';
 
-type ActivityState = Readonly<{ alertID: string; state: 'loading' }> |
-  Readonly<{ alertID: string; state: 'ready'; page: SOCPage<SOCActivity> }>;
-export type OperatorViewState = Readonly<{ state: 'disconnected' | 'loading' }> |
-  Readonly<{ state: 'error'; error: SOCFailure }> |
-  Readonly<{ state: 'ready'; snapshot: SOCSnapshot; activity?: ActivityState }>;
+type Selection = Readonly<{ kind: 'case'; alertID: string; state: 'loading' }> |
+  Readonly<{ kind: 'case'; alertID: string; state: 'ready'; detail: SOCCaseDetail }> |
+  Readonly<{ kind: 'scan'; jobID: string; state: 'loading' }> |
+  Readonly<{ kind: 'scan'; jobID: string; state: 'ready'; detail: SOCScanDetail }>;
+export type OperatorViewState = Readonly<{ state: 'disconnected'; interrupted?: boolean }> |
+  Readonly<{ state: 'loading'; operation?: SOCMutationCommand['kind'] }> |
+  Readonly<{ state: 'error'; error: SOCFailure; receipt?: SOCMutationReceipt }> |
+  Readonly<{ state: 'ready'; snapshot: SOCSnapshot; selection?: Selection; receipt?: SOCMutationReceipt }>;
 type ViewProps = Readonly<{
   view: OperatorViewState;
   onRefresh: () => void;
   onClear: () => void;
   onPage: (section: keyof SOCOffsets, offset: number) => void;
-  onActivity: (alertID: string, offset?: number) => void;
+  onCase: (alertID: string, offset?: number) => void;
+  onScan: (jobID: string) => void;
+  onMutation: (command: SOCMutationCommand) => void;
 }>;
 
-const utc = (value: string): string => new Date(value).toISOString();
-
-function Paging({ page, label, onChange }: { page: SOCPage<unknown>; label: string; onChange: (offset: number) => void }) {
-  return <div className="analyst-paging" role="group" aria-label={label + ' pages'}>
-    <button type="button" className="secondary" disabled={page.offset === 0} onClick={() => onChange(page.offset - socPageSize)}>Previous {label}</button>
-    <span>Page {page.offset / socPageSize + 1} · {page.items.length} returned record(s)</span>
-    <button type="button" className="secondary" disabled={page.items.length < page.limit || page.offset >= 10000}
-      onClick={() => onChange(page.offset + socPageSize)}>Next {label}</button>
-  </div>;
-}
-
-function AlertTable({ page, label, onActivity }: { page: SOCPage<SOCAlert>; label: string; onActivity: ViewProps['onActivity'] }) {
+function AlertTable({ page, label, canAcknowledge, onCase, onMutation }: {
+  page: SOCPage<SOCAlert>; label: string; canAcknowledge: boolean;
+  onCase: ViewProps['onCase']; onMutation: ViewProps['onMutation'];
+}) {
   if (!page.items.length) return <p className="empty">No {label.toLowerCase()} were returned on this page. This does not establish the absence of threats.</p>;
   return <div className="table-scroll" tabIndex={0} role="region" aria-label={label + ' table'}>
     <table><caption>{label}. Signature detections are endpoint reports; case state is analyst workflow metadata.</caption>
-      <thead><tr><th scope="col">Alert / endpoint</th><th scope="col">Reported detection</th><th scope="col">Case state / owner</th><th scope="col">Last update (UTC)</th><th scope="col">Case activity</th></tr></thead>
+      <thead><tr><th scope="col">Alert / endpoint</th><th scope="col">Reported detection</th><th scope="col">Case state / owner</th><th scope="col">Last update (UTC)</th><th scope="col">Case actions</th></tr></thead>
       <tbody>{page.items.map(alert => <tr key={alert.alert_id}>
         <th scope="row"><span className="soc-reference">{alert.alert_id}</span><span className="minor">{alert.agent_id}</span></th>
         <td>High · malware signature<span className="minor">{alert.signature_name}</span></td>
         <td>{alert.state}<span className="minor">{alert.assigned_to ? 'Assigned to ' + alert.assigned_to : 'Unassigned'}</span></td>
         <td><time dateTime={alert.updated_at}>{utc(alert.updated_at)}</time></td>
-        <td><button type="button" className="secondary" onClick={() => onActivity(alert.alert_id)} aria-label={'Read activity for alert ' + alert.alert_id}>Read activity</button></td>
+        <td><div className="actions">
+          <button type="button" className="secondary" onClick={() => onCase(alert.alert_id)} aria-label={'Read case and activity for alert ' + alert.alert_id}>Read case and activity</button>
+          {canAcknowledge && alert.state === 'open' && <button type="button" onClick={() => onMutation({ kind: 'ack', alert_id: alert.alert_id })} aria-label={'Acknowledge alert ' + alert.alert_id}>Acknowledge</button>}
+        </div></td>
       </tr>)}</tbody>
     </table>
   </div>;
 }
 
-export function OperatorSOCView({ view, onRefresh, onClear, onPage, onActivity }: ViewProps) {
+export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onScan, onMutation }: ViewProps) {
   return <div className="layout soc-layout">
     <a className="skip-link" href="#soc-content">Skip to SOC records</a>
     <header className="masthead"><div><p className="eyebrow">TuranSec EDR</p><h1>Operator SOC</h1>
-      <p>Read endpoint inventory, detection alerts and assigned cases from the authenticated service.</p></div>
+      <p>Review endpoint evidence, request path scans and manage detection cases through the authenticated service.</p></div>
       <span className="lab-indicator">{view.state === 'ready' ? 'Operator certificate accepted' : 'Operator certificate required'}</span>
     </header>
     <section className="panel" aria-labelledby="soc-connection-title">
@@ -62,9 +65,14 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onActivity }
       <p className="minor">Clearing this view removes displayed records. Your browser still manages the certificate; this action does not revoke it or sign out of the TLS connection.</p>
       <div role="status" aria-live="polite" aria-atomic="true">
         {view.state === 'disconnected' && <p>No records loaded. Endpoint condition is unknown until the authenticated service returns evidence.</p>}
-        {view.state === 'loading' && <p>Verifying the operator and loading bounded SOC pages. Previous records have been cleared.</p>}
+        {view.state === 'disconnected' && view.interrupted && <p>An operation was interrupted while clearing the view. It may already have been accepted by the server. Reconnect and inspect the current state before acting again. No automatic retry was sent.</p>}
+        {view.state === 'loading' && <p>{view.operation
+          ? 'Verifying the operator and selected record before sending the requested operation. Previous records have been cleared; the outcome is pending. No automatic retry will be sent.'
+          : 'Verifying the operator and loading bounded SOC pages. Previous records have been cleared.'}</p>}
         {view.state === 'error' && <p className="status status--warning">{socFailureMessages[view.error]}</p>}
         {view.state === 'ready' && <p>Loaded records for tenant <strong>{view.snapshot.session.tenant_id}</strong>, operator <strong>{view.snapshot.session.operator_id}</strong> ({view.snapshot.session.role}).</p>}
+        {view.state === 'ready' && view.receipt && <p>{mutationReceiptLabel(view.receipt)}. Current SOC records and selected details were reloaded. This queue or analyst workflow change is not proof of endpoint execution or remediation. Reference: <span className="soc-reference">{view.receipt.reference_id}</span>.</p>}
+        {view.state === 'error' && view.receipt && <p>{mutationReceiptLabel(view.receipt)}, but current records could not be reloaded. Reconnect to verify state before taking another action. Reference: <span className="soc-reference">{view.receipt.reference_id}</span>.</p>}
       </div>
       {view.state === 'ready' && <p className="minor">Server time after these reads: <time dateTime={view.snapshot.session.server_time}>{utc(view.snapshot.session.server_time)}</time>. Pages and summaries are separate reads, not an atomic database snapshot. Refresh to recheck authorization and current state.</p>}
     </section>
@@ -98,25 +106,42 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onActivity }
           <Paging page={view.snapshot.endpoints} label="endpoints" onChange={offset => onPage('endpoints', offset)} />
         </section>
         <section className="panel" aria-labelledby="soc-alerts-title"><h2 id="soc-alerts-title">Detection alerts</h2>
-          <AlertTable page={view.snapshot.alerts} label="Detection alerts" onActivity={onActivity} />
+          <p>{view.snapshot.session.role === 'scanner'
+            ? 'Acknowledge an open alert to record that triage has started. This does not resolve the case or change the endpoint.'
+            : 'Viewer role: read-only access. A scanner-role operator is required to acknowledge an alert.'}</p>
+          <AlertTable page={view.snapshot.alerts} label="Detection alerts" canAcknowledge={view.snapshot.session.role === 'scanner'} onCase={onCase} onMutation={onMutation} />
           <Paging page={view.snapshot.alerts} label="alerts" onChange={offset => onPage('alerts', offset)} />
         </section>
         <section className="panel" aria-labelledby="soc-mine-title"><h2 id="soc-mine-title">My assigned cases</h2>
-          <p>Active alerts assigned by the server to the authenticated operator. This view cannot assign, resolve or modify a case.</p>
-          <AlertTable page={view.snapshot.mine} label="Assigned active cases" onActivity={onActivity} />
+          <p>Active alerts assigned by the server to the authenticated operator. Open a case to review its current state, notes and assignment before taking an action.</p>
+          <AlertTable page={view.snapshot.mine} label="Assigned active cases" canAcknowledge={view.snapshot.session.role === 'scanner'} onCase={onCase} onMutation={onMutation} />
           <Paging page={view.snapshot.mine} label="assigned cases" onChange={offset => onPage('mine', offset)} />
         </section>
-        {view.activity && <section className="panel" aria-labelledby="soc-activity-title" aria-busy={view.activity.state === 'loading'}>
-          <h2 id="soc-activity-title">Case activity</h2><p>Alert <span className="soc-reference">{view.activity.alertID}</span></p>
-          <div role="status" aria-live="polite">{view.activity.state === 'loading' ? 'Loading the selected case activity.' : `${view.activity.page.items.length} activity record(s) returned.`}</div>
-          {view.activity.state === 'ready' && <>
-            {view.activity.page.items.length ? <ol className="soc-activity">{view.activity.page.items.map(event => <li key={event.activity_id}>
+        {view.selection?.kind === 'case' && <section className="panel" aria-labelledby="soc-activity-title" aria-busy={view.selection.state === 'loading'}>
+          <h2 id="soc-activity-title">Case details and activity</h2><p>Alert <span className="soc-reference">{view.selection.alertID}</span></p>
+          <div role="status" aria-live="polite">{view.selection.state === 'loading' ? 'Loading the selected case details and activity.' : `${view.selection.detail.activity.items.length} activity record(s) returned.`}</div>
+          {view.selection.state === 'ready' && <>
+            <dl className="soc-details"><div><dt>Current case state</dt><dd>{view.selection.detail.alert.state}</dd></div>
+              <div><dt>Current assignment</dt><dd>{view.selection.detail.alert.assigned_to || 'Unassigned'}</dd></div>
+              <div><dt>Reported signature</dt><dd>{view.selection.detail.alert.signature_name}</dd></div>
+              <div><dt>Acknowledged by</dt><dd>{view.selection.detail.alert.acknowledged_by || 'Not recorded'}</dd></div>
+              <div><dt>Resolved by</dt><dd>{view.selection.detail.alert.resolved_by || 'Not recorded'}</dd></div>
+              <div><dt>Resolution note</dt><dd>{view.selection.detail.alert.resolution_note || 'Not recorded'}</dd></div></dl>
+            <SOCCaseControls key={view.selection.alertID + view.selection.detail.alert.updated_at} alert={view.selection.detail.alert} canWrite={view.snapshot.session.role === 'scanner'} onMutation={onMutation} />
+            <h3>Recorded activity</h3>
+            {view.selection.detail.activity.items.length ? <ol className="soc-activity">{view.selection.detail.activity.items.map(event => <li key={event.activity_id}>
               <strong>{event.action}</strong> · {event.actor_id}<span className="minor"><time dateTime={event.occurred_at}>{utc(event.occurred_at)}</time></span>
               {event.note && <p>{event.note}</p>}
             </li>)}</ol> : <p className="empty">No activity was returned on this page. Earlier history may be unavailable.</p>}
-            <Paging page={view.activity.page} label="activity" onChange={offset => onActivity(view.activity!.alertID, offset)} />
+            <Paging page={view.selection.detail.activity} label="activity" onChange={offset => { if (view.selection?.kind === 'case') onCase(view.selection.alertID, offset); }} />
           </>}
           <p className="minor">Database activity is workflow evidence. It is not a cryptographic audit log or proof that an endpoint action occurred.</p>
+        </section>}
+        <SOCScanWorkspace snapshot={view.snapshot} onPage={onPage} onScan={onScan} onMutation={onMutation} />
+        {view.selection?.kind === 'scan' && <section className="panel" aria-labelledby="soc-scan-detail-title" aria-busy={view.selection.state === 'loading'}>
+          <h2 id="soc-scan-detail-title">Selected scan details</h2><p>Job <span className="soc-reference">{view.selection.jobID}</span></p>
+          <div role="status" aria-live="polite">{view.selection.state === 'loading' ? 'Loading the selected scan job and optional reported result.' : 'Current scan details loaded.'}</div>
+          {view.selection.state === 'ready' && <SOCScanDetailView detail={view.selection.detail} canWrite={view.snapshot.session.role === 'scanner'} onMutation={onMutation} />}
         </section>}
       </> : <section className="panel"><h2>SOC records unavailable</h2><p>Connect to the operator service to load records. No cached endpoint health or alert data is displayed.</p></section>}
     </main>
@@ -128,12 +153,16 @@ export function OperatorSOC() {
   const offsets = useRef<SOCOffsets>(firstSOCPages);
   const generation = useRef(0);
   const request = useRef<AbortController | null>(null);
+  const mutationPending = useRef(false);
+  const interruptedWrite = useRef(false);
   const clear = () => {
     generation.current++;
     request.current?.abort();
     request.current = null;
+    if (mutationPending.current) interruptedWrite.current = true;
+    mutationPending.current = false;
     offsets.current = firstSOCPages;
-    setView({ state: 'disconnected' });
+    setView({ state: 'disconnected', interrupted: interruptedWrite.current });
   };
   const begin = () => {
     generation.current++;
@@ -143,27 +172,66 @@ export function OperatorSOC() {
     return { controller, number: generation.current };
   };
   const refresh = async (pages = offsets.current) => {
+    if (mutationPending.current) return;
     const { controller, number } = begin();
     offsets.current = pages;
     setView({ state: 'loading' });
     try {
       const snapshot = await loadSOCSnapshot({ protocol: window.location.protocol, signal: controller.signal }, pages);
-      if (number === generation.current && !controller.signal.aborted) setView({ state: 'ready', snapshot });
+      if (number === generation.current && !controller.signal.aborted) { interruptedWrite.current = false; setView({ state: 'ready', snapshot }); }
     } catch (error) {
       if (number === generation.current && !controller.signal.aborted) setView({ state: 'error', error: socFailure(error) });
     }
   };
-  const activity = async (alertID: string, offset = 0) => {
-    if (view.state !== 'ready') return;
+  const readCase = async (alertID: string, offset = 0) => {
+    if (view.state !== 'ready' || mutationPending.current) return;
     const snapshot = view.snapshot;
     const { controller, number } = begin();
-    setView({ state: 'ready', snapshot, activity: { state: 'loading', alertID } });
+    setView({ state: 'ready', snapshot, selection: { kind: 'case', state: 'loading', alertID } });
     try {
-      const page = await loadSOCActivity(snapshot.session, alertID, { protocol: window.location.protocol, signal: controller.signal }, offset);
-      if (number === generation.current && !controller.signal.aborted) setView({ state: 'ready', snapshot, activity: { state: 'ready', alertID, page } });
+      const detail = await loadSOCCase(snapshot.session, alertID, { protocol: window.location.protocol, signal: controller.signal }, offset);
+      if (number === generation.current && !controller.signal.aborted) setView({ state: 'ready', snapshot, selection: { kind: 'case', state: 'ready', alertID, detail } });
     } catch (error) {
       // Authorization loss during a detail read clears the entire snapshot.
       if (number === generation.current && !controller.signal.aborted) setView({ state: 'error', error: socFailure(error) });
+    }
+  };
+  const readScan = async (jobID: string) => {
+    if (view.state !== 'ready' || mutationPending.current) return;
+    const snapshot = view.snapshot;
+    const { controller, number } = begin();
+    setView({ state: 'ready', snapshot, selection: { kind: 'scan', state: 'loading', jobID } });
+    try {
+      const detail = await loadSOCScanDetail(snapshot.session, jobID, { protocol: window.location.protocol, signal: controller.signal });
+      if (number === generation.current && !controller.signal.aborted) setView({ state: 'ready', snapshot, selection: { kind: 'scan', state: 'ready', jobID, detail } });
+    } catch (error) {
+      if (number === generation.current && !controller.signal.aborted) setView({ state: 'error', error: socFailure(error) });
+    }
+  };
+  const mutate = async (command: SOCMutationCommand) => {
+    if (view.state !== 'ready' || mutationPending.current) return;
+    mutationPending.current = true;
+    interruptedWrite.current = false;
+    const { controller, number } = begin();
+    setView({ state: 'loading', operation: command.kind });
+    try {
+      const visible = view.selection?.state === 'ready'
+        ? view.selection.kind === 'case' ? { alert: view.selection.detail.alert } : { job: view.selection.detail.job }
+        : {};
+      const outcome = await runSOCMutation(view.snapshot, command,
+        { protocol: window.location.protocol, signal: controller.signal }, offsets.current, visible);
+      if (number === generation.current && !controller.signal.aborted) {
+        const selection: Selection | undefined = outcome.caseDetail
+          ? { kind: 'case', state: 'ready', alertID: outcome.caseDetail.alert.alert_id, detail: outcome.caseDetail }
+          : outcome.scanDetail ? { kind: 'scan', state: 'ready', jobID: outcome.scanDetail.job.job_id, detail: outcome.scanDetail } : undefined;
+        setView({ state: 'ready', snapshot: outcome.snapshot, selection, receipt: outcome.receipt });
+      }
+    } catch (error) {
+      if (number === generation.current && !controller.signal.aborted) {
+        setView({ state: 'error', error: socFailure(error), receipt: error instanceof SOCMutationRefreshError ? error.receipt : undefined });
+      }
+    } finally {
+      if (number === generation.current) mutationPending.current = false;
     }
   };
   useEffect(() => {
@@ -180,5 +248,7 @@ export function OperatorSOC() {
   }, []);
   return <OperatorSOCView view={view} onRefresh={() => { void refresh(); }} onClear={clear}
     onPage={(section, offset) => { void refresh({ ...offsets.current, [section]: offset }); }}
-    onActivity={(alertID, offset) => { void activity(alertID, offset); }} />;
+    onCase={(alertID, offset) => { void readCase(alertID, offset); }}
+    onScan={jobID => { void readScan(jobID); }}
+    onMutation={command => { void mutate(command); }} />;
 }

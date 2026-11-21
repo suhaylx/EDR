@@ -167,7 +167,8 @@ def main() -> int:
         elif args.component == "release-tools":
             require_tracked(
                 "scripts/release/package-candidate.py", "scripts/release/release_switch.py",
-                "scripts/release/test_release_tools.py",
+                "scripts/release/test_release_tools.py", "scripts/release/prepare-release.py",
+                "scripts/release/test_prepare_release.py",
             )
             run("Signature tamper rejection and filesystem rollback regressions", [
                 sys.executable, "scripts/release/test_release_tools.py"
@@ -175,6 +176,17 @@ def main() -> int:
             run("Host evidence attribution and signature regressions", [
                 sys.executable, "scripts/test-host-acceptance.py"
             ])
+            run("Release record source, artifact and path integrity", [
+                sys.executable, "scripts/release/test_prepare_release.py"
+            ])
+            if platform.system() == "Linux":
+                require_tracked(
+                    "scripts/release/linux_service.py", "scripts/release/systemd_launcher.py",
+                    "scripts/release/test_linux_service.py",
+                )
+                run("Linux installer, activation recovery and authenticated health", [
+                    sys.executable, "scripts/release/test_linux_service.py"
+                ])
         verify_source()
         ledger["result"] = "passed"
         return 0
