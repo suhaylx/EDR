@@ -89,3 +89,8 @@
 .evidence-timeline li:focus{outline:3px solid #8ecbff;outline-offset:3px}
 @media(max-width:650px){.graph-controls{display:grid;grid-template-columns:1fr 1fr}.graph-controls button{font-size:12px;padding:9px}.process-branch>summary{padding-left:32px}.graph-source-link{margin-left:9px}}
 @media(max-width:390px){.graph-controls{grid-template-columns:1fr}}
+
+/* Day 2 integration: opt-in tab-scoped lab token with explicit disabled controls. */
+.auth-remember{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#b5c7dd;white-space:nowrap}
+.auth-remember input{width:auto;min-width:0;accent-color:#55a9ec}
+.auth input:disabled,.auth button:disabled{opacity:.55;cursor:not-allowed}
