@@ -22,6 +22,7 @@ type SOCAlertView struct{
  AcknowledgedBy string `json:"acknowledged_by,omitempty"`
  ResolvedBy string `json:"resolved_by,omitempty"`
  ResolutionNote string `json:"resolution_note,omitempty"`
+ AssignedTo string `json:"assigned_to,omitempty"`
 }
 type SOCAlertCounts struct{
  Open int64 `json:"open"`
@@ -30,12 +31,12 @@ type SOCAlertCounts struct{
 }
 const listSOCAlertsSQL=`SELECT alert_id::text,job_id::text,agent_id,category,
  severity,signature_name,state,created_at,updated_at,
- COALESCE(acknowledged_by,''),COALESCE(resolved_by,''),resolution_note
+ COALESCE(acknowledged_by,''),COALESCE(resolved_by,''),resolution_note,COALESCE(assigned_to,'')
  FROM edr_soc_alerts WHERE tenant_id=$1 AND ($2='' OR state=$2)
  ORDER BY created_at DESC,alert_id DESC LIMIT $3 OFFSET $4`
 const getSOCAlertSQL=`SELECT alert_id::text,job_id::text,agent_id,category,
  severity,signature_name,state,created_at,updated_at,
- COALESCE(acknowledged_by,''),COALESCE(resolved_by,''),resolution_note
+ COALESCE(acknowledged_by,''),COALESCE(resolved_by,''),resolution_note,COALESCE(assigned_to,'')
  FROM edr_soc_alerts WHERE tenant_id=$1 AND alert_id=$2::uuid`
 const socAlertCountsSQL=`SELECT
  count(*) FILTER(WHERE state='open'),
@@ -51,7 +52,7 @@ func socScanAlertRow(row interface{Scan(...any)error})(*SOCAlertView,error){
  var item SOCAlertView
  err:=row.Scan(&item.AlertID,&item.JobID,&item.AgentID,&item.Category,
   &item.Severity,&item.SignatureName,&item.State,&item.CreatedAt,
-  &item.UpdatedAt,&item.AcknowledgedBy,&item.ResolvedBy,&item.ResolutionNote)
+  &item.UpdatedAt,&item.AcknowledgedBy,&item.ResolvedBy,&item.ResolutionNote,&item.AssignedTo)
  if err!=nil{return nil,err}
  return &item,nil
 }

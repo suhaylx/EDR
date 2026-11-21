@@ -28,7 +28,7 @@ func TestSOCMalwareAlertsReadAndTriage(t *testing.T) {
    return &scanRows{columns:[]string{"alert_id","job_id","agent_id","category","severity",
      "signature_name","state","created_at","updated_at","acknowledged_by","resolved_by","note"},
     values:[][]driver.Value{{testUUID,leaseUUID,"win01","malware_signature",
-      "high","Lab-Signature","open",now,now,"","",""}}},nil
+      "high","Lab-Signature","open",now,now,"","","",""}}},nil
   }
   t.Fatalf("unknown alert SQL %s",q);return nil,nil
  })

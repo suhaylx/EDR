@@ -117,3 +117,42 @@ Liveness and readiness are reported telemetry, **not tamper-resistant
 attestation**, and do not prove the device is malware-free. Disabled tenants
 are excluded entirely. The timeline is a lightweight investigation feed,
 not full process-tree correlation, live threat hunting or event telemetry.
+
+## Analyst case assignment and immutable activity (accelerated sprint Day 3)
+
+Migration `0012_soc_alert_activity.up.sql` adds per-alert assignment
+metadata and an append-only PostgreSQL activity feed. Existing alerts are
+backfilled with an initial `system/created` event only; the migration does
+**not** invent historical actors or earlier transitions. A database superuser
+can still alter records, so this is not tamper-proof cryptographic evidence.
+
+All endpoints require the **separate verified SOC operator mTLS listener**:
+
+- `GET /soc/v1/tenants/{tenant}/my-alerts?limit=25&offset=0` —
+  unresolved alerts assigned to the *authenticated* operator, not to a
+  client-supplied operator ID (viewer or scanner role).
+- `POST /soc/v1/tenants/{tenant}/alerts/{uuid}/assign` with
+  `{"operator_id":"analyst2"}` — assign an open/acknowledged alert to
+  an active scanner in the same tenant (scanner role).
+  `{"operator_id":""}` unassigns it.
+- `POST /soc/v1/tenants/{tenant}/alerts/{uuid}/notes` with
+  `{"note":"Investigated signer and scan context"}` — append a bounded
+  analyst note; returns HTTP 201 and an activity ID (scanner role).
+- `GET /soc/v1/tenants/{tenant}/alerts/{uuid}/activity?limit=25&offset=0` —
+  newest-first activity entries, including creation, assignment,
+  notes, acknowledgment, resolution and reopening (viewer/scanner role).
+
+The normal alert list/detail now also includes `assigned_to` when set.
+The database rechecks tenant, operator role and revocation for mutations.
+Assignments reject inactive/non-scanner assignees and resolved alerts;
+conflicting/replayed operations return HTTP 409. Notes reject empty,
+control-character and oversized content. Update/delete of activity records
+are denied by a database trigger (subject to DB superuser and privilege
+limitations).
+
+This work does **not** perform process termination, network isolation,
+quarantine, deletion or any other endpoint action. No operator
+provisioning UI, signed release, on-host installation, or live lab evidence
+is implied. Before any production use, Agent 1 must approve the DB role
+grants and operator CA, and Agent 3 must rerun PostgreSQL/Go/Rust CI and
+independent cross-tenant/revocation tests on the exact integration head.
