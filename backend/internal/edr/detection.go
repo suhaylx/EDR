@@ -1,6 +1,7 @@
 package edr
 
 import (
+	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
@@ -88,8 +89,13 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 		}
 		// The real collector must expose source-event identity, provenance and
 		// tamper resistant device authentication before production use.
-		fingerprint := event.DeviceID + "|" + event.BootID + "|" + event.ProcessGUID + "|" +
-			windowsPath(event.FilePath) + "|" + event.ID
+		// Length-prefix each untrusted field so embedded delimiters cannot
+		// make distinct event tuples share the same detection identity.
+		fingerprint := fmt.Sprintf("%d:%s%d:%s%d:%s%d:%s%d:%s",
+			len(event.DeviceID), event.DeviceID, len(event.BootID), event.BootID,
+			len(event.ProcessGUID), event.ProcessGUID,
+			len(windowsPath(event.FilePath)), windowsPath(event.FilePath),
+			len(event.ID), event.ID)
 		if seen[fingerprint] {
 			continue
 		}
