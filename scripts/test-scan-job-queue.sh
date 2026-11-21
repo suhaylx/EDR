@@ -3,6 +3,12 @@
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Set a disposable PostgreSQL connection URL}"
 command -v psql >/dev/null
+# Never apply test migrations to a database already containing EDR data.
+existing="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_class WHERE relname IN ('edr_tenants','edr_agents','edr_agent_certificates','edr_scan_jobs') AND relkind='r'")"
+if [[ "$existing" != "0" ]]; then
+  echo "Refusing to run: EDR tables already exist; use an empty disposable database" >&2
+  exit 2
+fi
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0001_agent_enrollment.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0005_scan_job_queue.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
