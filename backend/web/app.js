@@ -1,7 +1,7 @@
 'use strict';
 // The SOC console is deliberately a lab-only UI. Values come from the Go API;
 // no synthetic detections, endpoint status or scan result is fabricated here.
-const state={token:'',view:'overview',days:7,agentFilter:'',data:{}};
+const state={token:'',view:'overview',days:7,agentFilter:'',graph:null,data:{}};
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const count=n=>Number(n||0).toLocaleString('en-US');
@@ -43,8 +43,56 @@ function overviewHTML(d){
   <section class="panel"><div class="section-heading"><h2>Recent endpoint events</h2><button class="text-link" type="button" data-go="events">Open telemetry</button></div>${rows(d.events.slice(-10).reverse(),[['Time',x=>labelTime(x.time)],['Agent','device_id'],['Type','type'],['Image / file',x=>x.image||x.file_path||'—']])}</section>
   <div class="data-stamp">Overview generated ${esc(labelTime(o.generated_at))}. No tenant isolation, durable history or live agent protection is available in this laboratory prototype.</div>`;
 }
+function incidentGraphHTML(g){
+  const nodes=g.nodes||[], edges=g.edges||[];
+  const byID=new Map(nodes.map(n=>[n.id,n]));
+  const processes=nodes.filter(n=>n.kind==='process');
+  const procEdges=edges.filter(e=>e.relation==='parent_process');
+  const parent=new Map(procEdges.map(e=>[e.to,e]));
+  const children=new Map();
+  for(const edge of procEdges){if(!children.has(edge.from))children.set(edge.from,[]);children.get(edge.from).push(edge.to);}
+  const visited=new Set();
+  function processTree(id){
+    if(visited.has(id))return '';
+    visited.add(id);
+    const p=byID.get(id);if(!p)return '';
+    const edge=parent.get(id), relation=edge?edge.provenance:'root/unknown';
+    const extra=nodes.filter(n=>n.kind==='event'&&n.process_guid===p.process_guid).length;
+    return `<li><div class="process-node"><strong>${esc(p.image||p.label)}</strong><span class="graph-tag">${esc(p.status)}</span><small>Process GUID: ${esc(p.process_guid)} · ${extra} retained event(s) · parent link: ${esc(relation)}</small></div>${children.get(id)?.length?`<ul>${children.get(id).map(processTree).join('')}</ul>`:''}</li>`;
+  }
+  const roots=processes.filter(n=>!parent.has(n.id)).map(n=>n.id);
+  const forest=roots.concat(processes.map(n=>n.id));
+  const tree=forest.map(processTree).join('');
+  const activity=nodes.filter(n=>n.kind==='event'||n.kind==='detection').sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.id.localeCompare(b.id));
+  const title=g.seed_detection_id?'Detection evidence graph':'Process evidence graph';
+  return `<section class="panel"><div class="section-heading"><h2>${esc(title)}</h2><span class="graph-tag">Retained lab evidence only</span></div><p>Host: <strong>${esc(g.device_id)}</strong> · Seed Process GUID: <code>${esc(g.seed_process_guid)}</code> · ${nodes.length} node(s) · ${edges.length} edge(s)</p><p>This view shows observed/reported relationships, not a verified full infection chain or confirmed malicious execution.</p>${g.truncated?'<p class="graph-warning">Graph truncated by configured node limit. Some evidence may be missing.</p>':''}</section>
+  <div class="overview-grid"><section class="panel"><h2>Process lineage</h2>${tree?`<ul class="process-tree">${tree}</ul>`:'<div class="empty">No process lineage within the retained events.</div>'}<p class="section-note">Parent links are labeled OBSERVED only when supported by a retained process-create event. Other links are reported, not confirmed.</p></section>
+  <section class="panel"><h2>Evidence timeline</h2>${activity.length?`<ol class="evidence-timeline">${activity.map(n=>`<li><time>${esc(labelTime(n.time))}</time><strong>${esc(n.kind==='detection'?'Detection · '+n.label:n.event_type)}</strong><span>${esc(n.file_path||n.detail||n.label)}</span><small>Process: ${esc(n.process_guid||'not reported')} · ${esc(n.event_id||n.id)}${n.kind==='detection'?' · '+esc(n.severity+' / '+n.confidence):''}</small></li>`).join('')}</ol>`:'<div class="empty">No retained events support this selected process.</div>'}</section></div>
+  <section class="panel"><h2>Investigation coverage and uncertainties</h2><ul class="coverage-gaps">${(g.gaps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="section-note">Supported evidence types can include process, file, loaded DLL, DNS, network, registry and detection observations. Only signals actually received and retained can appear. Not all links imply cause and effect.</p></section>`;
+}
+function investigationViewHTML(d){
+  const detections=d.alerts||[];
+  const options=detections.map(x=>`<option value="${esc(x.id)}">${esc(x.device_id+' · '+x.rule_id+' · '+x.process_image)}</option>`).join('');
+  return `<section class="panel"><h2>Trace the complete observed process story</h2><p>Start from a real detection record or enter an observed process GUID. Follow parent/child processes and the available file, module, DNS and network activity. A graph cannot reconstruct events that were never collected.</p><form id="graphForm" class="graph-search stack"><div class="field"><label for="graphDetection">Detection seed (optional)</label><select id="graphDetection"><option value="">Select a detection or enter a Process GUID</option>${options}</select></div><div class="field"><label for="graphDevice">Endpoint ID</label><input id="graphDevice" required maxlength="96" placeholder="win-lab-01" value="${esc(state.graph?.device_id||detections[0]?.device_id||'')}"></div><div class="field"><label for="graphProcess">Process GUID (used when no detection selected)</label><input id="graphProcess" maxlength="160" placeholder="{process-guid}" value="${esc(state.graph?.seed_process_guid||'')}"></div><button type="submit">Build evidence graph</button></form><p class="section-note">Lab-only query. All graph nodes are restricted to one endpoint. Production tenant scoping, durable collection, and event provenance are not implemented.</p></section>${state.graph?incidentGraphHTML(state.graph):'<section class="panel empty">No investigation loaded. Select a detection above or enter an endpoint and process GUID.</section>'}`;
+}
+function bindInvestigationForm(){
+  const form=$('graphForm');if(!form)return;
+  $('graphDetection').addEventListener('change',e=>{
+    const d=(state.data.alerts||[]).find(x=>x.id===e.target.value);
+    if(d){$('graphDevice').value=d.device_id;$('graphProcess').value=d.process_guid||'';}
+  });
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const dev=$('graphDevice').value.trim(), det=$('graphDetection').value, proc=$('graphProcess').value.trim();
+    if(!dev||(!det&&!proc)){notice('Choose a detection or enter an endpoint and Process GUID.',true);return;}
+    const params=new URLSearchParams({device_id:dev,depth:'4',max_nodes:'250'});
+    if(det)params.set('detection_id',det);else params.set('process_guid',proc);
+    try{state.graph=await api('/investigations?'+params);notice('Graph loaded from retained events. It is not proof of a full infection or complete telemetry coverage.');draw();}
+    catch(err){state.graph=null;notice('Graph unavailable: '+err.message,true);draw();}
+  });
+}
 function draw(){
-  const v=state.view;const labels={overview:['Security overview','Fleet heartbeat status, detections, rule hits and operational visibility'],agents:['Agent management','Enrolled Windows and Linux agents'],alerts:['Security alerts','Heuristic detection evidence; no confirmed malware classification'],scans:['AV scan jobs','Queue an agent scan request; actual ClamAV scanning is not connected'],events:['Telemetry & triage','Raw endpoint events (not yet correlated incidents)'],policies:['Sysmon policy library','Create and inspect policy drafts. Applying to endpoints is not implemented.'],assignments:['Policy assignments','Assign a desired policy to an agent or group']};$('viewTitle').textContent=labels[v][0];$('viewHint').textContent=labels[v][1];const d=state.data;const c=$('content');if(!d.overview){c.innerHTML='';return;}
+  const v=state.view;const labels={overview:['Security overview','Fleet heartbeat status, detections, rule hits and operational visibility'],agents:['Agent management','Enrolled Windows and Linux agents'],alerts:['Security alerts','Heuristic detection evidence; no confirmed malware classification'],scans:['AV scan jobs','Queue an agent scan request; actual ClamAV scanning is not connected'],events:['Telemetry & triage','Raw endpoint events (not yet correlated incidents)'],policies:['Sysmon policy library','Create and inspect policy drafts. Applying to endpoints is not implemented.'],assignments:['Policy assignments','Assign a desired policy to an agent or group'],investigations:['Process & incident graph','Observed process lineage, related evidence and missing telemetry']};$('viewTitle').textContent=labels[v][0];$('viewHint').textContent=labels[v][1];const d=state.data;const c=$('content');if(!d.overview){c.innerHTML='';return;}
   if(v==='overview'){
     c.innerHTML=overviewHTML(d);
     $('windowDays').addEventListener('change',e=>{state.days=Number(e.target.value);refresh();});
@@ -57,7 +105,13 @@ function draw(){
     const now=new Date();
     const start=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-(state.days-1));
     const alerts=d.alerts.filter(x=>{const timestamp=new Date(x.observed_at).getTime();return timestamp>=start&&timestamp<=now.getTime();});
-    c.innerHTML=`<section class="panel"><h2>Detection signals · ${esc(state.days)}-day window</h2><p>Generated by the prototype DLL-load correlation rule. A detection is an investigation signal, not a confirmed compromise or an automated block.</p>${rows(alerts,[['Observed',x=>labelTime(x.observed_at)],['Severity','severity'],['Confidence','confidence'],['Endpoint','device_id'],['Rule','rule_id'],['Process','process_image'],['Loaded module','module_path'],['Signals',x=>(x.signals||[]).join(', ')],['Evidence','load_event_id']])}</section>`;
+    c.innerHTML=`<section class="panel"><h2>Detection signals · ${esc(state.days)}-day window</h2><p>Generated by the prototype DLL-load correlation rule. A detection is an investigation signal, not a confirmed compromise or an automated block.</p>${rows(alerts,[['Observed',x=>labelTime(x.observed_at)],['Severity','severity'],['Confidence','confidence'],['Endpoint','device_id'],['Rule','rule_id'],['Process','process_image'],['Loaded module','module_path'],['Signals',x=>(x.signals||[]).join(', ')],['Evidence','load_event_id']])}</section><section class="panel"><h2>Trace observed attack context</h2><p>Build a process and evidence graph from one of these detected signals; every displayed relationship has an evidence identifier.</p><div class="graph-actions">${alerts.slice(0,20).map(x=>`<button type="button" data-trace="${esc(x.id)}" data-device="${esc(x.device_id)}">Investigate ${esc(x.rule_id)} · ${esc(x.device_id)}</button>`).join('')||'<p class="empty">No detection available to investigate.</p>'}</div></section>`;
+    c.querySelectorAll('[data-trace]').forEach(btn=>btn.addEventListener('click',async()=>{
+      try{state.graph=await api('/investigations?'+new URLSearchParams({device_id:btn.dataset.device,detection_id:btn.dataset.trace,depth:'4',max_nodes:'250'}));navigate('investigations');}catch(err){notice('Unable to build investigation: '+err.message,true);}
+    }));
+  }else if(v==='investigations'){
+    c.innerHTML=investigationViewHTML(d);
+    bindInvestigationForm();
   }else if(v==='scans'){
     const options=d.agents.map(x=>`<option value="${esc(x.id)}">${esc(x.id+' ('+x.platform+')')}</option>`).join('');c.innerHTML=`<section class="panel"><h2>Scan history</h2><p>Development lab only: these are queued commands and agent-claimed results, not verified ClamAV detections.</p>${rows([...d.scans].reverse(),[['Requested','created_at'],['Agent','agent_id'],['Mode','scan_type'],['Status','status'],['Verdict',x=>x.verdict||'Not scanned'],['Engine',x=>x.engine||'—'],['Details','detail']])}</section><section class="panel"><h2>Request a scan (does not execute locally)</h2><form id="newScan" class="stack"><div class="field"><label for="scanAgent">Endpoint</label><select id="scanAgent" required>${options}</select></div><div class="field"><label for="scanMode">Scan type</label><select id="scanMode"><option value="quick">Quick</option><option value="full">Full</option><option value="path">Custom path</option></select></div><div class="field"><label for="scanPath">Absolute device-local path (custom scan only)</label><input id="scanPath" autocomplete="off" placeholder="C:\\Windows\\System32 or /home/user"></div><button type="submit" ${options?'':'disabled'}>Queue scan</button></form><p>Requires a real authenticated Rust agent and ClamAV worker to execute. Never interpret a queued scan as protection.</p></section>`;
     $('newScan').addEventListener('submit',async e=>{e.preventDefault();try{const scan_type=$('scanMode').value;const payload={agent_id:$('scanAgent').value,request_id:'ui-'+globalThis.crypto.randomUUID(),scan_type};if(scan_type==='path')payload.path=$('scanPath').value.trim();await api('/scan-jobs',{method:'POST',body:JSON.stringify(payload)});await refresh();notice('Scan request queued. No scan has executed yet.');}catch(err){notice('Scan not queued: '+err.message,true);}});
