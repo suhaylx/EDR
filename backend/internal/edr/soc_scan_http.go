@@ -49,7 +49,7 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
    SOCEndpointHandler(q).ServeHTTP(w,r)
    return
   }
-  if operation=="alerts"||strings.HasPrefix(operation,"alerts/")||operation=="alert-stats" {
+  if operation=="alerts"||strings.HasPrefix(operation,"alerts/")||operation=="alert-stats"||operation=="my-alerts" {
    SOCAlertHandler(q).ServeHTTP(w,r)
    return
   }
