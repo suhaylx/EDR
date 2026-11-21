@@ -10,7 +10,7 @@
 | 02 | P1 | Agent 1 | WMI EIDs 19/20/21: exact names, same reported boot/device, no partial-chain alert, privacy-minimized fields | [Draft PR #93](https://github.com/suhaylx/EDR/pull/93) | DRAFT / CI PASS |
 | 03 | P1 | Agent 1 | EID25 image replacement plus independently reported EID1 process creation; unverified evidence not auto-remediated | [Draft PR #99](https://github.com/suhaylx/EDR/pull/99) | DRAFT / CI PASS |
 | 04 | P1 | Agent 1 | EID15 named NTFS stream detection; suppress benign Zone.Identifier and reject malformed/missing source evidence | [Draft PR #102](https://github.com/suhaylx/EDR/pull/102) | DRAFT / CI PASS |
-| 05 | P1 | Agent 1 | EID11 file creation + EID29 executable-file detection; no inference of execution; false-positive tests | [Draft PR #108](https://github.com/suhaylx/EDR/pull/108) | DRAFT / CI PENDING |
+| 05 | P1 | Agent 1 | EID11 file creation + EID29 executable-file detection; no inference of execution; false-positive tests | [Draft PR #108](https://github.com/suhaylx/EDR/pull/108) | DRAFT / CI PASS |
 | 06 | P0 | Agent 2 + Agent 1 review | Device mTLS enrollment: unique cert+device IDs, verified chain and tenant binding, wrong-device negative tests | Issue #2; SEC-001 | PLANNED |
 | 07 | P0 | Agent 2 + Agent 3 | Tenant isolation/RBAC for agent, events, policy, incidents, scans and response; every cross-tenant access denied in tests | BE-001 | PLANNED |
 | 08 | P0 | Agent 2 + Agent 3 | CA/cert lifecycle, bootstrap authentication, renewal/revocation/expiry and compromise recovery; deny revoked cert | BE-001 | PLANNED |
