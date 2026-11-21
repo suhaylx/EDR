@@ -31,3 +31,8 @@ Use [the next M13–M37 delivery board](SPRINT_NEXT_25_MILESTONES_20261121.md) a
 ## Current implementation checkpoints: M38–M62 (21 Nov 2026)
 
 Track [the next 25 milestones](SPRINT_M38_M62_20261121.md), following [M13–M37](SPRINT_NEXT_25_MILESTONES_20261121.md). The immediate P0 technical commit is [draft PR #117](https://github.com/suhaylx/EDR/pull/117) (Rust key inode/PEM bounded-read tests, dependent on #113), not production enrollment. The accepted evidence distinctions remain unchanged: exact SHA and CI, independent security review, independent QA, real authorized Windows/Linux validation, explicit owner-approved rollout. A 25-item plan is not 25 completed milestones. Do not merge to main automatically or treat scheduled automations as independent code execution.
+
+
+## Current engineering milestone batch M63–M87 (21 November 2026)
+
+The new authoritative [25-milestone M63–M87 board](SPRINT_M63_M87_20261121.md) follows [M38–M62](SPRINT_M38_M62_20261121.md) and earlier backlog. Exact artifact, test, dependency, owner and release gate per item; never call all 25 completed for a board update. Current shared P0 implementation is [draft PR #129](https://github.com/suhaylx/EDR/pull/129) (mTLS listener trust and loopback guard on the active scan-result stack), not a running service. [Priority backlog](PRIORITY_BACKLOG.md) and [five-role evidence](AGENT_ACTIVITY.md) retain separate code, CI, independent review, two-host lab and production statuses. No automatic merge or endpoint deployment.
