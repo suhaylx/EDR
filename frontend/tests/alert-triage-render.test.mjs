@@ -19,7 +19,7 @@ const render = detections => renderToStaticMarkup(createElement(AlertsTriageView
 test('alert queue uses labels, live result count, table headings and working-semantics controls', () => {
   const html=render(decodeLabDetections([item()]));
   assert.match(html, /<section[^>]*aria-labelledby="alerts-title"/);
-  assert.match(html, /<label htmlFor=/) === null; // React SSR emits for= instead
+  assert.doesNotMatch(html, /htmlFor=/); // React SSR emits native for= attributes
   assert.match(html, /for="alert-severity-filter"/);
   assert.match(html, /for="alert-source-filter"/);
   assert.match(html, /for="alert-query"/);
