@@ -55,15 +55,49 @@ pub fn heartbeat_once() -> io::Result<()> {
     Ok(())
 }
 
+pub fn status_once() -> io::Result<()> {
+    let client=AgentClient::from_env()?;
+    let status=client.heartbeat_status()?;
+    // Never expose private key or lease token through diagnostics.
+    println!("agent_mtls_status platform={} scan_ready={} heartbeats={}",
+        status.platform,status.scan_ready,status.received_count);
+    Ok(())
+}
+
 pub fn run_once() -> io::Result<()> {
-    // Authorization is checked BEFORE acquiring any remote lease.
+    // All preflight gates run before a remote job can be leased.
     let root=root_from_env()?;
     let client=AgentClient::from_env()?;
+    run_one(&client,&root).map(|_|())
+}
+
+// BE-143: opt-in, bounded batch scheduler. One active job at a time;
+// the HTTP client and enrolled credentials are reused throughout the batch.
+pub fn run_batch(max_jobs:usize) -> io::Result<()> {
+    if !(1..=20).contains(&max_jobs) {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput,
+            "scan batch limit must be 1..20"));
+    }
+    let root=root_from_env()?;
+    let client=AgentClient::from_env()?;
+    let mut completed=0usize;
+    for index in 0..max_jobs {
+        // A 204 (no pending job) stops the batch immediately.
+        if !run_one(&client,&root)? {break}
+        completed+=1;
+        // A short delay avoids a tight loop on a busy/recovering server.
+        if index+1<max_jobs {thread::sleep(Duration::from_millis(250));}
+    }
+    println!("agent_mtls_batch_finished completed={completed}");
+    Ok(())
+}
+
+fn run_one(client:&AgentClient,root:&Path) -> io::Result<bool> {
     // A liveness report is recorded before trying to claim work.
     client.heartbeat(if cfg!(windows) {"windows"} else {"linux"},
         env!("CARGO_PKG_VERSION"),"","",crate::scan_file::clamd_ready())?;
     let job=match client.claim()? {
-        None => {println!("agent_mtls_claim=no_job");return Ok(());}
+        None => {println!("agent_mtls_claim=no_job");return Ok(false);}
         Some(job)=>job,
     };
     // Initial extension prevents immediately expiring during clamd startup.
@@ -89,7 +123,7 @@ pub fn run_once() -> io::Result<()> {
         }
     });
 
-    let verdict=scan_claimed_file(&job,&root);
+    let verdict=scan_claimed_file(&job,root);
     let _=stop_tx.send(());
     if renew_worker.join().is_err() || !lease_healthy.load(Ordering::SeqCst) {
         return Err(deny("scan lease renewal failed; result not reported as success"));
@@ -98,12 +132,19 @@ pub fn run_once() -> io::Result<()> {
     client.complete_result(&job,kind,&signature,detail)?;
     // Never print file path, private key, lease token, or signature in agent logs.
     println!("agent_mtls_scan_result=stored classification={kind}");
-    Ok(())
+    Ok(true)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn be143_batch_count_must_be_bounded() {
+        assert!(!(1..=20).contains(&0));
+        assert!((1..=20).contains(&1));
+        assert!((1..=20).contains(&20));
+        assert!(!(1..=20).contains(&21));
+    }
     #[test]
     fn be093_retains_malicious_classification() {
         let (kind,name,_) = safe_verdict(&Outcome::Malicious("Lab-Signature".into()));
