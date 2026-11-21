@@ -4,7 +4,10 @@ import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
 import { describeScan, scanEngineEvidence } from './scan-state.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
-import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
+import { fetchLabDetections, type LabDetection } from './detections.js';
+import { MultisignalAlertTriage } from './MultisignalAlertTriage.js';
+import { RetainedSourceInspection } from './RetainedSourceInspection.js';
+import type { RetainedSourceSelection } from './multisignal-alert-triage.js';
 import type { InvestigationSeed } from './investigation.js';
 import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
 import { isSafeLabBrowserOrigin } from './security-origin.js';
@@ -99,36 +102,6 @@ function Overview({ overview }: { overview: LabSOCOverview }) {
   </>;
 }
 
-function Alerts({detections, generatedAt, days, onInvestigate}: {
-  detections: LabDetection[]; generatedAt: string; days: DayWindow;
-  onInvestigate: (seed: InvestigationSeed) => void;
-}) {
-  const visible = detectionsInWindow(detections, generatedAt, days);
-  return <section className="panel" aria-labelledby="alerts-title">
-    <h2 id="alerts-title">Observed detection signals</h2>
-    <p>Heuristic rule matches from the retained lab API, filtered to the selected {days}-day interval ending at server overview generation time. These are not confirmed incidents or malware infections.</p>
-    <p role="status">{visible.length} observed detection record(s) in this retained window.</p>
-    {visible.length === 0 ? <p className="empty">No matching retained alerts. This is not evidence the fleet is safe.</p>
-      : <div className="table-scroll"><table>
-        <caption>Retained detection evidence. Investigate actions navigate to a prefilled, read-only evidence query.</caption>
-        <thead><tr><th scope="col">Observed UTC</th><th scope="col">Severity / confidence</th><th scope="col">Endpoint</th><th scope="col">Rule</th><th scope="col">Observed object</th><th scope="col">Source evidence</th><th scope="col">Action</th></tr></thead>
-        <tbody>{visible.map(d=><tr key={d.id}>
-          <td>{d.observed_at}</td>
-          <td>{d.severity} / {d.confidence}</td>
-          <td>{d.device_id}<span className="minor">Process: {d.process_guid}</span></td>
-          <td>{d.rule_id}<span className="minor">{d.category}</span></td>
-          <td>{d.target_object || d.module_path || "No object path reported"}<span className="minor">Host image: {d.process_image || "Not reported"}</span></td>
-          <td>{d.evidence_event_id || d.load_event_id}<span className="minor">{d.evidence_source_event_id ? "Reported Sysmon ID " + d.evidence_source_event_id : "Event ID not reported"}</span>{d.file_create_event_id && <span className="minor">Separate file-create event: {d.file_create_event_id}</span>}</td>
-          <td>{d.process_guid
-            ? <button className="source-button" type="button" onClick={()=>onInvestigate(seedForDetection(d))}
-                aria-label={'Investigate process evidence for '+d.rule_id+' on '+d.device_id}>Inspect process</button>
-            : <span className="subtle">No process GUID · inspect source event instead</span>}</td>
-        </tr>)}</tbody>
-      </table></div>}
-    <p className="minor">A file write does not prove module execution. Agent 1 behavioral rules report evidence, not confirmed compromise. All response actions require separate authorization.</p>
-  </section>;
-}
-
 function EndpointInventory({overview}: {overview: LabSOCOverview}) {
   const [status,setStatus] = useState<InventoryFilter>('all');
   const [query,setQuery] = useState('');
@@ -172,6 +145,7 @@ function App() {
   const [detections, setDetections] = useState<LabDetection[]>([]);
   const [events, setEvents] = useState<LabTelemetryEvent[]>([]);
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
+  const [sourceSelection, setSourceSelection] = useState<RetainedSourceSelection | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
   const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
@@ -198,6 +172,7 @@ function App() {
     setDetections([]);
     setEvents([]);
     setInvestigationSeed(null);
+    setSourceSelection(null);
     setLoadedAt(null);
     try {
       // Both requests must succeed; do not display stale or partially labeled
@@ -221,6 +196,7 @@ function App() {
       setDetections([]);
       setEvents([]);
       setInvestigationSeed(null);
+    setSourceSelection(null);
       setOverview(null);
       setLoadedAt(null);
       setStatus('error');
@@ -237,6 +213,7 @@ function App() {
     setDetections([]);
     setEvents([]);
     setInvestigationSeed(null);
+    setSourceSelection(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -251,6 +228,7 @@ function App() {
     setDetections([]);
     setEvents([]);
     setInvestigationSeed(null);
+    setSourceSelection(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -264,6 +242,7 @@ function App() {
     setDetections([]);
     setEvents([]);
     setInvestigationSeed(null);
+    setSourceSelection(null);
     setOverview(null);
     setJobs([]);
     setLoadedAt(null);
@@ -295,7 +274,7 @@ function App() {
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
-        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => setView('telemetry')}>Sysmon & telemetry</button>
+        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
@@ -314,13 +293,18 @@ function App() {
           <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
         : view === 'telemetry' ?
         (status === 'ready'
-          ? <SysmonCoverage events={events}
-              onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
+          ? sourceSelection
+            ? <RetainedSourceInspection events={events} selection={sourceSelection}
+                onBack={() => setSourceSelection(null)}
+                onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
+            : <SysmonCoverage events={events}
+                onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
           : <section className="panel"><p className="empty">Connect and refresh to inspect retained Sysmon and Linux source events. No telemetry means visibility is unknown, not safe.</p></section>)
         : view === 'alerts' ?
         (status === 'ready' && overview
-          ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
-            onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}} />
+          ? <MultisignalAlertTriage detections={detections} generatedAt={overview.generated_at} days={days}
+            onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}
+            onInspectSource={selection => {setSourceSelection(selection);setView('telemetry');}} />
           : <section className="panel"><p className="empty">Connect and refresh to retrieve retained lab detection evidence.</p></section>)
         : view === 'investigations'
         ? (status === 'ready' ? <InvestigationView token={token} initialSeed={investigationSeed} /> :
