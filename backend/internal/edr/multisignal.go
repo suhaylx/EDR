@@ -157,5 +157,6 @@ func DetectAllLabSignals(events []Event) []Detection {
 	all = append(all, DetectRegistryAutorunSet(events)...)
 	all = append(all, DetectWMIPermanentSubscription(events)...)
 	all = append(all, DetectProcessTampering(events)...)
-	return append(all, DetectAlternateDataStreams(events)...)
+	all = append(all, DetectAlternateDataStreams(events)...)
+	return append(all, DetectExecutableFileDrops(events)...)
 }
