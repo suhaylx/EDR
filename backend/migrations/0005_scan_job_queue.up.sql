@@ -58,7 +58,13 @@ BEGIN
           AND a.revoked_at IS NULL AND t.disabled_at IS NULL
           AND j.state='pending' AND j.attempt_count < j.max_attempts
         ORDER BY j.created_at, j.job_id
-        FOR UPDATE OF j SKIP LOCKED LIMIT 1
+        -- Lock the active tenant and agent for this lease issuance.
+        -- An administrative disable/revoke transaction must serialize with
+        -- a claim, just as it already does with scan completion.
+        -- Skip only contended JOB rows; do not skip a principal revocation.
+        FOR UPDATE OF j SKIP LOCKED
+        FOR SHARE OF a,t
+        LIMIT 1
     )
     UPDATE public.edr_scan_jobs AS j
     SET state='leased', lease_owner=p_lease_owner, lease_token=p_lease_token,
