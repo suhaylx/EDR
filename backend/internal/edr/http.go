@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -135,15 +136,47 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 200, job)
-		case r.URL.Path == "/api/overview" && r.Method == "GET":
-			data := s.Store.Snapshot()
-			online := 0
-			for _, a := range data.Agents {
-				if time.Since(a.LastSeen) < 5*time.Minute {
-					online++
+		case r.URL.Path == "/api/investigations" && r.Method == "GET":
+			depth, maxNodes := 4, 250
+			if v := r.URL.Query().Get("depth"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid depth", 400)
+					return
 				}
+				depth = n
 			}
-			reply(w, 200, map[string]int{"agents": len(data.Agents), "online": online, "events": len(data.Events), "policies": len(data.Policies), "assignments": len(data.Assignments)})
+			if v := r.URL.Query().Get("max_nodes"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid max_nodes", 400)
+					return
+				}
+				maxNodes = n
+			}
+			snapshot := s.Store.Snapshot()
+			graph, err := BuildProcessInvestigation(snapshot.Events, DetectSuspiciousDLLLoads(snapshot.Events), r.URL.Query().Get("device_id"), r.URL.Query().Get("process_guid"), r.URL.Query().Get("detection_id"), depth, maxNodes)
+			if errors.Is(err, ErrInvestigationNotFound) {
+				http.Error(w, "investigation seed not found", 404)
+				return
+			}
+			if fail(w, err) {
+				return
+			}
+			reply(w, 200, graph)
+		case r.URL.Path == "/api/overview" && r.Method == "GET":
+			days := 7
+			switch r.URL.Query().Get("days") {
+			case "", "7":
+			case "1":
+				days = 1
+			case "30":
+				days = 30
+			default:
+				http.Error(w, "days must be 1, 7 or 30", http.StatusBadRequest)
+				return
+			}
+			reply(w, 200, BuildSOCOverview(s.Store.Snapshot(), s.Store.ScanJobs(), time.Now().UTC(), days))
 		case strings.HasPrefix(r.URL.Path, "/api/agents/") && r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/desired-policy"):
 			agentID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/agents/"), "/desired-policy")
 			if !validID(agentID) {
