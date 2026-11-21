@@ -1,6 +1,6 @@
 # TuranSec EDR — React SOC lab slice
 
-**Scope:** A separate, **read-only** React/TypeScript scan-history application. This is not the live dashboard served by Go yet and is **not production EDR**. The original Go-served JavaScript SOC console remains at `http://127.0.0.1:8080/` and is unchanged.
+**Scope:** A separate, **read-only** React/TypeScript SOC overview and scan-history application. This is not the live dashboard served by Go yet and is **not production EDR**. The original Go-served JavaScript SOC console remains at `http://127.0.0.1:8080/` and is unchanged.
 
 ## Local development (isolated loopback only)
 
@@ -19,7 +19,10 @@ The React/Vite development server listens on `127.0.0.1:5173`; it proxies `/api`
 
 ## Implemented in this slice
 
-- Strictly typed parser for `GET /api/scan-jobs`, rejecting malformed or oversized responses; explicit empty/error/loading states.
+- React SOC overview with reconciled online/offline/unknown server heartbeat status, retained alert trends, severity, busiest observed endpoints, fired rules, scan job health and explicit unverified coverage gaps.
+- Selectable 1/7/30-day UTC reporting window; changing it discards old summaries until a matching new authenticated fetch succeeds. No fake live data and no endpoint actions.
+
+- Strictly typed parsers for `GET /api/overview?days=1|7|30` and `GET /api/scan-jobs`, rejecting malformed or oversized responses; explicit empty/error/loading states.
 - Reported scan statuses distinct from actual protection; real scan trust and signature DB freshness **not verified**.
 - React-native text rendering for untrusted worker details; no HTML injection, no direct endpoint action.
 - System light/dark CSS tokens, keyboard-visible focus, reduced-motion styles and responsive layout.
