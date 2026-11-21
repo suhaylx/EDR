@@ -48,7 +48,7 @@ func TestSprintDay1SOCDispatchesAllOperatorFunctionalRoutes(t *testing.T) {
    return &scanRows{columns:[]string{"alert_id","job_id","agent_id","category",
     "severity","signature","state","created","updated","acked_by","resolved_by","note"},
     values:[][]driver.Value{{testUUID,leaseUUID,"win01","malware_signature",
-    "high","Lab-Signature","open",now,now,"","",""}}},nil
+    "high","Lab-Signature","open",now,now,"","","",""}}},nil
   default:
    t.Fatalf("unexpected top-level SOC SQL %q",query)
    return nil,nil
