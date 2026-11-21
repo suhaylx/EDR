@@ -33,6 +33,8 @@ func TestAgentScanQueueHandlerRejectsUntrustedRequests(t *testing.T){
         {"missing success","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`"}`,valid,400},
         {"trailing json","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","success":true}{}`,valid,400},
         {"invalid lease","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"invalid","success":true}`,valid,400},
+        {"claim unexpected JSON","POST",base+"scan-jobs/claim",`{"tenant_id":"tenantB"}`,valid,400},
+        {"claim unexpected byte","POST",base+"scan-jobs/claim","x",valid,400},
         {"no db claim","POST",base+"scan-jobs/claim","",valid,503},
         {"renew no principal","POST",base+"scan-jobs/renew","{}",nil,401},
         {"renew cross tenant","POST","/agent/v1/tenants/tenantB/agents/win01/scan-jobs/renew","{}",valid,403},
