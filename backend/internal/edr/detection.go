@@ -52,7 +52,8 @@ func suspiciousDLLPath(path string) bool {
 func DetectSuspiciousDLLLoads(events []Event) []Detection {
 	created := make(map[string][]Event)
 	for _, event := range events {
-		if event.Platform != "windows" || event.Type != "file_create" || event.DeviceID == "" || event.FilePath == "" {
+		if event.Platform != "windows" || event.Type != "file_create" || event.DeviceID == "" || event.FilePath == "" ||
+			event.ID == "" || event.Time.IsZero() {
 			continue
 		}
 		key := event.DeviceID + "|" + windowsPath(event.FilePath)
@@ -63,6 +64,7 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 	for _, event := range events {
 		if event.Platform != "windows" || event.Type != "module_load" ||
 			event.DeviceID == "" || event.ProcessGUID == "" || event.Image == "" ||
+			event.ID == "" || event.Time.IsZero() ||
 			!suspiciousDLLPath(event.FilePath) {
 			continue
 		}
