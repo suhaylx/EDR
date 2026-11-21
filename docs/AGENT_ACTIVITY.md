@@ -153,3 +153,5 @@ Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared P
 | **4 PM P0** | M38–M62 board and this tracker/backlog, issue comments and exact-head CI; **23:50** | [PM draft PR #7](https://github.com/suhaylx/EDR/pull/7) commit to be verified after write | **EVIDENCED once read back**; canonical ChatGPT Page read/write BLOCKED |
 
 **Independent new PR #117 review count at start: 0/4 roles accepted** (this does not prove people idle). All role schedules enabled as verified. **Release NO-GO**: no main merge, real host test, signed production binary or deployment. Do not use passwords/credentials exposed in chat.
+
+**Schedule reconciliation, 21 Nov 2026:** Frontend role automation was observed paused after its prior scheduled run, then explicitly re-enabled and confirmed by the Automations update. PM, InfoSec (renamed `TuranSec Agent 1 — SEC-026–050 Delivery`), Backend, QA and Frontend are now scheduled/enabled; their scheduled state does **not** imply verified autonomous execution, new PR commits, formal security review or host testing. Canonical Page sync remains BLOCKED; official GitHub issue/board is current.
