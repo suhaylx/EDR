@@ -191,6 +191,9 @@ function App() {
       setStatus('ready');
     } catch (cause: unknown) {
       if (controller.signal.aborted) return;
+      // One rejected source invalidates the snapshot. Cancel the remaining
+      // in-flight reads instead of downloading evidence the UI cannot publish.
+      controller.abort();
       setJobs([]);
       setDetections([]);
       setEvents([]);
