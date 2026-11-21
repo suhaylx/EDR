@@ -59,6 +59,13 @@ func TestAgentScanQueueRealMutualTLS(t *testing.T) {
         t.Fatalf("client without certificate unexpectedly got HTTP %d",resp.StatusCode)
     }
 
+    noCertRenew,err:=unauth.Post(server.URL+
+        "/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew",
+        "application/json",strings.NewReader("{}"))
+    if err==nil {
+        noCertRenew.Body.Close()
+        t.Fatalf("renewal without certificate unexpectedly got HTTP %d",noCertRenew.StatusCode)
+    }
     client:=server.Client()
     transport:=client.Transport.(*http.Transport).Clone()
     transport.TLSClientConfig=transport.TLSClientConfig.Clone()
