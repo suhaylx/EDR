@@ -31,3 +31,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cargo test
+
+  rust-agent-windows:
+    name: Rust agent unit tests (Windows Server 2022)
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --locked
