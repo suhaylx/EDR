@@ -146,3 +146,35 @@ func TestDLLCreateEvidenceRequiresSameExplicitBootScope(t *testing.T) {
 		})
 	}
 }
+
+func TestDLLCreateEvidenceRequiresMatchingNonemptyHashes(t *testing.T) {
+	load := provenanceLoad()
+	for _, tc := range []struct {
+		name string
+		createHash string
+		loadHash string
+		wantLink bool
+	}{
+		{"matching", "abc123", "abc123", true},
+		{"case-insensitive-match", "ABC123", "abc123", true},
+		{"different", "different", "abc123", false},
+		{"missing-create-hash", "", "abc123", false},
+		{"missing-load-hash", "abc123", "", false},
+		{"both-missing", "", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			l := load
+			l.Hash = tc.loadHash
+			create := Event{ID: "create-1", Platform: "windows", DeviceID: l.DeviceID,
+				Type: "file_create", FilePath: l.FilePath, BootID: l.BootID,
+				Hash: tc.createHash, Time: l.Time.Add(-time.Minute)}
+			got := DetectSuspiciousDLLLoads([]Event{create, l})
+			if len(got) != 1 {
+				t.Fatalf("module load must still alert: %+v", got)
+			}
+			if linked := got[0].FileCreateEventID != ""; linked != tc.wantLink {
+				t.Fatalf("unexpected hash-based evidence linkage: %+v", got[0])
+			}
+		})
+	}
+}
