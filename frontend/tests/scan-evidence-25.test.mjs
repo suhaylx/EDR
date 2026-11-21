@@ -138,10 +138,11 @@ test('M71 exact endpoint filter is case-insensitive but not substring-based',()=
  assert.deepEqual(ids(input,{endpoint:'windows-a'}),['scan-0']);
  assert.deepEqual(ids(input,{endpoint:'windows'}),[]);
 });
-test('M72 text search covers source metadata and is case-insensitive',()=>{
+test('M72 text search excludes private worker detail but searches bounded metadata',()=>{
  const input=rows({engine:'clamav',detail:'Observed scanner ERROR'},
   {engine:'Other',detail:'none'});
- assert.deepEqual(ids(input,{search:'scanner error'}),['scan-0']);
+ assert.deepEqual(ids(input,{search:'scanner error'}),[]);
+ assert.deepEqual(ids(input,{search:'clamav'}),['scan-0']);
  assert.deepEqual(ids(input,{search:'other'}),['scan-1']);
 });
 test('M73 metadata and mode filters are read-only and combine exactly',()=>{
