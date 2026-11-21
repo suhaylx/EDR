@@ -66,3 +66,26 @@ ancestor directory trees. Do not run this worker on untrusted writable trees.
 - Binary signing, service management, telemetry ingestion and signed policy pending.
 - SOC alert generation/incident linking from saved results pending.
 - InfoSec Agent 1 / QA Agent 3 approval required before merging or canary.
+
+## Enrolled device heartbeat (BE-121–125)
+
+Migration `0009_agent_heartbeats.up.sql` adds a durable last-seen snapshot,
+counter, platform, version and ClamAV readiness indicator for each enrolled
+device. These strings come from the endpoint and are **not cryptographic
+attestation**. The `scan_ready` field reports whether a local clamd PING
+returned PONG; it does not attest current signatures.
+
+On the dedicated enrolled mTLS listener:
+
+- `POST /agent/v1/tenants/{tenant}/agents/{agent}/heartbeat` with JSON
+  `{"platform":"linux","agent_version":"0.1.0","clamav_version":"","signature_version":"","scan_ready":false}`
+  returns 204 when recorded, 409 when the database refuses inactive identity,
+  400 for malformed fields, and 503 for database failure.
+- `GET` on the same path returns the *requesting* enrolled device's latest
+  snapshot and received count, or 404 if not yet seen.
+
+The Rust client supports `--heartbeat-mtls` to report liveness once using
+the same enrolled TLS identity. `--scan-once-mtls` now reports liveness before
+requesting a job; it never falls back to a shared development bearer token.
+The heartbeat does not deploy a recurring background service, offline retry
+queue, Sysmon collection, or endpoint protection.
