@@ -120,7 +120,7 @@ export function reviewEvidenceSnapshot(
     if(eventTime===null)eventsUnknownTime++;
     if(time.kind==='sender_report')eventsUsingSenderClock++;
     if(time.kind==='server_receipt')eventsUsingServerClock++;
-    if(eventTime!==null&&eventTime>generated)eventsAfterOverview++;
+    if((eventTime!==null&&eventTime>generated)||(ms(event.received_at)!==null&&(ms(event.received_at) as number)>generated))eventsAfterOverview++;
     if(!known.has(event.device_id))eventsNotInInventory++;
     if(!isInOverviewWindow(eventTime,generated,overview.window_days))continue;
     eventsInWindow++;
