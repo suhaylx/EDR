@@ -132,11 +132,19 @@ Run from the repository root against an empty disposable PostgreSQL database
 whose name begins with `edr_`, using a fixture administrator:
 
 ```sh
+EDR_QA_DISPOSABLE_DB=yes \
 EDR_TEST_DATABASE_URL="$EDR_DISPOSABLE_ADMIN_CONNECTION" \
   bash scripts/test-runtime-privileges.sh
 ```
 
-The shell script accepts loopback TCP only, refuses existing EDR schema tables,
+Use a `postgresql://` URL with an explicit literal loopback address and port,
+an `edr_` database name, and no query parameters except optional
+`sslmode=disable`. Clear inherited `PGHOSTADDR`, `PGSERVICE` and `PGSERVICEFILE`
+overrides before running this fixture. `--preflight-only` validates this target
+without opening a database connection.
+
+The shell script validates the client loopback TCP endpoint before connecting,
+retains that endpoint for restricted logins, refuses existing EDR schema tables,
 and permits the CI candidate's `edr_ci_candidate` ownership marker. It applies
 schema 0001–0013, creates unique temporary test logins with an ephemeral
 environment-supplied password, applies bootstrap twice and cleans up those

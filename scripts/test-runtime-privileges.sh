@@ -8,16 +8,58 @@ if ! [[ -v EDR_TEST_DATABASE_URL ]] || [[ -z "$EDR_TEST_DATABASE_URL" ]]; then
   echo 'EDR_TEST_DATABASE_URL must name an empty disposable PostgreSQL database' >&2
   exit 2
 fi
-command -v psql >/dev/null
 command -v python3 >/dev/null
 
+# Validate the client endpoint before opening any connection. A loopback port
+# published by a CI service container reaches a non-loopback server interface;
+# inet_server_addr() describes that interface, not the endpoint psql used.
+# Retain the validated client host/port for the restricted-login connections.
+target_info="$(python3 - <<'PY'
+import os
+import re
+from urllib.parse import urlsplit
+
+try:
+    value = os.environ["EDR_TEST_DATABASE_URL"]
+    target = urlsplit(value)
+    safe = (
+        os.environ.get("EDR_QA_DISPOSABLE_DB") == "yes"
+        and not any(os.environ.get(name) for name in ("PGHOSTADDR", "PGSERVICE", "PGSERVICEFILE"))
+        and not any(ord(char) <= 32 or ord(char) == 127 for char in value)
+        and target.scheme == "postgresql"
+        and target.hostname in ("127.0.0.1", "::1")
+        and target.port is not None and 1 <= target.port <= 65535
+        and re.fullmatch(r"/edr_[a-z0-9_]+", target.path) is not None
+        and bool(target.username)
+        and target.query in ("", "sslmode=disable")
+        and not target.fragment
+    )
+except (ValueError, TypeError, KeyError):
+    safe = False
+if not safe:
+    raise SystemExit("Refusing tests without an explicit disposable edr_* database on loopback TCP")
+print(f"{target.path[1:]}|{target.hostname}|{target.port}")
+PY
+)"
+IFS='|' read -r test_database test_host test_port <<< "$target_info"
+case "${1:-}" in
+  --preflight-only)
+    if (( $# != 1 )); then echo 'Unexpected argument' >&2; exit 2; fi
+    echo 'PASS: runtime privilege target preflight (no connection attempted)'
+    exit 0
+    ;;
+  '')
+    if (( $# != 0 )); then echo 'Unexpected argument' >&2; exit 2; fi
+    ;;
+  *) echo 'Unexpected argument' >&2; exit 2 ;;
+esac
+command -v psql >/dev/null
 connection_info="$(psql "$EDR_TEST_DATABASE_URL" -X -qAt -v ON_ERROR_STOP=1 \
-  -F '|' -c "SELECT current_database(),inet_server_addr(),inet_server_port(),current_user")"
-IFS='|' read -r test_database test_host test_port admin_login <<< "$connection_info"
-if ! [[ "$test_database" =~ ^edr_[a-z0-9_]+$ ]] ||
-   ! [[ "$test_host" == "127.0.0.1" || "$test_host" == "::1" ]] ||
-   ! [[ "$test_port" =~ ^[0-9]+$ ]]; then
-  echo 'Refusing tests outside a disposable edr_* database on loopback TCP' >&2
+  -F '|' -c "SELECT current_database(),inet_server_port()")"
+IFS='|' read -r connected_database server_port <<< "$connection_info"
+if [[ "$connected_database" != "$test_database" ]] ||
+   ! [[ "$server_port" =~ ^[0-9]+$ ]]; then
+  echo 'Refusing tests: connected database does not match the disposable TCP target' >&2
   exit 2
 fi
 existing="$(psql "$EDR_TEST_DATABASE_URL" -X -qAt -v ON_ERROR_STOP=1 \

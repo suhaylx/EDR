@@ -187,6 +187,26 @@ try {
     await page.screenshot({ path: join(resultsDir, 'operator-ready.png'), fullPage: true });
     await accessibility(page, 'Operator ready desktop');
   });
+  await check('primary and secondary hover with keyboard focus meet contrast in both color schemes', async () => {
+    for (const colorScheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme });
+      const controls = [
+        ['secondary case button', page.getByRole('button', { name: 'Read case and activity for alert ' + alertID }).first()],
+        ['primary refresh button', page.getByRole('button', { name: 'Refresh SOC records', exact: true })],
+      ];
+      for (const [label, control] of controls) {
+        await control.focus();
+        // Return through keyboard navigation, then hover without clicking away focus.
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        await control.hover();
+        assert.ok(await control.evaluate(element => element.matches(':hover') && element.matches(':focus-visible')), label + ' must be hovered and keyboard-focused');
+        await accessibility(page, `Operator ${label} hover and focus ${colorScheme}`);
+      }
+      await page.screenshot({ path: join(resultsDir, `operator-controls-${colorScheme}.png`), fullPage: true });
+    }
+    await page.emulateMedia({ colorScheme: 'light' });
+  });
   await check('unknown endpoint and readonly case activity stay honest and render untrusted text safely', async () => {
     await waitText(page, 'No server-received heartbeat recorded; current protection unknown');
     await page.getByRole('button', { name: 'Read case and activity for alert ' + alertID }).first().click();

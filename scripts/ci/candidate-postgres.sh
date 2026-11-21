@@ -56,6 +56,7 @@ case "${1:-}" in
 test)
   # Required files are intentionally not optional. A missing suite fails CI.
   bash scripts/test-soc-inventory-preflight.sh
+  bash scripts/test-runtime-privileges-preflight.sh
   new_db edr_chain_test
   bash scripts/test-postgres-migration-chain.sh
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-scan-job-results.sql
