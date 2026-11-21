@@ -1,0 +1,31 @@
+# Original TuranSec laboratory executable-file artifact rule.
+id: TURAN-WIN-EXECUTABLE-DROP-001
+version: 1
+platform: windows
+status: lab_prototype
+source: sysmon
+required_observations:
+  - {event_id: 11, type: file_create}
+  - {event_id: 29, type: file_executable_detected}
+join:
+  same_reported_device_boot_process_path: true
+  require_distinct_source_record_ids: true
+  file_create_precedes_executable_detection_minutes_max: 10
+  destination_extension_any: [.exe, .dll, .sys]
+  destination_region: potentially_user_writable
+  eid29_sha256: complete_hex_digest_required
+  eid11_sha256: optional_but_must_agree_when_present
+output:
+  category: executable_file_created_not_executed
+  severity: medium
+  confidence: low
+  action: alert_only
+  evidence: [file_drop_create_event_id, executable_detected_event_id]
+mitre_hypothesis: T1105
+false_positives:
+  - legitimate installers and updaters create Windows PE files
+  - Sysmon EID29 indicates an executable file, not process creation or execution
+  - metadata and hashes are unauthenticated sender claims in this lab
+safety:
+  never_infer_process_execution_from_file_create: true
+  no_auto_quarantine: true
