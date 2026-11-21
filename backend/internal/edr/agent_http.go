@@ -55,8 +55,34 @@ func AgentHTTPGuard(registry AgentIdentityRegistry, next http.Handler) http.Hand
 			return
 		}
 		ctx := context.WithValue(r.Context(), agentIdentityContextKey{}, identity)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		// All identity/authorization derives from the verified certificate
+		// in ctx; strip client-injected headers before any handler sees them.
+		// Clone first so caller-owned request headers remain unchanged.
+		guarded := r.WithContext(ctx)
+		guarded.Header = r.Header.Clone()
+		for name := range guarded.Header {
+			if untrustedAgentIdentityHeader(strings.ToLower(name)) {
+				delete(guarded.Header, name)
+			}
+		}
+		next.ServeHTTP(w, guarded)
 	})
+}
+
+// This denylist is defense in depth, not a replacement for mTLS and
+// independently checked tenant/device authorization on every operation.
+func untrustedAgentIdentityHeader(name string) bool {
+	switch name {
+	case "authorization", "proxy-authorization",
+		"x-tenant-id", "x-agent-id", "x-device-id", "x-user-id",
+		"x-forwarded-client-cert", "x-ssl-client-cert",
+		"x-verified-client-cert", "x-client-cert", "x-client-certificate",
+		"x-ssl-client-verify", "x-authenticated-user", "x-forwarded-user",
+		"x-remote-user", "x-forwarded-proto":
+		return true
+	default:
+		return false
+	}
 }
 
 func agentRouteIdentity(u *url.URL) (AgentIdentity, bool) {
