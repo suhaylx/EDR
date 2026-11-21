@@ -4,12 +4,12 @@ import {decodePolicyMetadata,decodePolicyAssignments,reviewPolicyEvidence,desire
  fetchPolicyMetadata,fetchPolicyAssignments} from '../.test-dist/policy-readonly.js';
 const digest='a'.repeat(64);
 const p=(id,patch={})=>({id,name:'Lab Sysmon',platform:'windows',revision:1,sha256:digest,
- xml:'<Sysmon><EventFiltering/></Sysmon>',created_at:'2026-11-21T12:00:00Z',...patch});
+ created_at:'2026-11-21T12:00:00Z',...patch});
 const a=(target_type,target_id,policy_id,patch={})=>({target_type,target_id,platform:'windows',policy_id,...patch});
 const e=(id,patch={})=>({id,group:'soc',platform:'windows',status:'online',
  applied_policy_id:'',applied_revision:0,last_policy_error:'',...patch});
 const base=(endpoints)=>({endpoints});
-test('Day2 decoder only returns bounded policy metadata, never XML',()=>{
+test('Day2 decoder only accepts bounded policy metadata without XML',()=>{
  const raw=p('p1');const value=decodePolicyMetadata([raw])[0];
  assert.deepEqual(Object.keys(value).sort(),['created_at','id','name','platform','revision','sha256'].sort());
  assert.equal(JSON.stringify(value).includes('<Sysmon>'),false);
@@ -19,9 +19,9 @@ test('Day2 empty policy/assignment catalogs are valid unknown coverage',()=>{
  assert.deepEqual(decodePolicyAssignments([]),[]);
  assert.equal(reviewPolicyEvidence(base([e('a')]),[],[])[0].status,'unassigned');
 });
-test('Day2 reject invalid XML source type even though UI never displays XML',()=>{
- assert.throws(()=>decodePolicyMetadata([p('p1',{xml:23})]),/XML/);
- assert.throws(()=>decodePolicyMetadata([p('p1',{xml:'x'.repeat(65537)})]),/XML/);
+test('Day2 fail closed if a legacy XML-bearing response reaches metadata decoder',()=>{
+ assert.throws(()=>decodePolicyMetadata([p('p1',{xml:'<Sysmon>SECRET</Sysmon>'})]),/Unexpected Sysmon XML/);
+ assert.throws(()=>decodePolicyMetadata([p('p1',{xml:''})]),/Unexpected Sysmon XML/);
 });
 test('Day2 reject duplicate IDs, invalid revisions, digest and timestamps',()=>{
  assert.throws(()=>decodePolicyMetadata([p('a'),p('a')]),/Duplicate/);
@@ -63,14 +63,16 @@ test('Day2 reported errors are not misrepresented as enforced policy',()=>{
  const rows=reviewPolicyEvidence(base([e('x',{applied_policy_id:'p1',applied_revision:1,last_policy_error:'failed'})]),
  decodePolicyMetadata([p('p1')]),decodePolicyAssignments([a('agent','x','p1')]));
  assert.equal(rows[0].status,'error_reported');
+ assert.equal(rows[0].errorReported,true);
+ assert.equal(JSON.stringify(rows[0]).includes('failed'),false);
 });
 test('Day2 policy GET sends bearer token, no cookies, no writes, no caching',async()=>{
  const calls=[],fetcher=async(url,options)=>{calls.push({url,options});
-  return {ok:true,json:async()=>url==='/api/policies'?[p('p1')]:[a('default','*','p1')]};
+  return {ok:true,json:async()=>url==='/api/policy-metadata'?[p('p1')]:[a('default','*','p1')]};
  };
  await fetchPolicyMetadata('t'.repeat(16),undefined,fetcher);
  await fetchPolicyAssignments('t'.repeat(16),undefined,fetcher);
- assert.deepEqual(calls.map(x=>x.url),['/api/policies','/api/assignments']);
+ assert.deepEqual(calls.map(x=>x.url),['/api/policy-metadata','/api/assignments']);
  for(const {options} of calls){
   assert.equal(options.method,'GET');assert.equal(options.credentials,'omit');
   assert.equal(options.cache,'no-store');assert.equal(options.headers.Authorization,'Bearer '+'t'.repeat(16));

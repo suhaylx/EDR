@@ -30,7 +30,9 @@ export function filterEndpointInventory(
 }
 
 export function policyEvidenceLabel(endpoint: EndpointActivity): string {
-  if (endpoint.last_policy_error.trim()) return 'Reported policy error: ' + endpoint.last_policy_error;
+  // The shared-token lab inventory has no role-specific right to display
+  // arbitrary endpoint error detail (paths, user names, scanner output, etc.).
+  if (endpoint.last_policy_error.trim()) return 'Reported policy error (details withheld; enforcement not verified)';
   if (!endpoint.applied_policy_id) return 'No applied policy acknowledgment reported';
   return 'Agent-reported applied policy ' + endpoint.applied_policy_id +
     ' (revision ' + endpoint.applied_revision + '); enforcement NOT VERIFIED';
