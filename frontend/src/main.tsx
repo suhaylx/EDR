@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
 import { describeScan, scanEngineEvidence } from './scan-state.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
+import { InvestigationView } from './InvestigationView.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -98,7 +99,7 @@ function App() {
   const [jobs, setJobs] = useState<LabScanJob[]>([]);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'scans'>('overview');
+  const [view, setView] = useState<'overview' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -137,6 +138,19 @@ function App() {
     }
   }
 
+  // Editing credentials invalidates previously fetched metrics and unmounts any
+  // active investigation. A stale scan result must not outlive its lab token.
+  function updateToken(value: string) {
+    request.current?.abort();
+    tokenRef.current = value;
+    setToken(value);
+    setJobs([]);
+    setOverview(null);
+    setLoadedAt(null);
+    setError('');
+    setStatus('disconnected');
+  }
+
   function disconnect() {
     request.current?.abort();
     tokenRef.current = '';
@@ -169,7 +183,7 @@ function App() {
         <p>Connect to a locally running Go API. The shared development token stays in this tab's memory; do not reuse production credentials.</p>
         <form className="form" onSubmit={e => { e.preventDefault(); void refresh(); }}>
           <label htmlFor="lab-token">Development API token</label>
-          <input id="lab-token" type="password" value={token} onChange={e => setToken(e.target.value)} autoComplete="off" placeholder="EDR_DEV_TOKEN" aria-describedby="token-note" />
+          <input id="lab-token" type="password" value={token} onChange={e => updateToken(e.target.value)} autoComplete="off" placeholder="EDR_DEV_TOKEN" aria-describedby="token-note" />
           <div id="token-note" className="minor">At least 16 characters. No token persistence; the current Go API is not production authentication.</div>
           <div className="actions">
             <button disabled={status === 'loading' || token.length < 16} type="submit">{status === 'loading' ? 'Loading…' : 'Connect / refresh'}</button>
@@ -181,6 +195,7 @@ function App() {
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
+        <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
       {view === 'overview' ? <>
         <section className="panel field compact-window">
@@ -192,7 +207,10 @@ function App() {
         </section>
         {status === 'ready' && overview ? <Overview overview={overview}/> :
           <section className="panel"><p className="empty">No current overview. Connect and refresh to request retained evidence for the selected UTC period.</p></section>}
-      </> : <section className="panel" aria-labelledby="history-title">
+      </> : view === 'investigations'
+        ? (status === 'ready' ? <InvestigationView token={token} /> :
+          <section className="panel"><p className="empty">Connect to the development API before requesting retained investigation evidence.</p></section>)
+        : <section className="panel" aria-labelledby="history-title">
         <div className="heading"><h2 id="history-title">Retained scan jobs</h2><span className="subtle">No automatic polling</span></div>
         <p>Queued and leased jobs are not completed scans. “Clean by signature” is not a claim that a file or endpoint is safe.</p>
         {status === 'ready' ? <ScanHistory jobs={jobs} /> : <p className="empty">No scan results displayed until a successful authenticated lab request.</p>}
