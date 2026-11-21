@@ -41,7 +41,7 @@ BEGIN
     '88888888-8888-4888-8888-888888888888',30) THEN
     RAISE EXCEPTION 'valid renewal rejected'; END IF;
   IF (SELECT lease_expires_at FROM edr_scan_jobs WHERE job_id=claimed.job_id)
-       <= before_expiry THEN RAISE EXCEPTION 'expiry not extended'; END IF;
+       < before_expiry THEN RAISE EXCEPTION 'renewal shortened lease'; END IF;
   IF (SELECT lease_expires_at FROM edr_scan_jobs WHERE job_id=claimed.job_id)
        > transaction_timestamp()+interval '31 seconds' THEN
     RAISE EXCEPTION 'renewal accumulates unbounded time'; END IF;

@@ -51,3 +51,14 @@ from authenticated device identity.
 This protocol is not a proof of running agent, secure key provisioning,
 signed MSI, production CA issuance, or end-to-end malware detection.
 Agent 1 InfoSec and Agent 3 QA sign-off are mandatory before release.
+
+## BE-020 acceptance checklist
+
+- [ ] Go CI and PostgreSQL 16 disposable migration chain pass on exact merged candidate SHA.
+- [ ] Agent 1 reviews mTLS issuer trust, tenant/device binding, lease-token secrecy and revocation races.
+- [ ] Agent 3 independently verifies stale token replay, renewal during disablement, retries and restart recovery.
+- [ ] Rust agent uses enrolled private key and verifies backend DNS/CA; no development bearer fallback.
+- [ ] Real ClamAV 1.5.5 detection and scanner-error tests run on isolated Windows and Linux lab endpoints.
+- [ ] Scan result schema is durable and distinguishes malicious, clean-by-signature, error and unscanned.
+- [ ] Signed packaging, rollback, audit trails and resource limits are approved before canary.
+- [ ] No merge, production listener or endpoint rollout without explicit approvals.
