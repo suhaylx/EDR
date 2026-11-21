@@ -36,8 +36,11 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "development token missing", 503)
 			return
 		}
-		auth := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(auth), []byte(s.Token)) != 1 {
+		// Require the actual Bearer authorization scheme. A raw token or
+		// Basic/unknown scheme must never authenticate a lab API request.
+		header := r.Header.Get("Authorization")
+		if !strings.HasPrefix(header, "Bearer ") ||
+			subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(header, "Bearer ")), []byte(s.Token)) != 1 {
 			http.Error(w, "unauthorized", 401)
 			return
 		}
