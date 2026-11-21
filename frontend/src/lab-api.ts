@@ -48,7 +48,7 @@ export function decodeScanJobs(value: unknown): LabScanJob[] {
     seen.add(id);
     const created = item.created_at;
     if (typeof created === 'string' && created !== '' &&
-      (!/^\\d{4}-\\d\\d-\\d\\dT/.test(created) || !Number.isFinite(Date.parse(created)))) {
+      (!/^\d{4}-\d\d-\d\dT/.test(created) || !Number.isFinite(Date.parse(created)))) {
       throw new Error('Invalid lab scan job UTC timestamp at record ' + (index + 1));
     }
     // Preserve server-reported fields without inventing missing metadata.
