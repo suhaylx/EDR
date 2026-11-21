@@ -142,7 +142,7 @@ Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared P
 
 ## M38–M62 verified five-role evidence checkpoint — 21 Nov 2026 (Asia/Tashkent)
 
-**Board:** [next 25 milestones M38–M62](SPRINT_M38_M62_20261121.md). **Shared PM-authored code** [draft PR #117](https://github.com/suhaylx/EDR/pull/117) head `7e59c813e8bcec1aa1bf7185452996b4c49a3a8a` protects Rust Unix client-key inode and bounds PEM; starter CI PASS and Rust CI was IN PROGRESS at first check. It does **not** demonstrate independent Agent 2 execution. Parent [PR #113](https://github.com/suhaylx/EDR/pull/113) starter/Rust CI PASS, [#112](https://github.com/suhaylx/EDR/pull/112) PostgreSQL CI 8/8 PASS. Actual Windows/Linux agent enrollment, ClamAV, Sysmon and deploy NOT RUN.
+**Board:** [next 25 milestones M38–M62](SPRINT_M38_M62_20261121.md). **Shared PM-authored code** [draft PR #117](https://github.com/suhaylx/EDR/pull/117) head `7e59c813e8bcec1aa1bf7185452996b4c49a3a8a` protects Rust Unix client-key inode and bounds PEM; **exact-head starter CI PASS (44931911463) and Rust CI PASS (44931911494, Ubuntu+Windows matrix both SUCCESS)**; formal InfoSec/QA and real-host acceptance NOT RUN. It does **not** demonstrate independent Agent 2 execution. Parent [PR #113](https://github.com/suhaylx/EDR/pull/113) starter/Rust CI PASS, [#112](https://github.com/suhaylx/EDR/pull/112) PostgreSQL CI 8/8 PASS. Actual Windows/Linux agent enrollment, ClamAV, Sysmon and deploy NOT RUN.
 
 | Role and priority | Exact new work order + checkpoint Asia/Tashkent | Verifiable source, actual test | Status and next corrective action |
 | --- | --- | --- | --- |
