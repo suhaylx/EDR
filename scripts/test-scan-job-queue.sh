@@ -197,6 +197,7 @@ SQL
 
 qa_tmp="$(mktemp -d)"
 export QA_RELEASE_FIFO="$qa_tmp/release"
+export QA_CLAIM_READY_FILE="$qa_tmp/claim-ready"
 mkfifo "$QA_RELEASE_FIFO"
 claim_pid=''
 qa_cleanup() {
@@ -221,7 +222,7 @@ BEGIN
     OR leased.attempt_count <> 1 THEN
     RAISE EXCEPTION 'first concurrent claim failed'; END IF;
 END $first_claim$;
-\echo QA_FIRST_CLAIM_HELD
+\! touch "$QA_CLAIM_READY_FILE"
 \! timeout 25 sh -c 'IFS= read -r response < "$QA_RELEASE_FIFO"'
 COMMIT;
 SQL
@@ -229,7 +230,7 @@ claim_pid=$!
 
 # Wait for a positive signal, not an arbitrary sleep. Fail if worker 1 exits.
 for ((i=0; i<100; i++)); do
-  if grep -q 'QA_FIRST_CLAIM_HELD' "$qa_tmp/worker1.log"; then break; fi
+  if [[ -f "$QA_CLAIM_READY_FILE" ]]; then break; fi
   if ! kill -0 "$claim_pid" 2>/dev/null; then
     cat "$qa_tmp/worker1.log"
     echo 'First concurrency worker exited before acquiring lease' >&2
@@ -237,7 +238,7 @@ for ((i=0; i<100; i++)); do
   fi
   sleep 0.1
 done
-if ! grep -q 'QA_FIRST_CLAIM_HELD' "$qa_tmp/worker1.log"; then
+if [[ ! -f "$QA_CLAIM_READY_FILE" ]]; then
   cat "$qa_tmp/worker1.log"
   echo 'Timed out waiting for first concurrency worker' >&2
   exit 1
