@@ -14,6 +14,7 @@ import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, typ
 import { isSafeLabBrowserOrigin } from './security-origin.js';
 import { fetchLabTelemetry, type LabTelemetryEvent } from './telemetry.js';
 import { SysmonCoverage } from './SysmonCoverage.js';
+import { EvidenceSnapshotReview } from './EvidenceSnapshotReview.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -132,7 +133,7 @@ function App() {
   const [scanSelection, setScanSelection] = useState<string | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'evidence' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -261,6 +262,7 @@ function App() {
       </section>
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
+        <button type="button" aria-current={view === 'evidence' ? 'page' : undefined} onClick={() => setView('evidence')}>Evidence snapshot</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
         <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);
@@ -278,7 +280,13 @@ function App() {
         </section>
         {status === 'ready' && overview ? <Overview overview={overview}/> :
           <section className="panel"><p className="empty">No current overview. Connect and refresh to request retained evidence for the selected UTC period.</p></section>}
-      </> : view === 'endpoints' ?
+      </> : view === 'evidence' ?
+        (status === 'ready' && overview ?
+          <EvidenceSnapshotReview overview={overview} detections={detections} events={events} jobs={jobs}/> :
+          <section className="panel"><h2>Evidence snapshot unavailable</h2>
+            <p className="empty">Connect and refresh all four lab sources before reviewing
+              response sample consistency. No previous or partial data is displayed.</p></section>)
+        : view === 'endpoints' ?
         (status === 'ready' && overview ? <EndpointInventory overview={overview}/> :
           <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
         : view === 'telemetry' ?
