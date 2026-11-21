@@ -39,9 +39,12 @@ jobs:
           Copy-Item -LiteralPath $source -Destination $exe
           & $exe
           if ($LASTEXITCODE -ne 0) { throw "Windows agent CLI smoke test failed" }
+          & $exe --telemetry-once
+          if ($LASTEXITCODE -ne 2) { throw "Invalid telemetry arguments must fail with exit code 2" }
+          $global:LASTEXITCODE = 0 # Expected failure must not leak as job exit status
           $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  TuranSec-EDR-Lab-Agent.exe" | Set-Content -Path dist/win-x64-lab/SHA256SUMS.txt -Encoding Ascii
-          Copy-Item docs/WINDOWS_AGENT_QUICKSTART.md dist/win-x64-lab/README.md
+          Copy-Item docs/WINDOWS_TELEMETRY_QUICKSTART.md dist/win-x64-lab/README.md
           Write-Output "Windows executable SHA256: $hash"
       - name: Publish unsigned lab portable EXE
         uses: actions/upload-artifact@v4
