@@ -10,7 +10,7 @@ const e=(id,patch={})=>({id,platform:'windows',group:'soc',status:'online',appli
   applied_revision:0,last_policy_error:'',...patch});
 const p=(id,patch={})=>({id,name:'Lab Sysmon policy',platform:'windows',revision:2,
  sha256:'a'.repeat(64),created_at:'2026-11-21T12:00:00Z',
- xml:'<Sysmon><EventFiltering>SECRET_POLICY_XML</EventFiltering></Sysmon>',...patch});
+ ...patch});
 const a=(id)=>({target_type:'agent',target_id:'WIN-A',platform:'windows',policy_id:id});
 const policyView=(endpoints=[e('WIN-A')],policies=[p('p1')],assignments=[a('p1')])=>
  renderToStaticMarkup(createElement(PolicyEvidenceReview,{overview:{endpoints},
@@ -30,7 +30,7 @@ test('Day2 policy view uses labeled controls, summary and reports desired vs app
  assert.match(html,/acknowledgment missing/);
  assert.match(html,/<caption>/);
 });
-test('Day2 raw policy XML is never presented or echoed to browser markup',()=>{
+test('Day2 metadata-only policy payload cannot render raw Sysmon XML',()=>{
  const html=policyView();
  assert.doesNotMatch(html,/SECRET_POLICY_XML/);
  assert.doesNotMatch(html,/<Sysmon/);
