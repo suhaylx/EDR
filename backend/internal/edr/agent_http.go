@@ -55,8 +55,35 @@ func AgentHTTPGuard(registry AgentIdentityRegistry, next http.Handler) http.Hand
 			return
 		}
 		ctx := context.WithValue(r.Context(), agentIdentityContextKey{}, identity)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		// SEC-051/052: do not pass a client's asserted identity, forwarded
+		// TLS certificate, or dev bearer credential to agent handlers. Every
+		// downstream operation must use the verified AgentIdentity in ctx.
+		// Clone headers first to avoid mutating the caller's original request.
+		guarded := r.WithContext(ctx)
+		guarded.Header = r.Header.Clone()
+		for name := range guarded.Header {
+			if untrustedAgentIdentityHeader(strings.ToLower(name)) {
+				delete(guarded.Header, name)
+			}
+		}
+		next.ServeHTTP(w, guarded)
 	})
+}
+
+// This is a strict denylist for client-controlled identity-like headers, not
+// a substitute for mTLS identity or tenant/device authorization.
+func untrustedAgentIdentityHeader(name string) bool {
+	switch name {
+	case "authorization", "proxy-authorization",
+		"x-tenant-id", "x-agent-id", "x-device-id", "x-user-id",
+		"x-forwarded-client-cert", "x-ssl-client-cert",
+		"x-verified-client-cert", "x-client-cert", "x-client-certificate",
+		"x-ssl-client-verify", "x-authenticated-user", "x-forwarded-user",
+		"x-remote-user", "x-forwarded-proto":
+		return true
+	default:
+		return false
+	}
 }
 
 func agentRouteIdentity(u *url.URL) (AgentIdentity, bool) {
