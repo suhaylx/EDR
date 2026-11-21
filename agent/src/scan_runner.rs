@@ -2,6 +2,7 @@
 //! Not an autostart endpoint service. Refuses a boolean-only success fallback.
 use crate::scan_file::{scan_claimed_file, Outcome};
 use crate::scan_mtls::AgentClient;
+use crate::scan_jobs::unsafe_scan_text;
 use std::env;
 use std::fs;
 use std::io::{self};
@@ -39,7 +40,7 @@ fn safe_verdict(outcome: &Outcome) -> (&'static str,String,&'static str) {
     match outcome {
         Outcome::CleanBySignature => ("clean_by_signature",String::new(),"ClamAV signature scan completed; not proof of safety"),
         Outcome::Malicious(name) if name.len()<=256
-            && !name.is_empty() && !name.chars().any(char::is_control) =>
+            && !name.is_empty() && !unsafe_scan_text(name) =>
             ("malicious",name.clone(),"Signature matched; investigate and contain by approved policy"),
         Outcome::Malicious(_) | Outcome::Error =>
             ("error",String::new(),"Scan could not produce a valid trusted ClamAV verdict"),
@@ -155,6 +156,8 @@ mod tests {
     fn be094_refuses_invalid_signature_as_valid_detection() {
         let (kind,_,_) = safe_verdict(&Outcome::Malicious("bad\nname".into()));
         assert_eq!(kind,"error");
+        let (bidi,_,_)=safe_verdict(&Outcome::Malicious("spoof\u{202e}name".into()));
+        assert_eq!(bidi,"error");
     }
     #[test]
     fn be095_scanner_error_cannot_be_clean() {
