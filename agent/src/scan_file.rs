@@ -133,8 +133,8 @@ pub fn clamd_ready() -> bool {
             let _=connection.set_read_timeout(Some(Duration::from_secs(2)));
             let _=connection.set_write_timeout(Some(Duration::from_secs(2)));
             let mut answer=[0u8;5];
-            return connection.write_all(b"zPING\\0").is_ok() &&
-                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\\0";
+            return connection.write_all(b"zPING\0").is_ok() &&
+                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\0";
         }
     }
     #[cfg(windows)]
@@ -145,8 +145,8 @@ pub fn clamd_ready() -> bool {
             let _=connection.set_read_timeout(Some(Duration::from_secs(2)));
             let _=connection.set_write_timeout(Some(Duration::from_secs(2)));
             let mut answer=[0u8;5];
-            return connection.write_all(b"zPING\\0").is_ok() &&
-                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\\0";
+            return connection.write_all(b"zPING\0").is_ok() &&
+                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\0";
         }
     }
     false
