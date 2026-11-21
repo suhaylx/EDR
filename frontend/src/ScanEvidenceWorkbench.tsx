@@ -167,15 +167,15 @@ export function ScanEvidenceWorkbench({jobs,onInspectContext}: {
                 <div><dt>Reported engine</dt><dd>{job.engine || 'not reported'}</dd></div>
                 <div><dt>Engine version</dt><dd>{job.engine_version || 'not reported'}</dd></div>
                 <div><dt>Signature DB version</dt><dd>{job.database_version || 'not reported'}</dd></div>
-                <div><dt>Signature name</dt><dd>{job.threat_name || 'not reported'}</dd></div>
-                <div><dt>Worker detail</dt><dd>{job.detail || 'not reported'}</dd></div>
+                <div><dt>Reported signature indicator</dt><dd>{job.signature_reported || !!job.threat_name?.trim() ? 'Present (name withheld)' : 'Not reported'}</dd></div>
+                <div><dt>Worker detail</dt><dd>Withheld from analyst metadata view</dd></div>
               </dl>
               {flags.length>0 && <div className="scan-evidence-warnings">
                 <strong>Inconsistent/missing reported metadata</strong>
                 <ul>{flags.map(flag=><li key={flag}>{SCAN_FLAG_LABELS[flag]}</li>)}</ul>
               </div>}
-              <p className="minor">Raw strings are unverified laboratory reports
-                rendered as text; this view cannot attest ClamAV signature
+              <p className="minor">Only bounded, redacted laboratory metadata is displayed;
+                this view cannot attest ClamAV signature
                 updates, scan execution or tamper resistance.</p>
             </details></td>
             {onInspectContext && <td><button type="button" className="source-button"
