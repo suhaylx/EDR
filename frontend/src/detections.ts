@@ -14,6 +14,9 @@ export type LabDetection = {
   process_image: string;
   module_path: string;
   load_event_id: string;
+  evidence_event_id: string;
+  target_object: string;
+  evidence_source_event_id: number;
   file_create_event_id: string;
   observed_at: string;
   explanation: string;
@@ -48,14 +51,25 @@ export function decodeLabDetections(raw: unknown): LabDetection[] {
       process_guid: text(d.process_guid, 'process_guid'),
       process_image: text(d.process_image, 'process_image'),
       module_path: text(d.module_path, 'module_path'),
-      load_event_id: text(d.load_event_id, 'load_event_id'),
+      load_event_id: text(d.load_event_id, 'load_event_id', true),
+      evidence_event_id: text(d.evidence_event_id, 'evidence_event_id', true),
+      target_object: text(d.target_object, 'target_object', true),
+      evidence_source_event_id: d.evidence_source_event_id === undefined || d.evidence_source_event_id === null ? 0 : Number(d.evidence_source_event_id),
       file_create_event_id: text(d.file_create_event_id, 'file_create_event_id', true),
       observed_at: text(d.observed_at, 'observed_at'),
       explanation: text(d.explanation, 'explanation'),
     };
+    // Agent 1 behavioral signals may have no process GUID or DLL load.
+    // Keep their real primary evidence ID, never fabricate a DLL observation.
+    const primaryID = item.evidence_event_id || item.load_event_id;
     if (!safeID(item.id, 160) || !safeID(item.device_id, 96) ||
-        !safeID(item.process_guid, 160) || !safeID(item.load_event_id, 256)) {
-      throw new Error('Detection missing bounded endpoint, process or source identity at record ' + (index + 1));
+        (item.process_guid !== '' && !safeID(item.process_guid, 160)) ||
+        !safeID(primaryID, 256) || item.target_object.length > 1024 ||
+        !Number.isInteger(item.evidence_source_event_id) || item.evidence_source_event_id < 0 ||
+        item.evidence_source_event_id > 255 ||
+        (item.evidence_source_event_id !== 0 &&
+          !((item.evidence_source_event_id >= 1 && item.evidence_source_event_id <= 29) || item.evidence_source_event_id === 255))) {
+      throw new Error('Detection missing bounded endpoint, evidence source or valid Sysmon ID at record ' + (index + 1));
     }
     const time = Date.parse(item.observed_at);
     if (!Number.isFinite(time) || !/^\d{4}-\d\d-\d\dT/.test(item.observed_at)) {
