@@ -407,14 +407,27 @@ func validateSysmonSourceFields(e Event) error {
     return nil
 }
 
+// Keep API-accepted text within the stricter React and Go-served SOC display
+// contracts. One oversized value must not make the full telemetry view fail.
+// Benign tabs/newlines are allowed in descriptive text, never C0/C1 controls.
+func validDisplayText(value string) bool {
+	return strings.IndexFunc(value, func(r rune) bool {
+		return (r < 0x20 && r != '\t' && r != '\n' && r != '\r') ||
+			r == 0x7f || r == 0xfffd
+	}) < 0
+}
+
 func (s *Store) Ingest(e Event) (Event, error) {
 	if !validID(e.DeviceID) {
 		return Event{}, errors.New("invalid device id")
 	}
 	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 ||
 		len(e.Source) > 128 || len(e.BootID) > 128 || len(e.ProcessGUID) > 128 ||
-		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
-		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
+		len(e.ParentProcessGUID) > 128 || len(e.Image) > 1024 ||
+		len(e.FilePath) > 1024 || len(e.Hash) > 256 ||
+		!validDisplayText(e.Type) || !validDisplayText(e.Source) ||
+		!validDisplayText(e.Image) || !validDisplayText(e.FilePath) ||
+		!validDisplayText(e.Detail) {
 		return Event{}, errors.New("invalid event fields")
 	}
 	if err := validateEventProvider(e); err != nil {
