@@ -1,6 +1,7 @@
 package edr
 
 import (
+	"strings"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -19,8 +20,8 @@ func TestDLLCreateIsNotDLLExecution(t *testing.T) {
 func TestActualModuleLoadRequiredAndEnriched(t *testing.T) {
 	now := time.Now().UTC()
 	path := `C:\Users\Alice\AppData\Local\Temp\plugin.dll`
-	creation := Event{ID: "create-1", Platform: "windows", DeviceID: "win-01", Type: "file_create", FilePath: path, Hash: "sha256sample", BootID: "boot-a", Time: now}
-	load := Event{ID: "load-1", Platform: "windows", DeviceID: "win-01", Type: "module_load", FilePath: path, Image: `C:\Windows\System32\rundll32.exe`, ProcessGUID: "{one}", Hash: "sha256sample", BootID: "boot-a", Time: now.Add(time.Minute)}
+	creation := Event{ID: "create-1", Platform: "windows", DeviceID: "win-01", Type: "file_create", FilePath: path, Hash: strings.Repeat("b", 64), BootID: "boot-a", Time: now}
+	load := Event{ID: "load-1", Platform: "windows", DeviceID: "win-01", Type: "module_load", FilePath: path, Image: `C:\Windows\System32\rundll32.exe`, ProcessGUID: "{one}", Hash: strings.Repeat("b", 64), BootID: "boot-a", Time: now.Add(time.Minute)}
 	alerts := DetectSuspiciousDLLLoads([]Event{creation, load})
 	if len(alerts) != 1 || alerts[0].LoadEventID != "load-1" || alerts[0].FileCreateEventID != "create-1" {
 		t.Fatalf("expected a linked, actually loaded DLL detection: %+v", alerts)
