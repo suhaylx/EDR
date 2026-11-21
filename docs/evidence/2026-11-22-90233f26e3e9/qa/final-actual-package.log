@@ -1,0 +1,7 @@
+PASS: actual Linux archive matches the independently pinned manifest and complete file inventory
+PASS: installer, configuration templates, migrations and installation-manual links resolve inside the package
+PASS: both actual packaged executables report the requested complete source SHA
+PASS: packaged installer, launcher, release preparation and verifier CLIs resolve their imports
+PASS: actual archive dry-run and temporary staging complete without selecting or starting a service
+PASS: packaged release helper creates valid checksums and leaves Windows explicitly absent
+LIMIT: unsigned local engineering archive; no native service activation, signing or deployment-host acceptance

@@ -1,0 +1,5 @@
+PASS: supported dotted or96-character enrolled identity accepted
+PASS: supported dotted or96-character enrolled identity accepted
+PASS: unsupported identity rejected
+PASS: unsupported identity rejected
+PASS: unsupported identity rejected

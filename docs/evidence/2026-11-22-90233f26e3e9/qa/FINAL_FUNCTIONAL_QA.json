@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "reviewed_at": "2026-11-21T20:29:05.524141+00:00",
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "tree": "6f2272b81541dd3efaaab73c6327a44d8c42d2b3",
+  "reviewer": "fresh independent functional QA; not original Agent3 owner",
+  "functional_verdict": "APPROVE for exercised workflows at this exact SHA",
+  "full_acceptance_verdict": "NOT APPROVED",
+  "release_verdict": "NO-GO",
+  "additional_infosec_review": "NOT APPROVED; stopped by automatic filtering as reported by root; this review did not retry or replace it",
+  "independent_execution": {
+    "backend_build_tests_race_vet": "PASS",
+    "frontend_typecheck_build": "PASS",
+    "frontend_tests": {
+      "passed": 374,
+      "failed": 0
+    },
+    "compiled_soc_client_actual_go_postgres": {
+      "checks_passed": 10,
+      "single_mutation_posts": 8,
+      "independent_sql_confirmation": "PASS"
+    },
+    "release_tests": {
+      "signature_rollback": 12,
+      "host_collector": 8,
+      "release_helper": 8,
+      "linux_installer": 36,
+      "all_passed": true
+    },
+    "actual_linux_package": {
+      "files_verified": 38,
+      "bytes": 10741228,
+      "sha256": "f70c3fc435b2d2e7dc96346bed14ac6546335824b2d1a7b45598acfe051e3fcc",
+      "manifest_sha256": "f70aa9ae5e64f7a94acfe7abc3174c1ea5aaf267eaa717f64f318a13f0d43825",
+      "binary_source_ids_verified": 2,
+      "temporary_stage_and_cli_checks": "PASS",
+      "publisher_signature": "absent"
+    }
+  },
+  "unwaived_gates": [
+    "Exact-head GitHub candidate-ci run44946276402 failed; all8 jobs have no executed steps and runner_id0 in inspected raw record",
+    "Actual browser/accessibility execution remains unexecuted; full frontend gate failed",
+    "Full Rust native gate failed with59 passed,1 Unix-socket EPERM failure,0 ignored; native Windows not established",
+    "Additional InfoSec review and original owner assignment acceptance remain unapproved",
+    "Approved Windows and Ubuntu deployment-host/scanner/Sysmon/service acceptance remains outstanding",
+    "Trusted package signing, native installed-service/database rollback and deployment authorization remain outstanding"
+  ],
+  "source_edits_by_reviewer": false,
+  "merge_or_deployment_performed": false,
+  "evidence": [
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/FINAL_FUNCTIONAL_QA.md",
+      "sha256": "11b035056be55c0e34504cbadba24b8dcdf7f4909a9c860819073dd4c4f4ddb3",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-source-manifest.json",
+      "sha256": "0a861661995044206093df0a612b096f21944a4fc8962f24e381ec93535040c2",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-github-readback.json",
+      "sha256": "1ceadd524d6a34b1ac0696f68d189c40f2a17075e3cee899b833cdeabd281abb",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-backend.log",
+      "sha256": "21ff51b5146cc8a93b0ae0000cfd40cf301fa35604056c31faecc5ff12f4e4f3",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-frontend.json",
+      "sha256": "c3efdc5971df7dfde4d49807d49ee1d84d9343f80cb1622598f388b47e3de8af",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-frontend.log",
+      "sha256": "35044b4123d4585b4b0de61e0d62cd4339774ea69162860b7d68aea377aee30c",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-release-tools.log",
+      "sha256": "e392a28ecbecbeeda042ec5841eee1c3fe31a289c85af6ae15cd78bbef743f5d",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-soc-client-functional.log",
+      "sha256": "aef35de2fcee76392902068fde006a39890a560cc52849d971c036d96f378242",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-actual-package.log",
+      "sha256": "f9f5b18650314fdd8310cd75f5533f7bff5d586bac97c4408d0e82bb163ec1c3",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-installer-cli.log",
+      "sha256": "2e8d7e9193065fdef332233cd6db5f13812d84a7e737b77d18ad1909e1731812",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-prepare-cli.log",
+      "sha256": "95411f7dcb8a6f246ce67e15c33bc6c386bd912f50ca624274d69713d0f96fd3",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/soc-client/source-manifest.json",
+      "sha256": "59d86ca4c995478230d4b83159142a70cfe08290250e798ca2693b3d33250f01",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/agent-config-identity-contract.log",
+      "sha256": "2df9147d048a8fadb0a653922a3e4ae856f26c4001ed54b08a560115d81b4dcd",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/agent-config-identity-recheck.log",
+      "sha256": "a30a284e185eff6129f2fb238523430c7d3b4634f75c04718ca255d5e2b7bebf",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-candidate/.quality-evidence/backend-linux.json",
+      "sha256": "bea2b3bdf5e0f1b99d1d82416d0c8b3b2d0d4c909cff59cd21b521041450d762",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-round2/final-candidate/.quality-evidence/release-tools-linux.json",
+      "sha256": "e60e168bc33963dfc62b7b8e7da265dcc6b1cbaa6b3dbbfcb19c0ec86c38fe44",
+      "attribution": "independent functional QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-linux.json",
+      "sha256": "41cd00e88324b70d53975552ed27608882502b4541a434752258fe5d5b0581ed",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-seed-linux.json",
+      "sha256": "95a43c10a4e44328a75d394d51d7ea7eb120f000542b74152bffd7c06d6326f4",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-verify-linux.json",
+      "sha256": "54a53db4d92a7848c73df38ef5b865f86ba22049dcc5947bc1858d39b053a6dc",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integration-linux.json",
+      "sha256": "9d625842281991455f10c0939c6b30bd097863acaa7b4d36d87142026bbbfb5a",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integrated-candidate.json",
+      "sha256": "ef0ae9ce0f6fea1631780d8bfef958a99bc9333581fe148e80d8e8ddd909ed79",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/frontend-linux.json",
+      "sha256": "b634e58188d4a3f16bbe986882f26964c594e2c6c93512b95018e719139cb7c5",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/rust-linux.json",
+      "sha256": "c2e11664777b4c12b332b2a3e44e510eca3601afd75fefef084b7c8472f85b1c",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/evidence-round2/github-exact-head-ci.json",
+      "sha256": "9d6826607e646a34345c3a7264d80e63ce740e0a1a0c5e341d405e1e45664d21",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/evidence-round2/typed-nil-before-fix.log",
+      "sha256": "54384b47b269aba5b5cbade2fe1a9c38c213c60eb15d47ec04ef34603974b9c3",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/evidence-round2/typed-nil-after-fix.log",
+      "sha256": "3cdde9f05f449c07f4311cb4a82f66f2c8fa87608748ce1652a07ede2352e580",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/release-files-v0.1.0-rc.1/release.json",
+      "sha256": "8c2ee073e562cbe4b8a42c70187e3add880725531b0eab7ec5491febe54a5e02",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/release-files-v0.1.0-rc.1/turansec-edr-90233f26e3e9-linux-x86_64-unsigned.manifest.json",
+      "sha256": "f70aa9ae5e64f7a94acfe7abc3174c1ea5aaf267eaa717f64f318a13f0d43825",
+      "attribution": "root or release owner execution; independently inspected by QA"
+    }
+  ]
+}

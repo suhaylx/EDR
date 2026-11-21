@@ -1,0 +1,18 @@
+Candidate: 90233f26e3e93b2d777cf1e07ca6f2fd479f5b82
+Started: 2026-11-21T20:27:48.537568+00:00
+
+=== PostgreSQL candidate verify ===
+BEGIN
+DO
+DELETE 4
+DELETE 3
+COMMIT
+Actual PostgreSQL service restart: challenge consumption, expiry and tenant isolation persisted
+DO
+BEGIN
+DELETE 3
+DELETE 3
+DELETE 1
+COMMIT
+Actual PostgreSQL service restart: pending/leased/recovery/replay persisted
+PASS: PostgreSQL candidate verify phase

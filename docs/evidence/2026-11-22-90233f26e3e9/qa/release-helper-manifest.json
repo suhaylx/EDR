@@ -1,0 +1,21 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "files": [
+    {
+      "path": "scripts/release/prepare-release.py",
+      "sha256": "9bdecb315f0347f56434231252119746c6d214d65da74c32f37734b197a7d5ff"
+    },
+    {
+      "path": "scripts/release/test_prepare_release.py",
+      "sha256": "d32b7fdb2b7730216e121a32301d7799eb2f6178a2ed3145ad4af44a2c7b13cb"
+    },
+    {
+      "path": ".github/workflows/release-candidate.yml",
+      "sha256": "5ec15602c551bfb4847b6e7833242b73745283424bb43f2e4bbcbffc7d61e01d"
+    },
+    {
+      "path": "docs/release/BUILD_RELEASE_FILES.md",
+      "sha256": "f6f378a5f9cbde089e49abd386288b357f45ae92d1806f927f10d3bccc6f91df"
+    }
+  ]
+}

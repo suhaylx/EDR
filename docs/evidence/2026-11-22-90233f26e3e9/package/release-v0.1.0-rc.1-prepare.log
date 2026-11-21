@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "version": "v0.1.0-rc.1",
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "status": "unsigned-engineering-candidate",
+  "artifacts": [
+    {
+      "target": "linux-x86_64",
+      "name": "turansec-edr-90233f26e3e9-linux-x86_64-unsigned.tar.gz",
+      "bytes": 10741228,
+      "sha256": "f70c3fc435b2d2e7dc96346bed14ac6546335824b2d1a7b45598acfe051e3fcc",
+      "manifest": "turansec-edr-90233f26e3e9-linux-x86_64-unsigned.manifest.json",
+      "manifest_sha256": "f70aa9ae5e64f7a94acfe7abc3174c1ea5aaf267eaa717f64f318a13f0d43825",
+      "publisher_signature": "absent"
+    }
+  ],
+  "native_platforms_not_built": [
+    "windows-x86_64"
+  ],
+  "deployment_authorization": "not-granted",
+  "acceptance": "Consult exact-SHA CI, independent reviews and native host evidence separately"
+}

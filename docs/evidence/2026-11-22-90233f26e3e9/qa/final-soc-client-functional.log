@@ -1,0 +1,13 @@
+PASS: Actual Go query responses decode into the expanded SOC snapshot
+PASS: Compiled SOC client ack operation persists and reloads its actual case response
+PASS: Compiled SOC client note operation persists and reloads its actual case response
+PASS: Compiled SOC client assign operation persists and reloads its actual case response
+PASS: Compiled SOC client unassign operation persists and reloads its actual case response
+PASS: Compiled SOC client resolve operation persists and reloads its actual case response
+PASS: Compiled SOC client reopen operation persists and reloads its actual case response
+PASS: Compiled SOC client schedules a path scan and decodes pending/no-result detail
+PASS: Compiled SOC client cancels its pending scan and reloads actual job/stat responses
+PASS: Actual PostgreSQL activity contains the complete exercised case workflow
+{"result":"PASS","checks":10,"mutation_posts":8,"scope":"compiled frontend API client + actual Go/PostgreSQL, temporary local mTLS fixture","browser_acceptance":"not-executed","infosec_approval":"not-claimed"}
+PASS: independent administrator read confirms exactly two persisted jobs and the new job cancelled
+LIMIT: synthetic detection seed; no real scanner, browser, service-manager or deployment-host acceptance

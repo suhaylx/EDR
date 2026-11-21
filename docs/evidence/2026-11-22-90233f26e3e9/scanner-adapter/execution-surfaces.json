@@ -1,0 +1,27 @@
+{
+  "observed_at_utc": "2026-11-21T20:12:25.204900+00:00",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "native_ui": {
+    "os_family": "Linux",
+    "open_windows": [
+      "Chromium new tab"
+    ],
+    "remote_windows_client_or_session_found": false
+  },
+  "available_cli": {
+    "ssh": true,
+    "pwsh": false,
+    "powershell": false,
+    "wine": false,
+    "docker": false,
+    "podman": false,
+    "qemu-system-x86_64": false
+  },
+  "connector_findings": {
+    "remote_execution_or_ssh_connector_found": false,
+    "github_managed_connection_available": true,
+    "github_runner_admin_routes_supported": false
+  },
+  "no_credentials_used_or_requested": true,
+  "no_runner_registration_or_settings_changes": true
+}

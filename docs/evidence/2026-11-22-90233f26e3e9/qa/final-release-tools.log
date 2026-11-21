@@ -1,0 +1,97 @@
+
+=== Signature tamper rejection and filesystem rollback regressions ===
+test_external_candidate_rejected (__main__.AtomicReleaseSwitchTests.test_external_candidate_rejected) ... ok
+test_failed_health_restores_previous_and_rechecks_it (__main__.AtomicReleaseSwitchTests.test_failed_health_restores_previous_and_rechecks_it) ... ok
+test_failed_rollback_health_is_not_reported_as_success (__main__.AtomicReleaseSwitchTests.test_failed_rollback_health_is_not_reported_as_success) ... ok
+test_pending_activation_requires_recovery (__main__.AtomicReleaseSwitchTests.test_pending_activation_requires_recovery) ... ok
+test_restart_failure_restores_previous (__main__.AtomicReleaseSwitchTests.test_restart_failure_restores_previous) ... ok
+test_success_preserves_previous_release (__main__.AtomicReleaseSwitchTests.test_success_preserves_previous_release) ... ok
+test_archive_tampering_rejected (__main__.PackageSignatureTests.test_archive_tampering_rejected) ... ok
+test_different_candidate_rejected (__main__.PackageSignatureTests.test_different_candidate_rejected) ... ok
+test_manifest_tampering_rejected (__main__.PackageSignatureTests.test_manifest_tampering_rejected) ... 4057533F0A7F0000:error:02000068:rsa routines:ossl_rsa_verify:bad signature:../crypto/rsa/rsa_sign.c:441:
+4057533F0A7F0000:error:1C880004:Provider routines:rsa_verify_directly:RSA lib:../providers/implementations/signature/rsa_sig.c:1054:
+ok
+test_missing_signature_rejected (__main__.PackageSignatureTests.test_missing_signature_rejected) ... ok
+test_valid_signature_binds_source_and_archive (__main__.PackageSignatureTests.test_valid_signature_binds_source_and_archive) ... ok
+test_wrong_trust_root_rejected (__main__.PackageSignatureTests.test_wrong_trust_root_rejected) ... 4067C8CB057F0000:error:0200008A:rsa routines:RSA_padding_check_PKCS1_type_1:invalid padding:../crypto/rsa/rsa_pk1.c:78:
+4067C8CB057F0000:error:02000072:rsa routines:rsa_ossl_public_decrypt:padding check failed:../crypto/rsa/rsa_ossl.c:788:
+4067C8CB057F0000:error:1C880004:Provider routines:rsa_verify_directly:RSA lib:../providers/implementations/signature/rsa_sig.c:1054:
+ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.549s
+
+OK
+
+=== Host evidence attribution and signature regressions ===
+test_actual_crypto_valid_signature_then_tamper_rejected (__main__.EvidenceBoundaryTests.test_actual_crypto_valid_signature_then_tamper_rejected) ... ok
+test_manifest_escape_rejected (__main__.EvidenceBoundaryTests.test_manifest_escape_rejected) ... ok
+test_scanner_refuses_non_eicar_input_before_execution (__main__.EvidenceBoundaryTests.test_scanner_refuses_non_eicar_input_before_execution) ... ok
+test_supplied_trust_root_inside_archive_rejected (__main__.EvidenceBoundaryTests.test_supplied_trust_root_inside_archive_rejected) ... ok
+test_symlink_artifact_rejected (__main__.EvidenceBoundaryTests.test_symlink_artifact_rejected) ... ok
+test_tampered_artifact_rejected (__main__.EvidenceBoundaryTests.test_tampered_artifact_rejected) ... ok
+test_unsigned_hash_match_is_not_publisher_approval (__main__.EvidenceBoundaryTests.test_unsigned_hash_match_is_not_publisher_approval) ... ok
+test_wrong_sha_rejected (__main__.EvidenceBoundaryTests.test_wrong_sha_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.106s
+
+OK
+
+=== Release record source, artifact and path integrity ===
+test_archive_path_escape_rejected (__main__.ReleasePreparationTests.test_archive_path_escape_rejected) ... ok
+test_archive_symlink_rejected (__main__.ReleasePreparationTests.test_archive_symlink_rejected) ... ok
+test_archive_tamper_rejected_before_metadata (__main__.ReleasePreparationTests.test_archive_tamper_rejected_before_metadata) ... ok
+test_malformed_manifest_structure_rejected (__main__.ReleasePreparationTests.test_malformed_manifest_structure_rejected) ... ok
+test_metadata_symlink_and_overwrite_rejected (__main__.ReleasePreparationTests.test_metadata_symlink_and_overwrite_rejected) ... ok
+test_records_only_actual_target_and_unsigned_state (__main__.ReleasePreparationTests.test_records_only_actual_target_and_unsigned_state) ... ok
+test_stable_or_injected_version_rejected (__main__.ReleasePreparationTests.test_stable_or_injected_version_rejected) ... ok
+test_wrong_source_and_missing_native_target_rejected (__main__.ReleasePreparationTests.test_wrong_source_and_missing_native_target_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.004s
+
+OK
+
+=== Linux installer, activation recovery and authenticated health ===
+test_dry_run_writes_nothing_and_starts_nothing (__main__.BundleTests.test_dry_run_writes_nothing_and_starts_nothing) ... ok
+test_input_snapshot_cannot_change_after_verification (__main__.BundleTests.test_input_snapshot_cannot_change_after_verification) ... ok
+test_post_stage_tampering_blocks_registration (__main__.BundleTests.test_post_stage_tampering_blocks_registration) ... ok
+test_prefix_symlink_is_not_followed (__main__.BundleTests.test_prefix_symlink_is_not_followed) ... ok
+test_setuid_archive_member_rejected (__main__.BundleTests.test_setuid_archive_member_rejected) ... ok
+test_traversal_symlink_and_extra_members_rejected (__main__.BundleTests.test_traversal_symlink_and_extra_members_rejected) ... ok
+test_unsigned_stage_requires_explicit_independent_digest (__main__.BundleTests.test_unsigned_stage_requires_explicit_independent_digest) ... ok
+test_valid_stage_is_idempotent_and_never_starts_services (__main__.BundleTests.test_valid_stage_is_idempotent_and_never_starts_services) ... ok
+test_wrong_unsigned_digest_rejected (__main__.BundleTests.test_wrong_unsigned_digest_rejected) ... ok
+test_active_dynamic_identity_does_not_block_uninstall (__main__.LauncherTests.test_active_dynamic_identity_does_not_block_uninstall) ... ok
+test_agent_configuration_rejects_privileged_groups_and_unbounded_batch (__main__.LauncherTests.test_agent_configuration_rejects_privileged_groups_and_unbounded_batch) ... ok
+test_agent_launcher_keeps_credentials_out_of_values_and_bounds_actions (__main__.LauncherTests.test_agent_launcher_keeps_credentials_out_of_values_and_bounds_actions) ... ok
+test_enrolled_identity_contract_matches_go_and_rust (__main__.LauncherTests.test_enrolled_identity_contract_matches_go_and_rust) ... ok
+test_existing_static_reserved_identity_is_not_adopted (__main__.LauncherTests.test_existing_static_reserved_identity_is_not_adopted) ... ok
+test_runtime_symlink_is_not_overwritten (__main__.LauncherTests.test_runtime_symlink_is_not_overwritten) ... ok
+test_server_uses_read_only_credentials_and_clears_inherited_environment (__main__.LauncherTests.test_server_uses_read_only_credentials_and_clears_inherited_environment) ... ok
+test_systemctl_absence_requires_explicit_missing_inactive_properties (__main__.LauncherTests.test_systemctl_absence_requires_explicit_missing_inactive_properties) ... ok
+test_real_mtls_probe_accepts_only_the_expected_session (__main__.LoopbackHealthTests.test_real_mtls_probe_accepts_only_the_expected_session) ... ok
+test_real_mtls_probe_does_not_follow_redirects (__main__.LoopbackHealthTests.test_real_mtls_probe_does_not_follow_redirects) ... ok
+test_real_mtls_probe_rejects_another_operator_or_tenant (__main__.LoopbackHealthTests.test_real_mtls_probe_rejects_another_operator_or_tenant) ... ok
+test_real_mtls_probe_rejects_forbidden_session (__main__.LoopbackHealthTests.test_real_mtls_probe_rejects_forbidden_session) ... ok
+test_agent_socket_requires_group_connect_access_without_world_access (__main__.ServiceLifecycleTests.test_agent_socket_requires_group_connect_access_without_world_access) ... ok
+test_agent_timer_starts_only_after_successful_bounded_preflight (__main__.ServiceLifecycleTests.test_agent_timer_starts_only_after_successful_bounded_preflight) ... ok
+test_extra_agent_group_is_not_granted (__main__.ServiceLifecycleTests.test_extra_agent_group_is_not_granted) ... ok
+test_failed_rollback_is_explicit_recovery_state (__main__.ServiceLifecycleTests.test_failed_rollback_is_explicit_recovery_state) ... ok
+test_failed_upgrade_restores_whole_release_units_and_credentials (__main__.ServiceLifecycleTests.test_failed_upgrade_restores_whole_release_units_and_credentials) ... ok
+test_generated_units_parse_with_real_systemd_analyze (__main__.ServiceLifecycleTests.test_generated_units_parse_with_real_systemd_analyze) ... ok
+test_initial_start_failure_stops_services_without_claiming_rollback (__main__.ServiceLifecycleTests.test_initial_start_failure_stops_services_without_claiming_rollback) ... ok
+test_local_unit_changes_block_upgrade_and_uninstall (__main__.ServiceLifecycleTests.test_local_unit_changes_block_upgrade_and_uninstall) ... ok
+test_other_mutation_cannot_run_during_installation_lock (__main__.ServiceLifecycleTests.test_other_mutation_cannot_run_during_installation_lock) ... ok
+test_other_process_answering_health_does_not_prove_candidate_started (__main__.ServiceLifecycleTests.test_other_process_answering_health_does_not_prove_candidate_started) ... ok
+test_private_file_permissions_and_nonlocal_bind_fail_registration (__main__.ServiceLifecycleTests.test_private_file_permissions_and_nonlocal_bind_fail_registration) ... ok
+test_reactivating_current_active_release_does_not_stop_it (__main__.ServiceLifecycleTests.test_reactivating_current_active_release_does_not_stop_it) ... ok
+test_registration_writes_units_without_starting_or_enabling (__main__.ServiceLifecycleTests.test_registration_writes_units_without_starting_or_enabling) ... ok
+test_uninstall_preserves_configuration_database_marker_and_releases (__main__.ServiceLifecycleTests.test_uninstall_preserves_configuration_database_marker_and_releases) ... ok
+test_upgrade_stops_old_services_before_switching_current (__main__.ServiceLifecycleTests.test_upgrade_stops_old_services_before_switching_current) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.703s
+
+OK

@@ -1,0 +1,24 @@
+--- FAIL: TestValidAgentServerKeypair (0.00s)
+    --- FAIL: TestValidAgentServerKeypair/typed-nil-signer (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x637040]
+
+goroutine 22 [running]:
+testing.tRunner.func1.2({0xd25a00, 0xdd3d20})
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/testing/testing.go:2125 +0x232
+testing.tRunner.func1()
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/testing/testing.go:2128 +0x329
+panic({0xd25a00?, 0xdd3d20?})
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/runtime/panic.go:859 +0x125
+crypto/ecdsa.(*PrivateKey).Public(0xdd5e20?)
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/crypto/ecdsa/ecdsa.go:212
+github.com/turansec/edr/backend/internal/edr.validAgentServerKeypair({{0x3e10322b10b0, 0x2, 0x2}, {0xcb1d48, 0x0}, {0x0, 0x0, 0x0}, {0x0, 0x0, ...}, ...})
+	/workspace/scratch/39b05ab721e3/EDR/backend/internal/edr/agent_server_keypair.go:40 +0x16b
+github.com/turansec/edr/backend/internal/edr.TestValidAgentServerKeypair.func1(0x3e10322e46c8)
+	/workspace/scratch/39b05ab721e3/EDR/backend/internal/edr/agent_mtls_server_keypair_test.go:93 +0x85
+testing.tRunner(0x3e10322e46c8, 0x3e103221ef00)
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/testing/testing.go:2195 +0xea
+created by testing.(*T).Run in goroutine 21
+	/workspace/scratch/39b05ab721e3/toolchains/go/src/testing/testing.go:2260 +0x4d4
+FAIL	github.com/turansec/edr/backend/internal/edr	0.008s
+FAIL

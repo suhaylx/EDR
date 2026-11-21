@@ -1,0 +1,35 @@
+{
+  "utc": "2026-11-21T20:09:25.973733+00:00",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "checks": [
+    {
+      "host_role": "Ubuntu lab",
+      "port": 22,
+      "status": "unreachable",
+      "errno": 101
+    },
+    {
+      "host_role": "Windows lab",
+      "port": 22,
+      "status": "unreachable",
+      "errno": 101
+    },
+    {
+      "host_role": "Windows lab",
+      "port": 3389,
+      "status": "unreachable",
+      "errno": 101
+    },
+    {
+      "surface": "local TCP",
+      "status": "allowed",
+      "errno": null
+    },
+    {
+      "surface": "local Unix socket",
+      "status": "denied",
+      "errno": 1
+    }
+  ]
+}

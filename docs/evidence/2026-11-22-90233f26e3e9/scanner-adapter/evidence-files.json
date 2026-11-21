@@ -1,0 +1,78 @@
+{
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "files": [
+    {
+      "file": "README.md",
+      "sha256": "88c8b4ede9868f26043a21633bf0a6c902e087302a940d2c6108191ea80a59dc",
+      "bytes": 5131
+    },
+    {
+      "file": "adapter-source-identity.json",
+      "sha256": "aada61b95b5bc18a4e624c31bf0eec35967c04124b8c706a3278ce324948c1b4",
+      "bytes": 1006
+    },
+    {
+      "file": "availability-recheck.json",
+      "sha256": "b0e071fab37c32f0347d7e7d398c6b124e2f799656d9ef01d2f2dcc467fb7b06",
+      "bytes": 706
+    },
+    {
+      "file": "bytecode.cvd.verify.log",
+      "sha256": "7c7f1186e618a75052077bb61af475c984b013dc51ef00d21d26cd2a08219121",
+      "bytes": 237
+    },
+    {
+      "file": "clamav-pgp-verification.log",
+      "sha256": "4e49f97017c27754f3380c36f801bd0645c320c78cf9d85c37de17af0f18f506",
+      "bytes": 826
+    },
+    {
+      "file": "clamd-tcp-runtime.log",
+      "sha256": "f2ae0427be62e18c9cf0b244fa2910bd818ac74d080926c44407f515f7a13dd2",
+      "bytes": 2242
+    },
+    {
+      "file": "daily.cvd.verify.log",
+      "sha256": "831336cf612d7fc31456735abc722b32f109457af27627bfa4b2b027f7eb5552",
+      "bytes": 233
+    },
+    {
+      "file": "exact-head-runner-evidence.json",
+      "sha256": "b623d8a151cf96b680ea593dbc4180bceee8325a0de57dafa99f5218718be688",
+      "bytes": 3353
+    },
+    {
+      "file": "execution-surfaces.json",
+      "sha256": "5f355d89b3dabca023ab806a3bb5d0250fd8200a41585b050ec8c59c8504fb1c",
+      "bytes": 739
+    },
+    {
+      "file": "real-clamd-adapter-result.json",
+      "sha256": "019636c10b25dfc535207896ca3d6167bb14355eb6015ec3196f228468139928",
+      "bytes": 2654
+    },
+    {
+      "file": "real_clamd_probe.rs",
+      "sha256": "6974d5006ff71df641e5664734cb6c4ef09191902eba52e52d49783292166df4",
+      "bytes": 1396
+    },
+    {
+      "file": "run-real-clamd-probe.py",
+      "sha256": "0bc7971d4d3347f155497d7855a9038a3b15d3b533543f1b696b0cfd6156dbba",
+      "bytes": 7835
+    },
+    {
+      "file": "rust-clamd-unavailable.log",
+      "sha256": "80ed0c21f075b3288131172869013d2e92b13385f26bb2de17c7533362c42019",
+      "bytes": 80
+    },
+    {
+      "file": "rust-real-clamd-probe.log",
+      "sha256": "ca032d9a4a96084b9eb5fa52d1883bd141ac38b36501d2999769ac360aa040a4",
+      "bytes": 120
+    }
+  ],
+  "includes_secrets": false,
+  "includes_eicar_fixture": false,
+  "includes_vendor_binaries_or_databases": false
+}

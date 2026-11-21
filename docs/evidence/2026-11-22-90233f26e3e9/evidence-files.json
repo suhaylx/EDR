@@ -1,0 +1,395 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "files": [
+    {
+      "path": "BROWSER_CAPABILITY_REPORT.md",
+      "bytes": 2898,
+      "sha256": "43642cca434cc4bb6e8164f49b407b44786d7ea142c9c59bd15f68bf57316bca"
+    },
+    {
+      "path": "README.md",
+      "bytes": 8627,
+      "sha256": "9b5b0c13a70bf9b84086920f3a7f01387f0bf4cbbe6349d7ded22c499d2655ef"
+    },
+    {
+      "path": "execution/backend-linux.json",
+      "bytes": 1899,
+      "sha256": "f02a1b1c46c20a648f786d235191e7e9a6ce1ffe0c6f974f28cb051742c4649b"
+    },
+    {
+      "path": "execution/backend-linux.log",
+      "bytes": 553,
+      "sha256": "a8e17e741cfb95dd3c2b19086cb9059d88f0ba298621e67af8fa1b48f358bf98"
+    },
+    {
+      "path": "execution/final-backend.log",
+      "bytes": 459,
+      "sha256": "60464c0a5dfacb2a5f69ccd88b93f05a478616ad1b84aef4c64230a3ffb64a5e"
+    },
+    {
+      "path": "execution/final-frontend.log",
+      "bytes": 34893,
+      "sha256": "bdcb1b5e88222f0290e24a358fc3b741f3964d023d87fab5306ccb68f86e15eb"
+    },
+    {
+      "path": "execution/final-integration.log",
+      "bytes": 7117,
+      "sha256": "8d87a537e3f0eac1fb4148eb0430105a92e1bc4c1b53011ae7bf5ecc42a2d8dc"
+    },
+    {
+      "path": "execution/final-postgres-init.log",
+      "bytes": 827,
+      "sha256": "2a68ae5f7a29c05e094ca3ea21c34f6401212396b0ca9dafa50d222f86d85345"
+    },
+    {
+      "path": "execution/final-postgres-seed.log",
+      "bytes": 1568,
+      "sha256": "82e86e9fa146e1a8a235654a1cff543889062695e04cb71e4ac410bb2025eeac"
+    },
+    {
+      "path": "execution/final-postgres-server.log",
+      "bytes": 2363,
+      "sha256": "864f381bd40dd1359503ad6ad6a4c8e304d90c243a294079ec6f35f65d806b2c"
+    },
+    {
+      "path": "execution/final-postgres-verify.log",
+      "bytes": 326,
+      "sha256": "79a5317036b4126f1915e843faa898bdca74ddd4cd575792b2e8dbf8a5dbb1af"
+    },
+    {
+      "path": "execution/final-postgres.log",
+      "bytes": 10886,
+      "sha256": "e68be13c317121e7fe815f92e6e6c6d961867328bfdfaba4c753273342d1c030"
+    },
+    {
+      "path": "execution/final-release-tools.log",
+      "bytes": 9973,
+      "sha256": "9cb7a36173e8c44ac386547294c4b23f2914a8a4ecdee0af70b8c20a40623063"
+    },
+    {
+      "path": "execution/final-rust.log",
+      "bytes": 9166,
+      "sha256": "74b3cc0722e11da8fc6b6656ad057c2d69efc03edcfa14f5467f2e5eecdb9921"
+    },
+    {
+      "path": "execution/frontend-linux.json",
+      "bytes": 2303,
+      "sha256": "b634e58188d4a3f16bbe986882f26964c594e2c6c93512b95018e719139cb7c5"
+    },
+    {
+      "path": "execution/frontend-linux.log",
+      "bytes": 34923,
+      "sha256": "991b18be908687801202720593ee3d54211de23989ac9d508057b01f851a13c5"
+    },
+    {
+      "path": "execution/integrated-candidate.json",
+      "bytes": 1842,
+      "sha256": "ef0ae9ce0f6fea1631780d8bfef958a99bc9333581fe148e80d8e8ddd909ed79"
+    },
+    {
+      "path": "execution/integration-linux.json",
+      "bytes": 1989,
+      "sha256": "9d625842281991455f10c0939c6b30bd097863acaa7b4d36d87142026bbbfb5a"
+    },
+    {
+      "path": "execution/integration-linux.log",
+      "bytes": 7211,
+      "sha256": "fd22fbb7bb3df12fd2d558202cd9ae4cc47ab8ac6722e6bb59be8bc3cd9986c2"
+    },
+    {
+      "path": "execution/postgres-linux.json",
+      "bytes": 820,
+      "sha256": "41cd00e88324b70d53975552ed27608882502b4541a434752258fe5d5b0581ed"
+    },
+    {
+      "path": "execution/postgres-linux.log",
+      "bytes": 10980,
+      "sha256": "8394040c252859637a600685f9c5b1ae32d3c80b210a1e4f12bd20492cda0540"
+    },
+    {
+      "path": "execution/postgres-seed-linux.json",
+      "bytes": 825,
+      "sha256": "95a43c10a4e44328a75d394d51d7ea7eb120f000542b74152bffd7c06d6326f4"
+    },
+    {
+      "path": "execution/postgres-seed-linux.log",
+      "bytes": 1662,
+      "sha256": "74a6b71845cd51babc2d6e8f4e4c6bc6a6e60e37003e8b7daf9e08c3d567bdd1"
+    },
+    {
+      "path": "execution/postgres-verify-linux.json",
+      "bytes": 831,
+      "sha256": "54a53db4d92a7848c73df38ef5b865f86ba22049dcc5947bc1858d39b053a6dc"
+    },
+    {
+      "path": "execution/postgres-verify-linux.log",
+      "bytes": 420,
+      "sha256": "0e5c7b742e73e8c44bb03d95aa6f735109ccf3ca45e8dca3594e5d3c4772110a"
+    },
+    {
+      "path": "execution/release-tools-linux.json",
+      "bytes": 2104,
+      "sha256": "326208c7ee4894f22714ed323669094a8961e32ab5b85d1d52c78e53d7626524"
+    },
+    {
+      "path": "execution/release-tools-linux.log",
+      "bytes": 10067,
+      "sha256": "04ac06439bb47ef7eda9625d5677b81f90839d75a206c9de3c9b6f48525d86d0"
+    },
+    {
+      "path": "execution/rust-linux.json",
+      "bytes": 1693,
+      "sha256": "c2e11664777b4c12b332b2a3e44e510eca3601afd75fefef084b7c8472f85b1c"
+    },
+    {
+      "path": "execution/rust-linux.log",
+      "bytes": 9212,
+      "sha256": "633a6b1beb282ab786b99685228de855f1b620e87fa14aed9eca8a48eb04f2c6"
+    },
+    {
+      "path": "execution/typed-nil-after-fix.log",
+      "bytes": 57,
+      "sha256": "3cdde9f05f449c07f4311cb4a82f66f2c8fa87608748ce1652a07ede2352e580"
+    },
+    {
+      "path": "execution/typed-nil-before-fix.log",
+      "bytes": 1530,
+      "sha256": "54384b47b269aba5b5cbade2fe1a9c38c213c60eb15d47ec04ef34603974b9c3"
+    },
+    {
+      "path": "github-exact-head-ci.json",
+      "bytes": 3431,
+      "sha256": "9d6826607e646a34345c3a7264d80e63ce740e0a1a0c5e341d405e1e45664d21"
+    },
+    {
+      "path": "package/release-archive-identity.json",
+      "bytes": 230,
+      "sha256": "6965e0a9cb3719c6643c9643174ea976b5f443b9b4ce9cb895a6f212c7be39dd"
+    },
+    {
+      "path": "package/release-v0.1.0-rc.1-build.log",
+      "bytes": 7071,
+      "sha256": "702fd11cf3f892357724948f0b917f911dd16dd1a78246a1426ae9a8bfe41822"
+    },
+    {
+      "path": "package/release-v0.1.0-rc.1-prepare.log",
+      "bytes": 815,
+      "sha256": "8c2ee073e562cbe4b8a42c70187e3add880725531b0eab7ec5491febe54a5e02"
+    },
+    {
+      "path": "package/release-v0.1.0-rc.1-readback.json",
+      "bytes": 1078,
+      "sha256": "26e4dd5db2d4feaf78769f3e56fbe690c31f92022f3fbeadf3729f046f2ff51d"
+    },
+    {
+      "path": "package/release-v0.1.0-rc.1-toolchain.json",
+      "bytes": 513,
+      "sha256": "36edf20e80c45f190ecc8d4505944793448753f132444f6290b29972a3f36083"
+    },
+    {
+      "path": "package/release.json",
+      "bytes": 815,
+      "sha256": "8c2ee073e562cbe4b8a42c70187e3add880725531b0eab7ec5491febe54a5e02"
+    },
+    {
+      "path": "qa/FINAL_FUNCTIONAL_QA.json",
+      "bytes": 9352,
+      "sha256": "c6819ccb19e3326c82a552a1832db5ec37ce906151f48d8364dd0bc28a009738"
+    },
+    {
+      "path": "qa/FINAL_FUNCTIONAL_QA.md",
+      "bytes": 9444,
+      "sha256": "11b035056be55c0e34504cbadba24b8dcdf7f4909a9c860819073dd4c4f4ddb3"
+    },
+    {
+      "path": "qa/agent-config-identity-contract.log",
+      "bytes": 297,
+      "sha256": "2df9147d048a8fadb0a653922a3e4ae856f26c4001ed54b08a560115d81b4dcd"
+    },
+    {
+      "path": "qa/agent-config-identity-recheck.log",
+      "bytes": 238,
+      "sha256": "a30a284e185eff6129f2fb238523430c7d3b4634f75c04718ca255d5e2b7bebf"
+    },
+    {
+      "path": "qa/check_actual_package.py",
+      "bytes": 6350,
+      "sha256": "9ee9846dcc9e21e624cfc63c9892e0da8e316f6b272fb612d81043a631829b3a"
+    },
+    {
+      "path": "qa/check_installer_cli.py",
+      "bytes": 2601,
+      "sha256": "1fdf04503c7a5c49f7437643a27cba7c1e8f98978d83719edf5f60f4a9444c49"
+    },
+    {
+      "path": "qa/check_prepare_cli.py",
+      "bytes": 3958,
+      "sha256": "97a78775f5efc8ddd8e41f58e86d162ce901866d5d40d5a4d90f554756a4b168"
+    },
+    {
+      "path": "qa/check_soc_client.mjs",
+      "bytes": 5386,
+      "sha256": "9798a31def8044db48f75766b4b19d12cac6b1abedbd2796e5900f3e3dbe1a75"
+    },
+    {
+      "path": "qa/final-actual-package.log",
+      "bytes": 685,
+      "sha256": "f9f5b18650314fdd8310cd75f5533f7bff5d586bac97c4408d0e82bb163ec1c3"
+    },
+    {
+      "path": "qa/final-backend.log",
+      "bytes": 459,
+      "sha256": "21ff51b5146cc8a93b0ae0000cfd40cf301fa35604056c31faecc5ff12f4e4f3"
+    },
+    {
+      "path": "qa/final-candidate/.quality-evidence/backend-linux.json",
+      "bytes": 1899,
+      "sha256": "bea2b3bdf5e0f1b99d1d82416d0c8b3b2d0d4c909cff59cd21b521041450d762"
+    },
+    {
+      "path": "qa/final-candidate/.quality-evidence/release-tools-linux.json",
+      "bytes": 2104,
+      "sha256": "e60e168bc33963dfc62b7b8e7da265dcc6b1cbaa6b3dbbfcb19c0ec86c38fe44"
+    },
+    {
+      "path": "qa/final-frontend.json",
+      "bytes": 715,
+      "sha256": "c3efdc5971df7dfde4d49807d49ee1d84d9343f80cb1622598f388b47e3de8af"
+    },
+    {
+      "path": "qa/final-frontend.log",
+      "bytes": 34545,
+      "sha256": "35044b4123d4585b4b0de61e0d62cd4339774ea69162860b7d68aea377aee30c"
+    },
+    {
+      "path": "qa/final-github-readback.json",
+      "bytes": 8574,
+      "sha256": "1ceadd524d6a34b1ac0696f68d189c40f2a17075e3cee899b833cdeabd281abb"
+    },
+    {
+      "path": "qa/final-installer-cli.log",
+      "bytes": 424,
+      "sha256": "2e8d7e9193065fdef332233cd6db5f13812d84a7e737b77d18ad1909e1731812"
+    },
+    {
+      "path": "qa/final-prepare-cli.log",
+      "bytes": 494,
+      "sha256": "95411f7dcb8a6f246ce67e15c33bc6c386bd912f50ca624274d69713d0f96fd3"
+    },
+    {
+      "path": "qa/final-release-tools.log",
+      "bytes": 9973,
+      "sha256": "e392a28ecbecbeeda042ec5841eee1c3fe31a289c85af6ae15cd78bbef743f5d"
+    },
+    {
+      "path": "qa/final-soc-client-functional.log",
+      "bytes": 1269,
+      "sha256": "aef35de2fcee76392902068fde006a39890a560cc52849d971c036d96f378242"
+    },
+    {
+      "path": "qa/final-source-manifest.json",
+      "bytes": 63644,
+      "sha256": "0a861661995044206093df0a612b096f21944a4fc8962f24e381ec93535040c2"
+    },
+    {
+      "path": "qa/installer-source-manifest.json",
+      "bytes": 2440,
+      "sha256": "e93d352980fcf919e2777a8a4319730e156b579eab5fb4caf88722427e952ba0"
+    },
+    {
+      "path": "qa/release-helper-manifest.json",
+      "bytes": 683,
+      "sha256": "9b6569c0337cac7cb58f2f0109d207b317855f7dd59beaa75a2ca0f6cf149e9d"
+    },
+    {
+      "path": "qa/run_soc_client_fixture.py",
+      "bytes": 6631,
+      "sha256": "084547737c805ab54e29cd3c889b27a9ec67bc2cbf48d05bc1651456f6856baa"
+    },
+    {
+      "path": "qa/run_soc_client_functional.sh",
+      "bytes": 935,
+      "sha256": "9374e3088a1abdef75e123505b9ba5eb8c2fc72a1044346386ba78b8e2d76ee6"
+    },
+    {
+      "path": "qa/soc-client/source-manifest.json",
+      "bytes": 761,
+      "sha256": "59d86ca4c995478230d4b83159142a70cfe08290250e798ca2693b3d33250f01"
+    },
+    {
+      "path": "scanner-adapter/NEW_CANDIDATE_MAPPING.json",
+      "bytes": 839,
+      "sha256": "1ef04ff95c5e2a32c2e0bb81a6ad50106b65f5749ea80c84114ca8817b1ee489"
+    },
+    {
+      "path": "scanner-adapter/README.md",
+      "bytes": 5131,
+      "sha256": "88c8b4ede9868f26043a21633bf0a6c902e087302a940d2c6108191ea80a59dc"
+    },
+    {
+      "path": "scanner-adapter/adapter-source-identity.json",
+      "bytes": 1006,
+      "sha256": "aada61b95b5bc18a4e624c31bf0eec35967c04124b8c706a3278ce324948c1b4"
+    },
+    {
+      "path": "scanner-adapter/availability-recheck.json",
+      "bytes": 706,
+      "sha256": "b0e071fab37c32f0347d7e7d398c6b124e2f799656d9ef01d2f2dcc467fb7b06"
+    },
+    {
+      "path": "scanner-adapter/bytecode.cvd.verify.log",
+      "bytes": 237,
+      "sha256": "7c7f1186e618a75052077bb61af475c984b013dc51ef00d21d26cd2a08219121"
+    },
+    {
+      "path": "scanner-adapter/clamav-pgp-verification.log",
+      "bytes": 826,
+      "sha256": "4e49f97017c27754f3380c36f801bd0645c320c78cf9d85c37de17af0f18f506"
+    },
+    {
+      "path": "scanner-adapter/clamd-tcp-runtime.log",
+      "bytes": 2242,
+      "sha256": "f2ae0427be62e18c9cf0b244fa2910bd818ac74d080926c44407f515f7a13dd2"
+    },
+    {
+      "path": "scanner-adapter/daily.cvd.verify.log",
+      "bytes": 233,
+      "sha256": "831336cf612d7fc31456735abc722b32f109457af27627bfa4b2b027f7eb5552"
+    },
+    {
+      "path": "scanner-adapter/exact-head-runner-evidence.json",
+      "bytes": 3353,
+      "sha256": "b623d8a151cf96b680ea593dbc4180bceee8325a0de57dafa99f5218718be688"
+    },
+    {
+      "path": "scanner-adapter/execution-surfaces.json",
+      "bytes": 739,
+      "sha256": "5f355d89b3dabca023ab806a3bb5d0250fd8200a41585b050ec8c59c8504fb1c"
+    },
+    {
+      "path": "scanner-adapter/real-clamd-adapter-result.json",
+      "bytes": 2654,
+      "sha256": "019636c10b25dfc535207896ca3d6167bb14355eb6015ec3196f228468139928"
+    },
+    {
+      "path": "scanner-adapter/real_clamd_probe.rs",
+      "bytes": 1396,
+      "sha256": "6974d5006ff71df641e5664734cb6c4ef09191902eba52e52d49783292166df4"
+    },
+    {
+      "path": "scanner-adapter/run-real-clamd-probe.py",
+      "bytes": 7835,
+      "sha256": "0bc7971d4d3347f155497d7855a9038a3b15d3b533543f1b696b0cfd6156dbba"
+    },
+    {
+      "path": "scanner-adapter/rust-clamd-unavailable.log",
+      "bytes": 80,
+      "sha256": "80ed0c21f075b3288131172869013d2e92b13385f26bb2de17c7533362c42019"
+    },
+    {
+      "path": "scanner-adapter/rust-real-clamd-probe.log",
+      "bytes": 120,
+      "sha256": "ca032d9a4a96084b9eb5fa52d1883bd141ac38b36501d2999769ac360aa040a4"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "integration",
+  "started_at": "2026-11-21T20:27:48.652806+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Build authenticated Go service",
+      "argv": [
+        "go",
+        "build",
+        "./cmd/edrd"
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T20:27:48.665031+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:49.198191+00:00"
+    },
+    {
+      "label": "Build one Rust endpoint agent",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked"
+      ],
+      "cwd": "agent",
+      "started_at": "2026-11-21T20:27:49.198455+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:49.264103+00:00"
+    },
+    {
+      "label": "Locked integrated frontend dependencies",
+      "argv": [
+        "npm",
+        "ci"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:27:49.264374+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:50.484202+00:00"
+    },
+    {
+      "label": "Build integrated React UI",
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:27:50.484441+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:54.712647+00:00"
+    },
+    {
+      "label": "Actual Go/PostgreSQL/Rust/React candidate",
+      "argv": [
+        "bash",
+        "scripts/test-integrated-candidate.sh"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:27:54.712931+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:56.901358+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T20:27:56.908085+00:00"
+}

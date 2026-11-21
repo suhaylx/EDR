@@ -1,0 +1,66 @@
+{
+  "observed_at_utc": "2026-11-21T20:11:52.290886+00:00",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "execution_os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "execution_class": "isolated Linux executor; external protocol acceptance probe",
+  "status": "PASS_WITH_SCOPE_LIMITS",
+  "checks": [
+    {
+      "check": "genuine daily and bytecode database signatures",
+      "status": "PASS"
+    },
+    {
+      "check": "real vendor clamd loopback TCP PING",
+      "status": "PASS"
+    },
+    {
+      "check": "unchanged candidate Rust adapter real benign scan",
+      "status": "PASS"
+    },
+    {
+      "check": "unchanged candidate Rust adapter real EICAR detection",
+      "status": "PASS"
+    },
+    {
+      "check": "real stopped daemon produces connection error, never clean",
+      "status": "PASS"
+    }
+  ],
+  "product_scan_command_exercised": false,
+  "integrated_backend_postgresql_ui_path_exercised": false,
+  "native_deployment_host_acceptance": false,
+  "signature_database_health_complete": false,
+  "limits": [
+    "The unchanged candidate clamav.rs and scan_jobs.rs modules are exercised by an external probe.",
+    "The product's Unix socket transport is not exercised; Unix sockets are prohibited in this executor.",
+    "Only signed daily and bytecode databases are present; main.cvd is missing after vendor CDN cooldown.",
+    "This is not Windows/Ubuntu deployment-host, installed-service, rollback or deployment-authorization evidence."
+  ],
+  "vendor_archive_sha256": "fff17fb1f8917d1ea1308c9736dabe376077458aba000a5dadcce7193a8c538c",
+  "vendor_pgp_fingerprint": "5BADCA2665EF59DCF8A23D8B707F0DB480836771",
+  "vendor_pgp_evidence": "clamav-pgp-verification.log",
+  "clamd_sha256": "bf5d92ed5a9df3e26518ecf27e0cb436efed2cc0cda0af17b41305932b04cdcf",
+  "probe_sha256": "2babebb8cb834c67adf3a2044ed74a75e21f65b8927d8f2c0597232501e65c54",
+  "database_checks": [
+    {
+      "name": "daily.cvd",
+      "sha256": "698abcd56b441205bff91ea9579f7583f7d8b63aa5a367ff553825f6a45a26be",
+      "vendor_signature_exit": 0,
+      "evidence": "daily.cvd.verify.log"
+    },
+    {
+      "name": "bytecode.cvd",
+      "sha256": "6d4aa01f219e988060fc419f495d07f27e0cdf1a2cccc065971da922c76f7ffb",
+      "vendor_signature_exit": 0,
+      "evidence": "bytecode.cvd.verify.log"
+    }
+  ],
+  "real_scan_results": {
+    "benign": "clean_by_signature",
+    "eicar": "malicious",
+    "signature": "Eicar-Test-Signature",
+    "transport": "loopback_tcp_probe"
+  },
+  "benign_sha256": "a5920712581ff5eb5bf112dd1e2d2243676fa0e1c9feaee602b39a6fcb503fcc",
+  "eicar_sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
+}

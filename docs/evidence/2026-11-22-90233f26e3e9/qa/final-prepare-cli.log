@@ -1,0 +1,6 @@
+PASS: combined preparation reports the missing platform and leaves metadata absent
+PASS: combined CLI workflow works in a directory with spaces and records both fixture targets
+PASS: generated checksums validate all four archive/manifest files and notes identify the source
+PASS: a repeated invocation preserves the existing release record
+PASS: CLI usage is available without a package or native host
+LIMIT: archives are synthetic CLI fixtures; no Windows/Linux native build or signing credit

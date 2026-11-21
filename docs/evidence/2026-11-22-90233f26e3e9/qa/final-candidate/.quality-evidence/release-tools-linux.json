@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "release-tools",
+  "started_at": "2026-11-21T20:26:57.581308+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Signature tamper rejection and filesystem rollback regressions",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/release/test_release_tools.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:26:57.604388+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:58.254889+00:00"
+    },
+    {
+      "label": "Host evidence attribution and signature regressions",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/test-host-acceptance.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:26:58.255205+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:58.449100+00:00"
+    },
+    {
+      "label": "Release record source, artifact and path integrity",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/release/test_prepare_release.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:26:58.449341+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:58.524701+00:00"
+    },
+    {
+      "label": "Linux installer, activation recovery and authenticated health",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/release/test_linux_service.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:26:58.529782+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:59.426594+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T20:26:59.433807+00:00"
+}

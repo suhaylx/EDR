@@ -1,0 +1,253 @@
+{
+  "observed_at": "2026-11-21T20:28:14.198Z",
+  "commit": {
+    "sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+    "url": "https://github.com/suhaylx/EDR/commit/90233f26e3e93b2d777cf1e07ca6f2fd479f5b82"
+  },
+  "pr": {
+    "url": "https://github.com/suhaylx/EDR/pull/180",
+    "head_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+    "draft": true,
+    "merged": false
+  },
+  "workflow_runs": [
+    {
+      "id": 44946276384,
+      "name": "postgres-scan-job-queue",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 133,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276384/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276384/logs",
+      "workflow_id": 426098455
+    },
+    {
+      "id": 44946276429,
+      "name": "ubuntu-go-backend-lab-build",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 75,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276429/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276429/logs",
+      "workflow_id": 426136490
+    },
+    {
+      "id": 44946276475,
+      "name": "postgres-revocation-integration",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 74,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276475/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276475/logs",
+      "workflow_id": 426093125
+    },
+    {
+      "id": 44946276402,
+      "name": "candidate-ci",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 2,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276402/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276402/logs",
+      "workflow_id": 426255197
+    },
+    {
+      "id": 44946276461,
+      "name": "p0-agent-mtls-scan-listener",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 15,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276461/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276461/logs",
+      "workflow_id": 426179727
+    },
+    {
+      "id": 44946276385,
+      "name": "postgres-enrollment-challenges",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 90,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276385/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276385/logs",
+      "workflow_id": 426096275
+    },
+    {
+      "id": 44946276471,
+      "name": "postgres-atomic-agent-enrollment",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 48,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276471/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276471/logs",
+      "workflow_id": 426111456
+    },
+    {
+      "id": 44946276451,
+      "name": "Windows lab preflight",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 46,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276451/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276451/logs",
+      "workflow_id": 426025820
+    },
+    {
+      "id": 44946276388,
+      "name": "postgres-enrollment-integration",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 82,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276388/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276388/logs",
+      "workflow_id": 426092136
+    },
+    {
+      "id": 44946276396,
+      "name": "rust-agent-ci",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 30,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276396/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276396/logs",
+      "workflow_id": 426170732
+    },
+    {
+      "id": 44946276417,
+      "name": "postgres-certificate-rotation",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 101,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276417/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276417/logs",
+      "workflow_id": 426095096
+    },
+    {
+      "id": 44946276486,
+      "name": "frontend-ui-checks",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 167,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276486/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276486/logs",
+      "workflow_id": 426092866
+    },
+    {
+      "id": 44946276409,
+      "name": "postgres-migration-chain",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 53,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276409/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276409/logs",
+      "workflow_id": 426129240
+    },
+    {
+      "id": 44946276498,
+      "name": "starter-ci",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 489,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276498/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276498/logs",
+      "workflow_id": 425916792
+    },
+    {
+      "id": 44946276411,
+      "name": "linux-lab-agent-build",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 54,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276411/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276411/logs",
+      "workflow_id": 426132594
+    },
+    {
+      "id": 44946276466,
+      "name": "windows-lab-agent-build",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 129,
+      "jobs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276466/jobs",
+      "logs_url": "https://api.github.com/repos/suhaylx/EDR/actions/runs/44946276466/logs",
+      "workflow_id": 426057097
+    }
+  ],
+  "candidate_run": {
+    "id": 44946276402,
+    "url": "https://github.com/suhaylx/EDR/actions/runs/44946276402",
+    "jobs": [
+      {
+        "id": 136974179781,
+        "name": "Package verification and rollback primitive",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974179980,
+        "name": "React build, tests and browser accessibility",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974180009,
+        "name": "Go build, tests, race and vet",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974180016,
+        "name": "Go, PostgreSQL, Rust and React integrated candidate",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974180085,
+        "name": "PostgreSQL 16 security, concurrency and actual restart",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974180086,
+        "name": "Rust native windows-latest",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974180096,
+        "name": "Rust native ubuntu-latest",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 136974200168,
+        "name": "Required candidate engineering checks",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 44946276402,
+        "logs_url": null,
+        "steps": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+PASS: CLI stage dry-run validates the fixture and creates no installation directory
+PASS: CLI stage creates the complete versioned fixture without selecting or starting it
+PASS: CLI staging the same archive again reports already_staged
+PASS: installer and launcher CLI help work from the packaged relative script layout
+LIMIT: synthetic archive, unprivileged temporary staging only; no systemd or deployment-host acceptance

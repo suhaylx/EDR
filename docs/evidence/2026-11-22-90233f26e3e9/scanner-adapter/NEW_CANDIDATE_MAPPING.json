@@ -1,0 +1,27 @@
+{
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "probe_candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "interpretation": "Prior real scanner adapter probe applies only to these unchanged source blobs; it is not a fresh full-product or host run.",
+  "files": [
+    {
+      "path": "agent/src/clamav.rs",
+      "git_blob": "3c583b5e43416fc44a38a98c0f0878721ac16c86",
+      "unchanged": true
+    },
+    {
+      "path": "agent/src/scan_jobs.rs",
+      "git_blob": "c5c6c2b0f8d41edb4fbb9c7e5e249b877b693b6b",
+      "unchanged": true
+    },
+    {
+      "path": "agent/Cargo.toml",
+      "git_blob": "8a9cb5f2d1ad4d7b46c6b032511b896ed0a29a18",
+      "unchanged": true
+    },
+    {
+      "path": "agent/Cargo.lock",
+      "git_blob": "1c8fb18486031d95a10cf52b4ae705d22ae192b3",
+      "unchanged": true
+    }
+  ]
+}

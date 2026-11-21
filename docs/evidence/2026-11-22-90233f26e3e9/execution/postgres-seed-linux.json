@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "postgres-seed",
+  "started_at": "2026-11-21T20:27:48.003944+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "PostgreSQL candidate seed",
+      "argv": [
+        "bash",
+        "scripts/ci/candidate-postgres.sh",
+        "seed"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:27:48.011716+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:27:48.193199+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T20:27:48.197984+00:00"
+}

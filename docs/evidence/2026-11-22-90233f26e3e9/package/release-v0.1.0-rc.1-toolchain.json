@@ -1,0 +1,17 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "tree_sha": "6f2272b81541dd3efaaab73c6327a44d8c42d2b3",
+  "native_host": {
+    "system": "Linux",
+    "machine": "x86_64"
+  },
+  "python": "3.12.14",
+  "toolchains": {
+    "go": "go version go1.27.4 linux/amd64",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "cargo": "cargo 1.100.0 (3acc79c0c 2026-11-05)",
+    "node": "v24.22.3",
+    "npm": "11.19.1",
+    "openssl": "OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)"
+  }
+}

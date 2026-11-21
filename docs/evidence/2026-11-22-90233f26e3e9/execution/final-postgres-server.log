@@ -1,0 +1,22 @@
+2026-11-22 01:27:09.777 +05 [23] LOG:  starting PostgreSQL 16.16 on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-11-22 01:27:09.777 +05 [23] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-11-22 01:27:09.778 +05 [26] LOG:  database system was shut down at 2026-11-22 01:27:09 +05
+2026-11-22 01:27:09.780 +05 [23] LOG:  database system is ready to accept connections
+2026-11-22 01:27:48.204 +05 [23] LOG:  received fast shutdown request
+2026-11-22 01:27:48.204 +05 [23] LOG:  aborting any active transactions
+2026-11-22 01:27:48.205 +05 [23] LOG:  background worker "logical replication launcher" (PID 29) exited with exit code 1
+2026-11-22 01:27:48.206 +05 [24] LOG:  shutting down
+2026-11-22 01:27:48.206 +05 [24] LOG:  checkpoint starting: shutdown immediate
+2026-11-22 01:27:48.320 +05 [24] LOG:  checkpoint complete: wrote 13412 buffers (81.9%); 0 WAL file(s) added, 0 removed, 4 recycled; write=0.107 s, sync=0.008 s, total=0.115 s; sync files=4694, longest=0.001 s, average=0.001 s; distance=62338 kB, estimate=62338 kB; lsn=0/5188D08, redo lsn=0/5188D08
+2026-11-22 01:27:48.332 +05 [23] LOG:  database system is shut down
+2026-11-22 01:27:48.422 +05 [1734] LOG:  starting PostgreSQL 16.16 on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-11-22 01:27:48.422 +05 [1734] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-11-22 01:27:48.424 +05 [1737] LOG:  database system was shut down at 2026-11-22 01:27:48 +05
+2026-11-22 01:27:48.426 +05 [1734] LOG:  database system is ready to accept connections
+2026-11-22 01:27:56.916 +05 [1734] LOG:  received fast shutdown request
+2026-11-22 01:27:56.916 +05 [1734] LOG:  aborting any active transactions
+2026-11-22 01:27:56.917 +05 [1734] LOG:  background worker "logical replication launcher" (PID 1740) exited with exit code 1
+2026-11-22 01:27:56.918 +05 [1735] LOG:  shutting down
+2026-11-22 01:27:56.918 +05 [1735] LOG:  checkpoint starting: shutdown immediate
+2026-11-22 01:27:56.927 +05 [1735] LOG:  checkpoint complete: wrote 1163 buffers (7.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.009 s, sync=0.001 s, total=0.009 s; sync files=428, longest=0.001 s, average=0.000 s; distance=5219 kB, estimate=5219 kB; lsn=0/56A1A70, redo lsn=0/56A1A70
+2026-11-22 01:27:56.930 +05 [1734] LOG:  database system is shut down

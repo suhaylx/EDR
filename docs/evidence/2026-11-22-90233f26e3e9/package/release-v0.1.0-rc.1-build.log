@@ -1,0 +1,215 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling libc v0.2.191
+   Compiling stable_deref_trait v1.2.1
+   Compiling bytes v1.12.2
+   Compiling pin-project-lite v0.2.18
+   Compiling litemap v0.8.3
+   Compiling writeable v0.6.4
+   Compiling smallvec v1.16.6
+   Compiling find-msvc-tools v0.1.15
+   Compiling utf_types v1.0.0
+   Compiling futures-core v0.3.34
+   Compiling itoa v1.0.19
+   Compiling shlex v2.0.1
+   Compiling utf8_iter v1.1.0
+   Compiling icu_properties_data v2.4.0
+   Compiling icu_normalizer_data v2.4.0
+   Compiling once_cell v1.21.4
+   Compiling cc v1.11.3
+   Compiling percent-encoding v2.3.2
+   Compiling memchr v2.8.3
+   Compiling futures-sink v0.3.34
+   Compiling cfg-if v1.0.5
+   Compiling zeroize v1.9.2
+   Compiling http v1.5.0
+   Compiling httparse v1.10.1
+   Compiling futures-io v0.3.34
+   Compiling untrusted v0.9.0
+   Compiling serde_core v1.0.229
+   Compiling slab v0.4.12
+   Compiling futures-task v0.3.34
+   Compiling rustls-pki-types v1.16.0
+   Compiling form_urlencoded v1.2.3
+   Compiling syn v3.0.10
+   Compiling futures-util v0.3.34
+   Compiling tower-service v0.3.3
+   Compiling rustls v0.23.46
+   Compiling try-lock v0.2.5
+   Compiling want v0.3.2
+   Compiling socket2 v0.6.5
+   Compiling mio v1.2.5
+   Compiling getrandom v0.2.17
+   Compiling http-body v1.1.0
+   Compiling tracing-core v0.1.36
+   Compiling serde v1.0.229
+   Compiling ring v0.17.14
+   Compiling zmij v1.0.23
+   Compiling tokio v1.54.1
+   Compiling subtle v2.6.1
+   Compiling atomic-waker v1.1.2
+   Compiling tracing v0.1.44
+   Compiling futures-channel v0.3.34
+   Compiling sync_wrapper v1.0.2
+   Compiling base64 v0.23.1
+   Compiling tower-layer v0.3.3
+   Compiling ipnet v2.12.2
+   Compiling serde_json v1.0.154
+   Compiling base64 v0.22.1
+   Compiling synstructure v0.14.0
+   Compiling log v0.4.35
+   Compiling ryu v1.0.23
+   Compiling bitflags v2.13.2
+   Compiling http-body-util v0.1.5
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerovec-derive v0.11.7
+   Compiling displaydoc v0.2.7
+   Compiling serde_derive v1.0.229
+   Compiling zerofrom v0.1.8
+   Compiling yoke v0.8.4
+   Compiling zerovec v0.11.9
+   Compiling zerotrie v0.2.5
+   Compiling tinystr v0.8.5
+   Compiling potential_utf v0.1.6
+   Compiling icu_collections v2.4.0
+   Compiling icu_locale_core v2.4.0
+   Compiling icu_provider v2.4.0
+   Compiling hyper v1.12.0
+   Compiling icu_properties v2.4.0
+   Compiling icu_normalizer v2.4.0
+   Compiling tower v0.5.3
+   Compiling serde_urlencoded v0.7.1
+   Compiling hyper-util v0.1.21
+   Compiling idna_adapter v1.2.2
+   Compiling idna v1.1.0
+   Compiling url v2.5.9
+   Compiling tower-http v0.6.11
+   Compiling ureq v2.12.1
+   Compiling rustls-webpki v0.103.17
+   Compiling tokio-rustls v0.26.6
+   Compiling hyper-rustls v0.27.10
+   Compiling reqwest v0.12.28
+   Compiling turansec-edr-agent v0.1.0 (/tmp/edr-package-gg460s7p/source/agent)
+warning: unused import: `open_lab_scan_target`
+  --> src/worker.rs:10:21
+   |
+10 | use crate::{clamav, open_lab_scan_target, scan_lab_file};
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> src/telemetry.rs:11:5
+   |
+11 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: function `windows_scan_target_allowed` is never used
+  --> src/worker.rs:65:4
+   |
+65 | fn windows_scan_target_allowed(p: &str) -> bool {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `allowed_lab_file` is never used
+   --> src/worker.rs:205:4
+    |
+205 | fn allowed_lab_file(path: &str, root: &Path) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_RESPONSE_BYTES` is never used
+  --> src/telemetry.rs:18:7
+   |
+18 | const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+   |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_OBSERVATIONS` is never used
+  --> src/telemetry.rs:19:7
+   |
+19 | const MAX_OBSERVATIONS: usize = 64;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `SysmonEvent` is never constructed
+  --> src/telemetry.rs:22:8
+   |
+22 | struct SysmonEvent {
+   |        ^^^^^^^^^^^
+
+warning: function `known_sysmon_id` is never used
+  --> src/telemetry.rs:66:4
+   |
+66 | fn known_sysmon_id(id: u32) -> bool { (1..=29).contains(&id) || id == 255 }
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `sysmon_kind` is never used
+  --> src/telemetry.rs:67:4
+   |
+67 | fn sysmon_kind(id: u32) -> &'static str {
+   |    ^^^^^^^^^^^
+
+warning: constant `SAFE_FIELDS` is never used
+  --> src/telemetry.rs:82:7
+   |
+82 | const SAFE_FIELDS: &[&str] = &[
+   |       ^^^^^^^^^^^
+
+warning: function `records_after` is never used
+  --> src/telemetry.rs:88:4
+   |
+88 | fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
+   |    ^^^^^^^^^^^^^
+
+warning: function `event_payload` is never used
+   --> src/telemetry.rs:120:4
+    |
+120 | fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
+    |    ^^^^^^^^^^^^^
+
+warning: function `checkpoint_path` is never used
+   --> src/telemetry.rs:143:4
+    |
+143 | fn checkpoint_path(local_app_data: &Path, agent_id: &str) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `read_checkpoint` is never used
+   --> src/telemetry.rs:152:4
+    |
+152 | fn read_checkpoint(path: &Path) -> io::Result<u64> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `write_checkpoint` is never used
+   --> src/telemetry.rs:162:4
+    |
+162 | fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: `turansec-edr-agent` (bin "turansec-edr-agent") generated 15 warnings (run `cargo fix --bin "turansec-edr-agent" -p turansec-edr-agent` to apply 2 suggestions)
+    Finished `release` profile [optimized] target(s) in 25.10s
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+added 26 packages in 1s
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> turansec-edr-soc-lab@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.8 building client environment for production...
+transforming...
+✓ 52 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.48 kB │ gzip:   0.31 kB
+dist/assets/index-Cm6a_oOk.css   27.13 kB │ gzip:   4.83 kB
+dist/assets/index-I4DYQGEH.js   434.12 kB │ gzip: 119.25 kB
+
+✓ built in 207ms
+{
+  "result": "unsigned-lab-candidate-staged",
+  "archive": "/workspace/scratch/39b05ab721e3/release-files-v0.1.0-rc.1/turansec-edr-90233f26e3e9-linux-x86_64-unsigned.tar.gz",
+  "manifest": "/workspace/scratch/39b05ab721e3/release-files-v0.1.0-rc.1/turansec-edr-90233f26e3e9-linux-x86_64-unsigned.manifest.json",
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "deployment_authorization": "not-granted"
+}

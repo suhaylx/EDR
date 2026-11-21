@@ -1,0 +1,123 @@
+{
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "run_id": 44946276402,
+  "run_url": "https://github.com/suhaylx/EDR/actions/runs/44946276402",
+  "conclusion": "failure",
+  "interpretation": "All eight candidate jobs failed before runner assignment; no test steps executed.",
+  "verified_account_level_root_cause": null,
+  "administration_capabilities": "The connector lacks runner/permissions/annotations administration routes; the fallback browser is signed out and shows a private-repository 404.",
+  "jobs": [
+    {
+      "id": 136974179781,
+      "name": "Package verification and rollback primitive",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:21Z"
+    },
+    {
+      "id": 136974179980,
+      "name": "React build, tests and browser accessibility",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:23Z"
+    },
+    {
+      "id": 136974180009,
+      "name": "Go build, tests, race and vet",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:23Z"
+    },
+    {
+      "id": 136974180016,
+      "name": "Go, PostgreSQL, Rust and React integrated candidate",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:21Z"
+    },
+    {
+      "id": 136974180085,
+      "name": "PostgreSQL 16 security, concurrency and actual restart",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:23Z"
+    },
+    {
+      "id": 136974180086,
+      "name": "Rust native windows-latest",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "windows-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:21Z"
+    },
+    {
+      "id": 136974180096,
+      "name": "Rust native ubuntu-latest",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:18Z",
+      "completed_at": "2026-11-21T20:26:23Z"
+    },
+    {
+      "id": 136974200168,
+      "name": "Required candidate engineering checks",
+      "status": "completed",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps": [],
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "started_at": "2026-11-21T20:26:23Z",
+      "completed_at": "2026-11-21T20:26:25Z"
+    }
+  ]
+}

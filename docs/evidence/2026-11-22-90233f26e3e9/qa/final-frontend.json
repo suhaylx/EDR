@@ -1,0 +1,41 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "scope": "ordinary frontend functional checks; browser not executed",
+  "started_at": "2026-11-21T20:26:57.598015+00:00",
+  "commands": [
+    {
+      "argv": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "result": "passed",
+  "finished_at": "2026-11-21T20:27:11.200474+00:00"
+}

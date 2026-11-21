@@ -1,0 +1,17 @@
+
+=== Go toolchain ===
+go version go1.27.4 linux/amd64
+
+=== Go build ===
+
+=== Go tests ===
+ok  	github.com/turansec/edr/backend/cmd/edrd	0.009s
+ok  	github.com/turansec/edr/backend/cmd/server	0.004s
+ok  	github.com/turansec/edr/backend/internal/edr	0.395s
+
+=== Go race tests ===
+ok  	github.com/turansec/edr/backend/cmd/edrd	1.055s
+ok  	github.com/turansec/edr/backend/cmd/server	1.058s
+ok  	github.com/turansec/edr/backend/internal/edr	2.033s
+
+=== Go vet ===

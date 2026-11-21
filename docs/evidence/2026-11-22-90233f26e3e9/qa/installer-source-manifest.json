@@ -1,0 +1,69 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "files": [
+    {
+      "path": "scripts/release/linux_service.py",
+      "sha256": "fb73a14c68f0c6baaa00845823662b623a4233b5e7ec8a7eb4ba54138fa5e206"
+    },
+    {
+      "path": "scripts/release/systemd_launcher.py",
+      "sha256": "f809230e5b9008ed55a984534e6f21bdb160466276fc4ff6763e8f7179f8daa9"
+    },
+    {
+      "path": "scripts/release/test_linux_service.py",
+      "sha256": "6bfd9ed2bfadf447b393327a2ceb6565e3835d749af115377d6e99c2d9b5d40b"
+    },
+    {
+      "path": "scripts/release/package-candidate.py",
+      "sha256": "b158b0cf3fe8902c2cbe4182e130a7975beb325d2ad4e5b5f89bcd4284ed4332"
+    },
+    {
+      "path": "scripts/release/release_switch.py",
+      "sha256": "d51674254af1bf6036430221bc5ef718211cd83307354d026008d2a5ff7c13fc"
+    },
+    {
+      "path": "scripts/release/test_release_tools.py",
+      "sha256": "84324130291382bbff365b15d845cdfaceaa51771b415638773106324aa69a72"
+    },
+    {
+      "path": "config/edrd.example.json",
+      "sha256": "2abd2a064d00b41ff5720f5bc71bc81591c1aba7de4a6457504d2d12f6954e58"
+    },
+    {
+      "path": "config/agent.example.json",
+      "sha256": "3d330f9602eaa5ff1d3d4fb41914c00ba067e2dd84b95845149230c6642a3db5"
+    },
+    {
+      "path": "config/service-health.example.json",
+      "sha256": "bc0270b634c2247643dfe59beb623305906cd0fcade174b9bb0a0eb78f7ba664"
+    },
+    {
+      "path": "docs/INSTALLATION.md",
+      "sha256": "534bb572fbe325db9d543b7e1c4ef5fe6d4b9ba0a3d60e270b14536533fd9c21"
+    },
+    {
+      "path": "docs/LINUX_SERVICE_INSTALLATION.md",
+      "sha256": "dfdaf3a2b693a182f46429ff0d2381c5873817c54b6d62055fb7c0de6bb45b5e"
+    },
+    {
+      "path": "packaging/linux/turansec-agent.service.in",
+      "sha256": "e8a3b439072e83684194d9480eaa1f36308a26a241f577e65a9de1be9e595902"
+    },
+    {
+      "path": "packaging/linux/turansec-edrd.service.in",
+      "sha256": "e50a558ecac20f1a66588a1fa6eafbff5b9bb4aa178e6a6fd831d9578f70fca9"
+    },
+    {
+      "path": "packaging/linux/turansec-agent.timer.in",
+      "sha256": "436387c7634b410e568f03f585f75e7c9b84d09847fb9b82b3a28ab9187b8fd3"
+    },
+    {
+      "path": "scripts/release/prepare-release.py",
+      "sha256": "9bdecb315f0347f56434231252119746c6d214d65da74c32f37734b197a7d5ff"
+    },
+    {
+      "path": "docs/release/BUILD_RELEASE_FILES.md",
+      "sha256": "f6f378a5f9cbde089e49abd386288b357f45ae92d1806f927f10d3bccc6f91df"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "frontend",
+  "started_at": "2026-11-21T20:26:40.258415+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Node toolchain",
+      "argv": [
+        "node",
+        "--version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T20:26:40.268742+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:40.275367+00:00"
+    },
+    {
+      "label": "Locked frontend dependencies",
+      "argv": [
+        "npm",
+        "ci"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:26:40.275553+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:41.804389+00:00"
+    },
+    {
+      "label": "React typecheck",
+      "argv": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:26:41.804662+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:47.578319+00:00"
+    },
+    {
+      "label": "React tests",
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:26:47.578695+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:53.913439+00:00"
+    },
+    {
+      "label": "React production build",
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:26:53.913756+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T20:26:58.129017+00:00"
+    },
+    {
+      "label": "Install locked Playwright browser",
+      "argv": [
+        "node",
+        "node_modules/playwright/cli.js",
+        "install",
+        "--with-deps",
+        "chromium"
+      ],
+      "cwd": "frontend",
+      "started_at": "2026-11-21T20:26:58.129283+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-11-21T20:26:59.598024+00:00"
+    }
+  ],
+  "result": "failed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "error": "Required check failed: Install locked Playwright browser",
+  "finished_at": "2026-11-21T20:26:59.598428+00:00"
+}

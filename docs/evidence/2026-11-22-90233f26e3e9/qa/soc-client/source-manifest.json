@@ -1,0 +1,23 @@
+{
+  "scope": "published candidate compiled SOC API client",
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "captured_at": "2026-11-21T20:27:25.030719+00:00",
+  "files": [
+    {
+      "path": "frontend/src/soc-api.ts",
+      "sha256": "60ce4fed6248639a4f9fd6eef9896233bb60661b83e30f0b448fd07933492f5c"
+    },
+    {
+      "path": "frontend/src/soc-scans.ts",
+      "sha256": "045ed9e2b48d6853509ebc4c895fca66b0a9203acf08a90ba8f9f433a638e1af"
+    },
+    {
+      "path": "frontend/src/soc-contract.ts",
+      "sha256": "9acea5e6ea4e55157c246ab6275e101e0940eab54c171b532ff78f3f8e7961a9"
+    },
+    {
+      "path": "frontend/src/soc-operator-endpoints.ts",
+      "sha256": "41cb9f098ea6e984f07b2b407c19eb79548969dc2f1e6b66337979be50270906"
+    }
+  ]
+}

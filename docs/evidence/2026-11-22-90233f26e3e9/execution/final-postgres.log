@@ -1,0 +1,630 @@
+
+=== PostgreSQL candidate test ===
+PASS: QA inventory target guard positive and negative cases (no PostgreSQL connection)
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+INSERT 0 0
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+SET
+DO
+CREATE TABLE
+DO
+REVOKE
+INSERT 0 1
+DO
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 1
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 2
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 3
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 3
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 4
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 6
+UPDATE 1
+INSERT 0 5
+PREPARE
+ agent_id | platform | agent_version | clamav_version | signature_version | scan_ready |           last_seen           | received_count | health 
+----------+----------+---------------+----------------+-------------------+------------+-------------------------------+----------------+--------
+ linux01  | linux    | 0.1.0         | 1.5            | sig1              | t          | 2026-11-22 01:27:10.752981+05 |              5 | online
+(1 row)
+
+DO
+DEALLOCATE
+ROLLBACK
+Full PostgreSQL migration chain (0001..0013) integration passed
+BEGIN
+INSERT 0 2
+INSERT 0 3
+DO
+ROLLBACK
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+CREATE VIEW
+CREATE VIEW
+CREATE VIEW
+DO
+UPDATE 1
+DO
+UPDATE 1
+DO
+UPDATE 1
+DO
+INSERT 0 1
+DO
+UPDATE 1
+DO
+ROLLBACK
+SOC inventory list/detail/summary query projections passed disposable PostgreSQL
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+DO
+DO
+DO
+UPDATE 1
+INSERT 0 1
+DO
+ROLLBACK
+PostgreSQL enrollment migration and constraint smoke test passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+DO
+ROLLBACK
+Atomic agent enrollment integration passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 3
+UPDATE 1
+INSERT 0 3
+DO
+ROLLBACK
+Enrollment challenge single-use integration passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+DO
+ROLLBACK
+PostgreSQL revocation and append-only audit tests passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 3
+INSERT 0 3
+DO
+DO
+UPDATE 1
+DO
+ROLLBACK
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+PostgreSQL certificate rotation integration passed
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+COMMIT
+DO
+Tenant disable serialized before certificate rotation; no mutation
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+DO
+UPDATE 1
+DO
+UPDATE 1
+DO
+INSERT 0 2
+INSERT 0 2
+DO
+DO
+ROLLBACK
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+Durable scan-job queue integration passed
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+DO
+ROLLBACK
+Lease renewal negative/positive SQL tests passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+DO
+DO
+DELETE 1
+DELETE 1
+DELETE 1
+Concurrent scan claim regression passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+DO
+COMMIT
+BEGIN
+UPDATE 1
+UPDATE 1
+COMMIT
+DO
+Post-commit scan-job revocation and tenant disablement checks passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+DO
+COMMIT
+BEGIN
+UPDATE 2
+COMMIT
+DO
+BEGIN
+DELETE 2
+DELETE 2
+DELETE 1
+COMMIT
+Post-commit stale token replay and retry exhaustion regression passed
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+DO
+Concurrent agent revocation and tenant disablement serialized before queue claim
+CREATE TABLE
+INSERT 0 1
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+COMMIT
+BEGIN
+CREATE FUNCTION
+REVOKE
+COMMIT
+BEGIN
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+COMMIT
+DO
+Concurrent agent revocation and tenant disablement serialized before completion
+CREATE TABLE
+INSERT 0 1
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_tenants" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_agents" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_agent_certificates" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_soc_operators" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:355: NOTICE:  role "edr_grant_runtime_5500be5d0a7d" has already been granted membership in role "edr_runtime" by role "agent"
+psql:backend/bootstrap/runtime_privileges.sql:355: NOTICE:  role "edr_grant_registry_5500be5d0a7d" has already been granted membership in role "edr_identity_ro" by role "agent"
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:backend/migrations/0013_scan_lease_wallclock.up.sql:301: NOTICE:  relation "edr_schema_capabilities" already exists, skipping
+psql:backend/migrations/0013_scan_lease_wallclock.up.sql:301: NOTICE:  relation "edr_schema_capabilities" already exists, skipping
+psql:scripts/test-lease-wallclock-upgrade.sql:56: NOTICE:  PASS: 0013 replaces obsolete lease clocks and retains OID/owner/ACL/security mode/settings across two applications
+psql:scripts/test-runtime-privileges-catalog.sql:122: NOTICE:  PASS: exact function allowlist, safe owners/search paths, no PUBLIC mutation execution, least-privilege role catalog
+psql:scripts/test-runtime-privileges.sql:163: NOTICE:  PASS: actual runtime login completed nested lifecycle and 35 forbidden operations were denied
+psql:scripts/test-registry-privileges.sql:54: NOTICE:  PASS: actual readonly registry login resolved both identities and 17 forbidden operations were denied
+PASS: certificate authorization revoke / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization revoke / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization expiry / admin_first (observed lock wait; expected mutation count).
+PASS: renew rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: result rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: legacy rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: renew rejected lease expired during certificate lock wait (pre-expiry transaction; no mutation).
+PASS: result rejected lease expired during certificate lock wait (pre-expiry transaction; no mutation).
+PASS: claim used fresh time after authorization wait for full lease duration.
+PASS: renew used fresh time after authorization wait for full lease duration.
+PASS: maintenance used fresh expiry time and skipped the concurrently locked job.
+PASS: live PostgreSQL restricted logins, transactional certificate authorization, lifecycle, exact grants, and denied escalation.
+PASS: PostgreSQL candidate test phase

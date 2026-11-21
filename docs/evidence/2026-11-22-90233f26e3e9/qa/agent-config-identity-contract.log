@@ -1,0 +1,3 @@
+valid enrolled dotted identity: REJECTED (Enrolled tenant and agent identifiers are required)
+unsupported 97-character identity: ACCEPTED
+Contract references: Rust scan_jobs.rs valid_identity and Go store.go validID allow dots and maximum96 ASCII characters; installer snapshot currently differs.

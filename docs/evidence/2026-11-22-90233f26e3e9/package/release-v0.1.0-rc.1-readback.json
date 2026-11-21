@@ -1,0 +1,31 @@
+{
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "archive": {
+    "name": "turansec-edr-90233f26e3e9-linux-x86_64-unsigned.tar.gz",
+    "size": 10741228,
+    "sha256": "f70c3fc435b2d2e7dc96346bed14ac6546335824b2d1a7b45598acfe051e3fcc"
+  },
+  "manifest": {
+    "name": "turansec-edr-90233f26e3e9-linux-x86_64-unsigned.manifest.json",
+    "size": 7110,
+    "sha256": "f70aa9ae5e64f7a94acfe7abc3174c1ea5aaf267eaa717f64f318a13f0d43825"
+  },
+  "verified_catalog_files": 38,
+  "required_installer_payload_present": true,
+  "embedded_private_key_or_certificate_files": false,
+  "binaries": {
+    "bin/edrd": {
+      "version": "edrd 0.1.0-candidate source=90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+      "exit_code": 0,
+      "format": "ELF64 x86_64"
+    },
+    "bin/turansec-edr-agent": {
+      "version": "turansec-edr-agent 0.1.0 source=90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+      "exit_code": 0,
+      "format": "ELF64 x86_64"
+    }
+  },
+  "publisher_signature": "absent",
+  "native_windows_package": "not-built",
+  "deployment_authorization": "not-granted"
+}
