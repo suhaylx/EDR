@@ -1,7 +1,6 @@
 package edr
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"io"
@@ -36,11 +35,8 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "development token missing", 503)
 			return
 		}
-		// Require the actual Bearer authorization scheme. A raw token or
-		// Basic/unknown scheme must never authenticate a lab API request.
-		header := r.Header.Get("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") ||
-			subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(header, "Bearer ")), []byte(s.Token)) != 1 {
+		// Do not accept a bare token: all routes require the Bearer scheme.
+		if !validDevelopmentBearer(r.Header.Get("Authorization"), s.Token) {
 			http.Error(w, "unauthorized", 401)
 			return
 		}
