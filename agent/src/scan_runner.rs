@@ -46,10 +46,22 @@ fn safe_verdict(outcome: &Outcome) -> (&'static str,String,&'static str) {
     }
 }
 
+pub fn heartbeat_once() -> io::Result<()> {
+    let client=AgentClient::from_env()?;
+    client.heartbeat(
+        if cfg!(windows) {"windows"} else {"linux"},
+        env!("CARGO_PKG_VERSION"),"","",crate::scan_file::clamd_ready())?;
+    println!("agent_mtls_heartbeat=stored");
+    Ok(())
+}
+
 pub fn run_once() -> io::Result<()> {
     // Authorization is checked BEFORE acquiring any remote lease.
     let root=root_from_env()?;
     let client=AgentClient::from_env()?;
+    // A liveness report is recorded before trying to claim work.
+    client.heartbeat(if cfg!(windows) {"windows"} else {"linux"},
+        env!("CARGO_PKG_VERSION"),"","",crate::scan_file::clamd_ready())?;
     let job=match client.claim()? {
         None => {println!("agent_mtls_claim=no_job");return Ok(());}
         Some(job)=>job,

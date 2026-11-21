@@ -18,7 +18,8 @@ for migration in \
   0005_scan_job_queue \
   0006_atomic_agent_enrollment \
   0007_scan_job_lease_renewal \
-  0008_scan_job_results; do
+  0008_scan_job_results \
+  0009_agent_heartbeats; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
@@ -129,4 +130,5 @@ BEGIN
 END $flow$;
 ROLLBACK;
 SQL
-echo "Full PostgreSQL migration chain (0001..0008) integration passed"
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-agent-heartbeats.sql
+echo "Full PostgreSQL migration chain (0001..0009) integration passed"

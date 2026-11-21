@@ -119,6 +119,39 @@ fn clamd_scan(file: &mut File) -> io::Result<clamav::Verdict> {
     clamav::scan_stream(&mut connection,file,MAX_SCAN_FILE)
 }
 
+/// BE-125: clamd daemon health probe. A PONG is liveness, not proof
+/// that signatures are current, nor remote device integrity attestation.
+pub fn clamd_ready() -> bool {
+    use std::io::{Read, Write};
+    #[cfg(unix)]
+    {
+        use std::os::unix::net::UnixStream;
+        let socket=std::env::var("TURANSEC_CLAMD_SOCKET")
+            .unwrap_or_else(|_| "/run/clamav/clamd.ctl".to_owned());
+        if !Path::new(&socket).is_absolute() {return false}
+        if let Ok(mut connection)=UnixStream::connect(socket) {
+            let _=connection.set_read_timeout(Some(Duration::from_secs(2)));
+            let _=connection.set_write_timeout(Some(Duration::from_secs(2)));
+            let mut answer=[0u8;5];
+            return connection.write_all(b"zPING\0").is_ok() &&
+                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\0";
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::net::TcpStream;
+        let addr="127.0.0.1:3310".parse().expect("static loopback IP");
+        if let Ok(mut connection)=TcpStream::connect_timeout(&addr,Duration::from_secs(2)) {
+            let _=connection.set_read_timeout(Some(Duration::from_secs(2)));
+            let _=connection.set_write_timeout(Some(Duration::from_secs(2)));
+            let mut answer=[0u8;5];
+            return connection.write_all(b"zPING\0").is_ok() &&
+                connection.read_exact(&mut answer).is_ok() && &answer==b"PONG\0";
+        }
+    }
+    false
+}
+
 pub fn scan_claimed_file(job: &ClaimedJob, root: &Path) -> Outcome {
     if job.validate().is_err() {
         return Outcome::Error;

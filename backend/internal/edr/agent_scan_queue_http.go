@@ -21,6 +21,37 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
         if r.URL.RawQuery!="" { http.Error(w,"invalid query",http.StatusBadRequest);return }
         prefix:="/agent/v1/tenants/"+principal.TenantID+"/agents/"+principal.AgentID+"/"
         operation:=strings.TrimPrefix(r.URL.Path,prefix)
+        // BE-124: one-shot enrolled agent health/capability reporting.
+        // The tenant and device come exclusively from verified mTLS context.
+        if operation=="heartbeat" {
+            switch r.Method {
+            case http.MethodPost:
+                r.Body=http.MaxBytesReader(w,r.Body,4096)
+                var payload AgentHeartbeat
+                decoder:=json.NewDecoder(r.Body)
+                decoder.DisallowUnknownFields()
+                if decoder.Decode(&payload)!=nil || !validHeartbeat(payload) {
+                    http.Error(w,"invalid heartbeat",http.StatusBadRequest);return
+                }
+                var extra json.RawMessage
+                if decoder.Decode(&extra)!=io.EOF {
+                    http.Error(w,"multiple heartbeat documents",http.StatusBadRequest);return
+                }
+                saved,err:=queue.RecordHeartbeat(r.Context(),principal.TenantID,principal.AgentID,payload)
+                if err!=nil {http.Error(w,"service unavailable",http.StatusServiceUnavailable);return}
+                if !saved {http.Error(w,"device no longer active",http.StatusConflict);return}
+                w.WriteHeader(http.StatusNoContent)
+            case http.MethodGet:
+                status,err:=queue.HeartbeatStatus(r.Context(),principal.TenantID,principal.AgentID)
+                if err!=nil {http.Error(w,"service unavailable",http.StatusServiceUnavailable);return}
+                if status==nil {http.NotFound(w,r);return}
+                _=json.NewEncoder(w).Encode(status)
+            default:
+                w.Header().Set("Allow","GET, POST")
+                http.Error(w,"method not allowed",http.StatusMethodNotAllowed)
+            }
+            return
+        }
         if operation=="scan-jobs/claim" {
             if r.Method!=http.MethodPost { w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return }
             // Claim takes no payload. Refuse hidden overrides or oversized bodies.
