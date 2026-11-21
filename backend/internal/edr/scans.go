@@ -101,6 +101,9 @@ func (s *Store) CreateScan(req ScanRequest, now time.Time) (ScanJob, error) {
 			if prev.ScanType != req.ScanType || prev.Path != req.Path {
 				return ScanJob{}, errors.New("request_id reused with different parameters")
 			}
+			// The idempotent command-creation response must not reveal the
+			// active delivery capability; only the scoped lease endpoint may.
+			prev.LeaseID = ""
 			return prev, nil // retry-safe: no duplicate scan job
 		}
 	}
@@ -206,7 +209,9 @@ func (s *Store) CompleteScan(jobID string, req ScanCompletion, now time.Time) (S
 		}
 		if j.Status == "completed" || j.Status == "failed" {
 			if j.Verdict == req.Verdict && j.Engine == req.Engine && j.ThreatName == req.ThreatName && j.EngineVersion == req.EngineVersion && j.DatabaseVersion == req.DatabaseVersion && j.Detail == req.Detail {
-				return *j, nil
+				redacted := *j
+				redacted.LeaseID = ""
+				return redacted, nil
 			}
 			return ScanJob{}, errors.New("conflicting scan result")
 		}
