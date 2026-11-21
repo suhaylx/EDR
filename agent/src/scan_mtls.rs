@@ -129,6 +129,36 @@ impl AgentClient {
         self.server.join(&suffix).expect("validated URI segments")
     }
 
+    // BE-125: signed transport binds this status to the enrolled certificate.
+    // Reported versions are untrusted observational telemetry, not attestation.
+    pub fn heartbeat(&self, platform: &str, agent_version: &str,
+        clamav_version: &str, signature_version: &str, scan_ready: bool) -> io::Result<()> {
+        #[derive(serde::Serialize)]
+        struct Report<'a> {
+            platform: &'a str, agent_version: &'a str,
+            clamav_version: &'a str, signature_version: &'a str,
+            scan_ready: bool,
+        }
+        if !["windows","linux"].contains(&platform) || agent_version.is_empty()
+           || agent_version.len()>64 || clamav_version.len()>64 ||
+           signature_version.len()>96 {
+            return Err(reject("invalid heartbeat capability report"));
+        }
+        let response = self.http.post(self.endpoint_heartbeat())
+            .json(&Report{platform,agent_version,clamav_version,
+                signature_version,scan_ready})
+            .send().map_err(|_| reject("heartbeat transport failed"))?;
+        match response.status().as_u16() {
+            204 => Ok(()),
+            _ => Err(reject("heartbeat was rejected")),
+        }
+    }
+    fn endpoint_heartbeat(&self) -> Url {
+        let suffix=format!("/agent/v1/tenants/{}/agents/{}/heartbeat",
+            self.tenant,self.agent);
+        self.server.join(&suffix).expect("validated URI segments")
+    }
+
     pub fn claim(&self) -> io::Result<Option<ClaimedJob>> {
         // Claim is bodyless: JSON {} is explicitly rejected by the backend.
         let response = self.http.post(self.endpoint("claim")).body("")
