@@ -1,0 +1,100 @@
+{
+  "source_sha": "65702cbc1cde6750304d9e438bb27bc0537c2d45",
+  "workflow_sha": "c9b8f67347eb03c7df6c647a19dcf6bfde8898c3",
+  "run_id": 44956977201,
+  "run_attempt": 1,
+  "conclusion": "success",
+  "jobs": [
+    {
+      "id": 137007158294,
+      "name": "Native unsigned windows-x86_64",
+      "conclusion": "success",
+      "html_url": "https://github.com/suhaylx/EDR/actions/runs/44956977201/job/137007158294",
+      "started_at": "2026-11-21T22:29:12Z",
+      "completed_at": "2026-11-21T22:35:39Z"
+    },
+    {
+      "id": 137007158567,
+      "name": "Native unsigned linux-x86_64",
+      "conclusion": "success",
+      "html_url": "https://github.com/suhaylx/EDR/actions/runs/44956977201/job/137007158567",
+      "started_at": "2026-11-21T22:29:12Z",
+      "completed_at": "2026-11-21T22:34:06Z"
+    },
+    {
+      "id": 137008904505,
+      "name": "Validate release files and optional draft",
+      "conclusion": "success",
+      "html_url": "https://github.com/suhaylx/EDR/actions/runs/44956977201/job/137008904505",
+      "started_at": "2026-11-21T22:35:42Z",
+      "completed_at": "2026-11-21T22:35:55Z"
+    }
+  ],
+  "release": {
+    "id": 454032107,
+    "tag": "v0.1.0-rc.2",
+    "target_commitish": "65702cbc1cde6750304d9e438bb27bc0537c2d45",
+    "draft": true,
+    "prerelease": true,
+    "published_at": null,
+    "html_url": "https://github.com/suhaylx/EDR/releases/tag/untagged-82e4f1a402acda71ef9c",
+    "assets": [
+      {
+        "id": 777081000,
+        "name": "release.json",
+        "size": 1232,
+        "state": "uploaded",
+        "digest": "sha256:b215c0280ab3c1ad3e3c396e122fa0d9b961ae9ce1d953fd365f7c0e67540a11",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/release.json"
+      },
+      {
+        "id": 777080993,
+        "name": "RELEASE_NOTES.md",
+        "size": 1199,
+        "state": "uploaded",
+        "digest": "sha256:cf73985ff4a33dbe455c849c2f62c9d40a7332d9f2bd0060c3666cd635ee8e7c",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/RELEASE_NOTES.md"
+      },
+      {
+        "id": 777080992,
+        "name": "SHA256SUMS",
+        "size": 499,
+        "state": "uploaded",
+        "digest": "sha256:27394e96ed5e4196d9a57e87b0a1eb0af9dc230820b0c85d8537f5b09c84b01d",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/SHA256SUMS"
+      },
+      {
+        "id": 777080999,
+        "name": "turansec-edr-65702cbc1cde-linux-x86_64-unsigned.manifest.json",
+        "size": 7109,
+        "state": "uploaded",
+        "digest": "sha256:1d07f64c4f6d1f80ea0fd1a7293dd0023fce0fe7437b558f2dac1d7aad9b8fb4",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/turansec-edr-65702cbc1cde-linux-x86_64-unsigned.manifest.json"
+      },
+      {
+        "id": 777080994,
+        "name": "turansec-edr-65702cbc1cde-linux-x86_64-unsigned.tar.gz",
+        "size": 9804534,
+        "state": "uploaded",
+        "digest": "sha256:b1c19f5dbc5556119d850da176dd5cc29075ff1d3c25b24c2be1a08c7ca3fa78",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/turansec-edr-65702cbc1cde-linux-x86_64-unsigned.tar.gz"
+      },
+      {
+        "id": 777081012,
+        "name": "turansec-edr-65702cbc1cde-windows-x86_64-unsigned.manifest.json",
+        "size": 7326,
+        "state": "uploaded",
+        "digest": "sha256:9476a2db6aca0dfa1c373cab162a5bda293174a56ee434cf7d3f22feb64bfd71",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/turansec-edr-65702cbc1cde-windows-x86_64-unsigned.manifest.json"
+      },
+      {
+        "id": 777081015,
+        "name": "turansec-edr-65702cbc1cde-windows-x86_64-unsigned.zip",
+        "size": 9595202,
+        "state": "uploaded",
+        "digest": "sha256:dfe1d44cbb2cc636485b110c87812be42d39ff8554e6e445c8f4a64347101ef9",
+        "browser_download_url": "https://github.com/suhaylx/EDR/releases/download/untagged-82e4f1a402acda71ef9c/turansec-edr-65702cbc1cde-windows-x86_64-unsigned.zip"
+      }
+    ]
+  }
+}

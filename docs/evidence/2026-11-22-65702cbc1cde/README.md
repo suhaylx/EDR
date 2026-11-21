@@ -35,7 +35,9 @@ The final browser trace proves one submitted acknowledgement POST at the server 
 
 ## Package delivery
 
-[Native package run 44956977201](https://github.com/suhaylx/EDR/actions/runs/44956977201) builds unsigned Linux and Windows portable archives from the source above. Its delivery-workflow commit is `c9b8f67347eb03c7df6c647a19dcf6bfde8898c3`, on a separate release-build branch. The workflow checks out the tested source explicitly, verifies package file hashes and native binary source identifiers, and prepares reviewable draft assets. At the creation of this evidence record, package execution is still in progress; this section does not claim successful delivery.
+**Both native package builds and the combined preparation job passed.** [Download the unsigned draft prerelease v0.1.0-rc.2](https://github.com/suhaylx/EDR/releases/tag/untagged-82e4f1a402acda71ef9c). Both archives contain the tested source above; all 38 files and both native binary source identifiers were verified on each platform. All seven release assets are uploaded, and archive/manifest API digests match the preparation record.
+
+[Package hashes, native job links and scope](packages/PACKAGE_EVIDENCE.md). [Exact release record](packages/release.json). This is a draft unsigned portable candidate, not a signed installation release or deployment approval.
 
 ## Remaining release and assignment gates
 
@@ -46,3 +48,5 @@ The original seven-day sprint has a three-day baseline plus four remaining days.
 ## Record provenance
 
 The independent QA and frontend agents verified the actual artifacts before the execution workspace became unavailable. This durable evidence set records their verified findings and GitHub metadata; reconstructed prose is identified as such. The linked original Actions artifacts retain the actual command ledgers, reports and screenshots. No private credentials or signing keys are included.
+
+The independent QA and frontend reviewers separately read the first published evidence commit 79cb9909f576bef72016d69f1134be946dcfcfde and confirmed that the transcriptions faithfully preserved their results, hashes and limitations. The reports remain unchanged in this package-evidence update.

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "version": "v0.1.0-rc.2",
+  "source_sha": "65702cbc1cde6750304d9e438bb27bc0537c2d45",
+  "status": "unsigned-engineering-candidate",
+  "artifacts": [
+    {
+      "target": "linux-x86_64",
+      "name": "turansec-edr-65702cbc1cde-linux-x86_64-unsigned.tar.gz",
+      "bytes": 9804534,
+      "sha256": "b1c19f5dbc5556119d850da176dd5cc29075ff1d3c25b24c2be1a08c7ca3fa78",
+      "manifest": "turansec-edr-65702cbc1cde-linux-x86_64-unsigned.manifest.json",
+      "manifest_sha256": "1d07f64c4f6d1f80ea0fd1a7293dd0023fce0fe7437b558f2dac1d7aad9b8fb4",
+      "publisher_signature": "absent"
+    },
+    {
+      "target": "windows-x86_64",
+      "name": "turansec-edr-65702cbc1cde-windows-x86_64-unsigned.zip",
+      "bytes": 9595202,
+      "sha256": "dfe1d44cbb2cc636485b110c87812be42d39ff8554e6e445c8f4a64347101ef9",
+      "manifest": "turansec-edr-65702cbc1cde-windows-x86_64-unsigned.manifest.json",
+      "manifest_sha256": "9476a2db6aca0dfa1c373cab162a5bda293174a56ee434cf7d3f22feb64bfd71",
+      "publisher_signature": "absent"
+    }
+  ],
+  "native_platforms_not_built": [],
+  "deployment_authorization": "not-granted",
+  "acceptance": "Consult exact-SHA CI, independent reviews and native host evidence separately"
+}
