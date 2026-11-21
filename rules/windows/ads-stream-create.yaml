@@ -1,0 +1,35 @@
+# Original TuranSec laboratory heuristic for Sysmon Event 15, no copied signatures.
+id: TURAN-WIN-ADS-STREAM-001
+version: 1
+platform: windows
+status: lab_prototype
+source: sysmon
+required_event:
+  event_id: 15
+  type: file_create_stream_hash
+  fields: [device_id, boot_id, process_guid, source_record_id, file_path, sha256, time]
+match:
+  path_type: drive_absolute_ntfs_alternate_data_stream
+  location: user_writable_or_download_temp_programdata_heuristic
+  hash: valid_sha256_hex_unverified
+  named_stream_required: true
+  optional_data_stream_type: "$DATA"
+suppress_named_stream:
+  - Zone.Identifier
+  - WofCompressedData
+  - SummaryInformation
+  - DocumentSummaryInformation
+output:
+  category: nondefault_alternate_data_stream_creation
+  severity: medium
+  confidence: low
+  action: alert_only
+mitre_hypothesis: T1564.004
+false_positives:
+  - applications may legitimately store metadata or additional streams
+  - Zone.Identifier marks downloads and is expected benign telemetry
+  - path and SHA256 originate from unauthenticated lab sender
+safety:
+  do_not_infer_execution: true
+  no_auto_quarantine: true
+  no_production_claim: true
