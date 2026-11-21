@@ -91,3 +91,71 @@ export function localCompanionPresentation(
     explanation: 'Component and scan states are reported status only; they do not attest endpoint protection, signature freshness, or policy enforcement.',
   };
 }
+
+/**
+ * Presentation rows are derived from a confirmed recent report only.
+ * Stale or missing snapshots must not leak previous positive-looking statuses.
+ * This function does not authenticate IPC; its caller must do so separately.
+ */
+export type LocalCompanionRow = {
+  key: string;
+  label: string;
+  value: string;
+  detail: string;
+};
+const unknown = (key: string, label: string): LocalCompanionRow => ({
+  key, label, value: 'Unknown', detail: 'No current authenticated local status.',
+});
+
+export function localCompanionRows(
+  snapshot: LocalCompanionSnapshot | null, nowMs: number,
+): LocalCompanionRow[] {
+  const current = localCompanionPresentation(snapshot, nowMs);
+  if (current.status !== 'reported' || !snapshot) {
+    return [
+      unknown('core', 'TuranSec Rust core'),
+      unknown('clamav', 'ClamAV scanner'),
+      unknown('telemetry', 'Endpoint telemetry'),
+      unknown('policy', 'Policy acknowledgement'),
+      unknown('scan', 'Last reported scan job'),
+      unknown('timestamp', 'Last status report'),
+    ];
+  }
+  const core: Record<LocalCompanionSnapshot['core_state'], string> = {
+    reported_running: 'Running (reported)',
+    reported_degraded: 'Degraded (reported)',
+    reported_stopped: 'Stopped (reported)',
+    unknown: 'Unknown',
+  };
+  const component: Record<ReportedComponentState, string> = {
+    reported_available: 'Available (reported)',
+    reported_unavailable: 'Unavailable (reported)',
+    unknown: 'Unknown',
+  };
+  const scan: Record<ReportedScanState, string> = {
+    queued: 'Queued — not yet scanned',
+    leased: 'Leased — result pending',
+    completed: 'Completed (reported) — verdict unavailable',
+    failed: 'Failed (reported) — no valid verdict',
+    expired: 'Expired (reported) — no valid verdict',
+    unknown: 'Unknown — no scan result evidence',
+  };
+  return [
+    {key: 'core', label: 'TuranSec Rust core', value: core[snapshot.core_state],
+      detail: 'A local status report is not proof of tamper resistance or active protection.'},
+    {key: 'clamav', label: 'ClamAV scanner', value: component[snapshot.clamav_state],
+      detail: 'Engine execution, signatures, database freshness and file safety are not attested.'},
+    {key: 'telemetry',
+      label: snapshot.platform === 'windows' ? 'Windows Sysmon telemetry' : 'Linux telemetry collector',
+      value: component[snapshot.telemetry_state],
+      detail: 'Collector readiness, event loss and required event coverage are not attested.'},
+    {key: 'policy', label: 'Policy acknowledgement',
+      value: snapshot.policy_revision === null || snapshot.policy_revision === 0
+        ? 'Revision unknown or zero' : 'Revision ' + snapshot.policy_revision + ' (reported)',
+      detail: 'Applied revision is not an authenticated policy enforcement confirmation.'},
+    {key: 'scan', label: 'Last reported scan job', value: scan[snapshot.scan_state],
+      detail: 'A job lifecycle state is not a verified malware verdict or endpoint safety claim.'},
+    {key: 'timestamp', label: 'Last status report', value: snapshot.observed_at,
+      detail: 'Wall-clock time alone is not replay resistance or transport authentication.'},
+  ];
+}
