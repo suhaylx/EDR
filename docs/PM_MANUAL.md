@@ -22,3 +22,7 @@ Agent 2 owns releases, packaging, canary and rollback. Agent 1 must approve secu
 
 ## Lab minimum
 Ubuntu 24.04 LTS dev server: 8 vCPU, 16 GB RAM, 200 GB SSD. Windows 11 test VM: 4 vCPU, 8 GB RAM, 80 GB SSD. Isolated networking, snapshots and test credentials; AD and dedicated ClickHouse testing later.
+
+## Current 25-milestone sprint sources — 21 November 2026
+
+Use [the next M13–M37 delivery board](SPRINT_NEXT_25_MILESTONES_20261121.md) after [M01–M12](SPRINT_12_MILESTONES_20261121.md). Priorities remain in [PRIORITY_BACKLOG.md](PRIORITY_BACKLOG.md); five-role proofs and checkpoints in [AGENT_ACTIVITY.md](AGENT_ACTIVITY.md). Draft PR #101 limits lab mTLS binding to loopback; it is not a deployed authenticated service. Keep Code/CI vs independent InfoSec review vs QA vs on-host deployment separate; no 25 cosmetic commits, main merges, secret reuse or unauthorized endpoint installs.
