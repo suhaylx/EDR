@@ -8,6 +8,8 @@ import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetec
 import type { InvestigationSeed } from './investigation.js';
 import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
 import { isSafeLabBrowserOrigin } from './security-origin.js';
+import { fetchLabTelemetry, type LabTelemetryEvent } from './telemetry.js';
+import { SysmonCoverage } from './SysmonCoverage.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -166,10 +168,11 @@ function App() {
   const [status, setStatus] = useState<LoadState>('disconnected');
   const [jobs, setJobs] = useState<LabScanJob[]>([]);
   const [detections, setDetections] = useState<LabDetection[]>([]);
+  const [events, setEvents] = useState<LabTelemetryEvent[]>([]);
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -191,26 +194,30 @@ function App() {
     setOverview(null);
     setJobs([]);
     setDetections([]);
+    setEvents([]);
     setInvestigationSeed(null);
     setLoadedAt(null);
     try {
       // Both requests must succeed; do not display stale or partially labeled
       // metrics after a failed refresh or a changed UTC window.
-      const [nextOverview, data, detected] = await Promise.all([
+      const [nextOverview, data, detected, telemetry] = await Promise.all([
         fetchLabOverview(tokenRef.current, days, controller.signal),
         fetchLabScanJobs(tokenRef.current, controller.signal),
         fetchLabDetections(tokenRef.current, controller.signal),
+        fetchLabTelemetry(tokenRef.current, controller.signal),
       ]);
       if (controller.signal.aborted) return;
       setOverview(nextOverview);
       setJobs(data);
       setDetections(detected);
+      setEvents(telemetry);
       setLoadedAt(new Date());
       setStatus('ready');
     } catch (cause: unknown) {
       if (controller.signal.aborted) return;
       setJobs([]);
       setDetections([]);
+      setEvents([]);
       setInvestigationSeed(null);
       setOverview(null);
       setLoadedAt(null);
@@ -226,6 +233,7 @@ function App() {
     tokenRef.current = value;
     setToken(value);
     setDetections([]);
+    setEvents([]);
     setInvestigationSeed(null);
     setJobs([]);
     setOverview(null);
@@ -239,6 +247,7 @@ function App() {
     tokenRef.current = '';
     setToken('');
     setDetections([]);
+    setEvents([]);
     setInvestigationSeed(null);
     setJobs([]);
     setOverview(null);
@@ -251,6 +260,7 @@ function App() {
     request.current?.abort();
     setDays(value);
     setDetections([]);
+    setEvents([]);
     setInvestigationSeed(null);
     setOverview(null);
     setJobs([]);
@@ -283,6 +293,7 @@ function App() {
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
+        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => setView('telemetry')}>Sysmon & telemetry</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
@@ -299,6 +310,11 @@ function App() {
       </> : view === 'endpoints' ?
         (status === 'ready' && overview ? <EndpointInventory overview={overview}/> :
           <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
+        : view === 'telemetry' ?
+        (status === 'ready'
+          ? <SysmonCoverage events={events}
+              onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
+          : <section className="panel"><p className="empty">Connect and refresh to inspect retained Sysmon and Linux source events. No telemetry means visibility is unknown, not safe.</p></section>)
         : view === 'alerts' ?
         (status === 'ready' && overview
           ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
