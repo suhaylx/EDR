@@ -2,7 +2,7 @@
 
 **Assignment date:** 21 November 2026, Asia/Tashkent. **Owner:** Agent 1 / InfoSec Security Functionality Lead. Agent 2 owns Go/Rust implementation integration, Agent 3 independent QA and real-host evidence, Agent 5 SOC UX, PM sprint tracking.
 
-**Status:** 25 new security work orders only. Every row starts **PLANNED**, not implemented, CI-passed, deployed or QA-accepted. Related code elsewhere is partial until verified on the exact merged integration SHA. This adds to [SEC-001–025](https://github.com/suhaylx/EDR/pull/110), [SEC-026–050](https://github.com/suhaylx/EDR/pull/116) and [SEC-051–075](https://github.com/suhaylx/EDR/pull/122).
+**Status:** 25 additional work orders. SEC-076 has a partial code PR #133 under CI review; SEC-077–100 remain PLANNED. None are independently QA-accepted, deployed or production-ready. Related code elsewhere is partial until verified on the exact merged integration SHA. This adds to [SEC-001–025](https://github.com/suhaylx/EDR/pull/110), [SEC-026–050](https://github.com/suhaylx/EDR/pull/116) and [SEC-051–075](https://github.com/suhaylx/EDR/pull/122).
 
 **Priority:** Existing open P0 authentication, tenant isolation, durable delivery, real ClamAV, scan safety and acceptance gates remain ahead of optional new detection rules. Do not interpret 100 milestone assignments as 100 completed security features or production readiness.
 
@@ -10,7 +10,7 @@
 
 | ID | Priority | Expected source behavior and positive/negative acceptance | Proposed deliverable and test files | Dependencies / blockers | Status |
 | --- | --- | --- | --- | --- | --- |
-| SEC-076 | P0 | Additional Windows Event Log provider separation: immutable provider+channel+event ID, boot/device binding and server receipt; Sysmon EID1 must never be confused with Security EID4688. | docs/security/windows-provider-provenance.md; backend/internal/edr/windows_provider_contract_test.go | Windows Security / Sysmon collection; existing SEC-026–030 | PLANNED |
+| SEC-076 | P0 | Additional Windows Event Log provider separation: immutable provider+channel+event ID, boot/device binding and server receipt; Sysmon EID1 must never be confused with Security EID4688. | docs/security/windows-provider-provenance.md; backend/internal/edr/windows_provider_contract_test.go | Windows Security / Sysmon collection; existing SEC-026–030 | IN PROGRESS — [partial provider guard PR #133](https://github.com/suhaylx/EDR/pull/133), CI and QA pending |
 | SEC-077 | P1 | PowerShell 4104 script-block evidence: explicit opt-in and privacy redaction of scripts, tokens and user identity, hash-only fields when policy permits, tested with benign administrative scripts. | rules/windows/powershell-audit-metadata.yaml; backend/internal/edr/powershell_privacy_test.go | Windows PowerShell Operational access+privacy policy | PLANNED |
 | SEC-078 | P1 | Windows Security EID4688 process-creation correlation with Sysmon 1: deduplicate only when independently reported PID, creation identity, boot and time agree; unresolved link remains unknown. | rules/windows/process-provider-correlation.yaml; backend/internal/edr/provider_process_test.go | SEC-076 provider trust, SEC-035 process identity | PLANNED |
 | SEC-079 | P1 | Service-install EID7045 contextual detection: exact System provider, image path, service name and authorized installer exception; do not infer Sysmon ID or malware. | rules/windows/service-install-context.yaml; backend/internal/edr/service_install_test.go | SEC-076 source contract | PLANNED |
