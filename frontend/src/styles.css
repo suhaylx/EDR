@@ -145,3 +145,23 @@
 @media(max-width:700px){.alert-evidence-gap-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.analyst-filter-grid,.analyst-sorting,.alert-evidence-gap-summary dl{grid-template-columns:1fr}}
 @media(forced-colors:active){.analyst-filters,.alert-evidence-gap-summary,.related-source-context{border-color:CanvasText}}
+
+/* Agent 5 scan job evidence worklist; never implies verified endpoint protection. */
+.scan-evidence-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.scan-evidence-summary>div{padding:16px;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:12px}
+.scan-evidence-summary dt{font-size:.85rem;color:var(--muted);line-height:1.45}
+.scan-evidence-summary dd{margin:9px 0 0;font-size:1.65rem;font-weight:800;font-variant-numeric:tabular-nums}
+.scan-evidence-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}
+.scan-evidence-filters .field{display:grid;gap:8px;min-width:0}
+.scan-evidence-filters input,.scan-evidence-filters select{width:100%;min-width:0;max-width:100%;min-height:44px;
+  padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:9px}
+.scan-evidence-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-evidence-detail{margin-top:10px;border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:0}
+.scan-evidence-detail summary{cursor:pointer;min-height:40px;padding-top:9px;font-weight:700}
+.scan-evidence-detail summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.scan-evidence-detail p{overflow-wrap:anywhere;white-space:pre-wrap}
+.scan-evidence-paging{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin:18px 0}
+.scan-evidence-paging>span{font-weight:700;font-variant-numeric:tabular-nums}
+@media(max-width:900px){.scan-evidence-summary,.scan-evidence-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.scan-evidence-summary,.scan-evidence-filters{grid-template-columns:1fr}}
+@media(forced-colors:active){.scan-evidence-summary>div,.scan-evidence-detail{border-color:CanvasText}}
