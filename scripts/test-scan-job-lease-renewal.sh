@@ -3,7 +3,7 @@
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Set disposable PostgreSQL URL}"
 command -v psql >/dev/null
-psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0006_scan_job_lease_renewal.up.sql
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0007_scan_job_lease_renewal.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 BEGIN;
 INSERT INTO edr_tenants(tenant_id,display_name) VALUES ('renewA','Renew A'),('renewB','Renew B');
