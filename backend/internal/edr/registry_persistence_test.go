@@ -103,7 +103,7 @@ func TestRegistryRuleNegativeEvidenceAndFalsePositives(t *testing.T) {
 		{"missing-image", func(e []Event) { e[2].Image = "" }},
 		{"trusted-system-location", func(e []Event) { e[2].Image = `C:\Windows\System32\msiexec.exe` }},
 		{"not-an-exe", func(e []Event) { e[2].Image = `C:\Users\Alice\Temp\script.ps1` }},
-		{"not-run-key", func(e []Event) { e[2].RegistryTarget += "Other" }},
+		{"not-run-key", func(e []Event) { e[2].RegistryTarget = strings.Replace(e[2].RegistryTarget, `\Run\`, `\RunOther\`, 1) }},
 		{"not-windows", func(e []Event) { e[2].Platform = "linux" }},
 	}
 	for _, tc := range cases {
