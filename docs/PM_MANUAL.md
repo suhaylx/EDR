@@ -26,3 +26,8 @@ Ubuntu 24.04 LTS dev server: 8 vCPU, 16 GB RAM, 200 GB SSD. Windows 11 test VM: 
 ## Current 25-milestone sprint sources — 21 November 2026
 
 Use [the next M13–M37 delivery board](SPRINT_NEXT_25_MILESTONES_20261121.md) after [M01–M12](SPRINT_12_MILESTONES_20261121.md). Priorities remain in [PRIORITY_BACKLOG.md](PRIORITY_BACKLOG.md); five-role proofs and checkpoints in [AGENT_ACTIVITY.md](AGENT_ACTIVITY.md). Draft PR #101 limits lab mTLS binding to loopback; it is not a deployed authenticated service. Keep Code/CI vs independent InfoSec review vs QA vs on-host deployment separate; no 25 cosmetic commits, main merges, secret reuse or unauthorized endpoint installs.
+
+
+## Current implementation checkpoints: M38–M62 (21 Nov 2026)
+
+Track [the next 25 milestones](SPRINT_M38_M62_20261121.md), following [M13–M37](SPRINT_NEXT_25_MILESTONES_20261121.md). The immediate P0 technical commit is [draft PR #117](https://github.com/suhaylx/EDR/pull/117) (Rust key inode/PEM bounded-read tests, dependent on #113), not production enrollment. The accepted evidence distinctions remain unchanged: exact SHA and CI, independent security review, independent QA, real authorized Windows/Linux validation, explicit owner-approved rollout. A 25-item plan is not 25 completed milestones. Do not merge to main automatically or treat scheduled automations as independent code execution.
