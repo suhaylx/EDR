@@ -4,6 +4,8 @@
 mod clamav;
 #[allow(dead_code)]
 mod scan_jobs;
+#[allow(dead_code)]
+mod scan_mtls;
 
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
