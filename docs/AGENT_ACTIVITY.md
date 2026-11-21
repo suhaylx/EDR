@@ -138,3 +138,18 @@ Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared P
 | **4 PM** | PM-001 save next 25 board, backlog and evidence; **23:50** | [PM PR #7](https://github.com/suhaylx/EDR/pull/7) with new 25 board, issue #6 evidence | **EVIDENCED: saved/read-back board/backlog/manual and GitHub issue orders**; canonical ChatGPT Page write BLOCKED in current toolset |
 
 **Counts:** four roles have prior source/CI evidence; **0/4 independently approved the new PR #101**. Automation scheduling does not imply background engineering. Do not flag missed checkpoints until they pass. Release NO-GO.
+
+
+## M38–M62 verified five-role evidence checkpoint — 21 Nov 2026 (Asia/Tashkent)
+
+**Board:** [next 25 milestones M38–M62](SPRINT_M38_M62_20261121.md). **Shared PM-authored code** [draft PR #117](https://github.com/suhaylx/EDR/pull/117) head `7e59c813e8bcec1aa1bf7185452996b4c49a3a8a` protects Rust Unix client-key inode and bounds PEM; starter CI PASS and Rust CI was IN PROGRESS at first check. It does **not** demonstrate independent Agent 2 execution. Parent [PR #113](https://github.com/suhaylx/EDR/pull/113) starter/Rust CI PASS, [#112](https://github.com/suhaylx/EDR/pull/112) PostgreSQL CI 8/8 PASS. Actual Windows/Linux agent enrollment, ClamAV, Sysmon and deploy NOT RUN.
+
+| Role and priority | Exact new work order + checkpoint Asia/Tashkent | Verifiable source, actual test | Status and next corrective action |
+| --- | --- | --- | --- |
+| **1 InfoSec P0/P1** | M38/M40/M53; review `agent/src/scan_mtls.rs` path-replacement and Windows ACL gap on [#117](https://github.com/suhaylx/EDR/pull/117); original Sysmon EID7/EID11 safe fixtures; **23:10** | Security rule [#108](https://github.com/suhaylx/EDR/pull/108) exists; new #117 formal security review NOT VERIFIED | **CODE EVIDENCED, SIGNOFF PENDING**; provide line-level findings, targeted fixture run and review verdict |
+| **2 Backend/Deployment P0** | M41/M44–M47: runnable `backend/cmd/agentserver/main.go` + approved `go.mod/go.sum` PG driver, TLS1.3, one Rust agent and ClamAV verdict; **23:20** | [#113](https://github.com/suhaylx/EDR/pull/113) Rust starter and Rust CI PASS, [#112](https://github.com/suhaylx/EDR/pull/112) PG 8/8 PASS; #117 shared PM patch | **CODE EVIDENCED, REAL SERVICE BLOCKED**; verified dependency driver unavailable locally, require real TLS/PG/revocation tests and formal review |
+| **3 QA P0** | M38–M39/M61: Rust inode/mode/oversize and real mTLS tenant/SQL replay/ClamAV/Sysmon matrix in `docs/qa/p0-test-matrix.md`; **23:30** | [#96](https://github.com/suhaylx/EDR/pull/96) recent 4/4 CI PASS; #117 exact-head independent QA NOT VERIFIED, OS tests NOT RUN | **TEST SOURCE EVIDENCED, RELEASE QA BLOCKED**; submit PASS/FAIL/NOT RUN and role-owned signoff |
+| **5 Frontend/UX P1** | M57–M59 React `frontend/src/` authenticated tenant-safe SOC, honest ClamAV/Sysmon unknown states, local IPC contract; **23:40** | [#100](https://github.com/suhaylx/EDR/pull/100) latest known head `ad5a6ba3ac95863dc3b93963ac9888493aedd522` 3/3 CI PASS, browser/manual a11y NOT RUN | **LAB CODE EVIDENCED, A11Y/LIVE API BLOCKED**; verify 401/403/503, keyboard/zoom, local privilege separation |
+| **4 PM P0** | M38–M62 board and this tracker/backlog, issue comments and exact-head CI; **23:50** | [PM draft PR #7](https://github.com/suhaylx/EDR/pull/7) commit to be verified after write | **EVIDENCED once read back**; canonical ChatGPT Page read/write BLOCKED |
+
+**Independent new PR #117 review count at start: 0/4 roles accepted** (this does not prove people idle). All role schedules enabled as verified. **Release NO-GO**: no main merge, real host test, signed production binary or deployment. Do not use passwords/credentials exposed in chat.
