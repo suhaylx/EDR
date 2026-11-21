@@ -1,8 +1,9 @@
-//! Lab-only Windows heartbeat and real Sysmon Event ID 1 transfer.
+//! Lab-only Windows heartbeat and configured Sysmon 1-29/255 transfer.
 //! No service installation, tamper protection, TLS identity or prevention.
 //! Always connect to the Linux development API using a Windows-local SSH tunnel.
 use serde::Deserialize;
 use serde_json::json;
+use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io;
@@ -14,10 +15,11 @@ use std::process::Command;
 #[cfg(windows)]
 use std::thread;
 
-const MAX_RESPONSE_BYTES: usize = 64 * 1024;
+const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+const MAX_OBSERVATIONS: usize = 64;
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
-struct SysmonProcess {
+struct SysmonEvent {
     record_id: u64,
     event_id: u32,
     time: String,
@@ -27,6 +29,8 @@ struct SysmonProcess {
     process_guid: String,
     #[serde(default)]
     parent_process_guid: String,
+    #[serde(default)] file_path: String,
+    #[serde(default)] fields: BTreeMap<String, String>,
 }
 
 fn error(kind: io::ErrorKind, reason: impl Into<String>) -> io::Error {
@@ -57,44 +61,76 @@ pub(crate) fn api_port() -> io::Result<u16> {
     Ok(port)
 }
 
-fn records_after(json_body: &[u8], last_seen: u64) -> io::Result<Vec<SysmonProcess>> {
-    if json_body.len() > MAX_RESPONSE_BYTES {
-        return Err(error(io::ErrorKind::InvalidData, "oversized Sysmon query output"));
-    }
-    let mut records: Vec<SysmonProcess> = serde_json::from_slice(json_body)
-        .map_err(|_| error(io::ErrorKind::InvalidData, "malformed Sysmon JSON"))?;
-    if records.len() > 32 {
-        return Err(error(io::ErrorKind::InvalidData, "too many Sysmon records"));
-    }
-    records.retain(|r| {
-        r.record_id > last_seen
-            && r.event_id == 1
-            && !r.process_guid.is_empty()
-            && r.process_guid.len() <= 160
-            && !r.image.is_empty()
-            && r.image.len() <= 1024
-            && r.parent_process_guid.len() <= 160
-            && r.time.len() <= 64
-            && r.time.contains('T')
-    });
-    records.sort_by_key(|r| r.record_id);
-    records.dedup_by_key(|r| r.record_id);
-    Ok(records)
-}
 
-fn event_payload(agent_id: &str, r: &SysmonProcess) -> serde_json::Value {
-    json!({
-        "device_id": agent_id,
-        "platform": "windows",
-        "source": "sysmon",
-        "source_record_id": r.record_id.to_string(),
-        "type": "process_create",
-        "time": r.time,
-        "process_guid": r.process_guid,
-        "parent_process_guid": r.parent_process_guid,
-        "image": r.image,
-        "detail": format!("Observed Sysmon Operational Event ID 1; Windows EventRecordID={}; command line not collected", r.record_id)
-    })
+fn known_sysmon_id(id: u32) -> bool { (1..=29).contains(&id) || id == 255 }
+fn sysmon_kind(id: u32) -> &'static str {
+    match id {
+      1=>"process_create",2=>"file_creation_time",3=>"network_connect",
+      4=>"sysmon_service_state",5=>"process_terminate",6=>"driver_load",
+      7=>"module_load",8=>"create_remote_thread",9=>"raw_access_read",
+      10=>"process_access",11=>"file_create",12=>"registry_object",
+      13=>"registry_value_set",14=>"registry_rename",15=>"file_stream_hash",
+      16=>"sysmon_config_change",17=>"pipe_create",18=>"pipe_connect",
+      19=>"wmi_filter",20=>"wmi_consumer",21=>"wmi_binding",22=>"dns_query",
+      23=>"file_delete_archive",24=>"clipboard_change_metadata",
+      25=>"process_tampering",26=>"file_delete_detected",
+      27=>"file_block_executable",28=>"file_block_shredding",
+      29=>"file_executable_detected",255=>"sysmon_error",_=>"unknown"
+    }
+}
+const SAFE_FIELDS: &[&str] = &[
+ "rule_name","destination_ip","destination_port","source_ip","source_port",
+ "protocol","query_name","target_object","pipe_name","source_image",
+ "target_image","source_process_guid","target_process_guid","image_loaded",
+ "operation","event_type","query_status","target_filename","initiated",
+];
+fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
+    if raw.len() > MAX_RESPONSE_BYTES {
+        return Err(error(io::ErrorKind::InvalidData,"oversized Sysmon query result"));
+    }
+    let mut observations:Vec<SysmonEvent> = serde_json::from_slice(raw)
+        .map_err(|_|error(io::ErrorKind::InvalidData,"malformed Sysmon JSON"))?;
+    if observations.len()>MAX_OBSERVATIONS {
+        return Err(error(io::ErrorKind::InvalidData,"too many Sysmon records"));
+    }
+    for e in &observations {
+        if e.record_id == 0 || !known_sysmon_id(e.event_id)
+            || !(10..=64).contains(&e.time.len()) || !e.time.contains('T')
+            || e.image.len()>1024 || e.file_path.len()>1024
+            || e.process_guid.len()>128 || e.parent_process_guid.len()>128
+            || e.fields.len()>SAFE_FIELDS.len()
+            || e.fields.iter().any(|(k,v)| !SAFE_FIELDS.contains(&k.as_str())
+                || v.len()>512 || v.chars().any(char::is_control))
+            || e.fields.iter().map(|(k,v)|k.len()+v.len()).sum::<usize>() > 4096
+        { return Err(error(io::ErrorKind::InvalidData,"invalid Sysmon event metadata")); }
+        if e.event_id==24 && (!e.image.is_empty() || !e.file_path.is_empty()
+            || !e.process_guid.is_empty() || !e.parent_process_guid.is_empty() || !e.fields.is_empty())
+        { return Err(error(io::ErrorKind::InvalidData,"clipboard payload must not be exported")); }
+        if e.event_id==1 && (e.process_guid.is_empty() || e.image.is_empty()) {
+            return Err(error(io::ErrorKind::InvalidData,"process creation missing GUID/image"));
+        }
+    }
+    observations.retain(|e|e.record_id>checkpoint);
+    observations.sort_by_key(|e|e.record_id);
+    observations.dedup_by_key(|e|e.record_id);
+    Ok(observations)
+}
+fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
+    let mut payload=json!({
+      "device_id":agent_id,"platform":"windows","source":"sysmon",
+      "source_event_id":e.event_id,"source_record_id":e.record_id.to_string(),
+      "type":sysmon_kind(e.event_id),"time":e.time,
+      "detail":format!("Observed Sysmon Operational Event ID {}, EventRecordID={}; sender-reported metadata",e.event_id,e.record_id)
+    });
+    if !e.image.is_empty(){payload["image"]=json!(e.image);}
+    if !e.file_path.is_empty(){payload["file_path"]=json!(e.file_path);}
+    if !e.process_guid.is_empty(){payload["process_guid"]=json!(e.process_guid);}
+    // Event ID 1 alone establishes the parent link; no inferred edges.
+    if e.event_id==1 && !e.parent_process_guid.is_empty() {
+      payload["parent_process_guid"]=json!(e.parent_process_guid);
+    }
+    if !e.fields.is_empty(){payload["source_fields"]=json!(e.fields);}
+    payload
 }
 
 fn checkpoint_path(local_app_data: &Path, agent_id: &str) -> io::Result<PathBuf> {
@@ -156,7 +192,7 @@ ConvertTo-Json -InputObject $observations -Compress -Depth 4
 "#;
 
 #[cfg(windows)]
-fn collect_sysmon(last_seen: u64) -> io::Result<Vec<SysmonProcess>> {
+fn collect_sysmon(last_seen: u64) -> io::Result<Vec<SysmonEvent>> {
     let output = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", SYSMON_POWERSHELL])
         .output()?;
