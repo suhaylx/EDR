@@ -1,0 +1,57 @@
+name: github-hosted-isolated-full-ci
+
+# Primary full CI: GitHub provisions a clean ubuntu-latest VM, then the test
+# script builds throwaway Docker containers and PostgreSQL networks itself.
+# GitHub-hosted runner assignment must first be repaired (#153/#148).
+on:
+  push:
+    branches:
+      - qa/github-actions-isolated-full-ci-20261121
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turansec-edr-hosted-isolated-qa
+  cancel-in-progress: true
+
+jobs:
+  full-security-and-regression-suite:
+    if: github.repository == 'suhaylx/EDR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GIT_TERMINAL_PROMPT: '0'
+      CI: 'true'
+    steps:
+      - name: Checkout exact GitHub source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout separate historical React lab snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: 0466e7c47f098ffdb83f7818eb6571e0d941aebe
+          path: _frontend_lab_snapshot
+          persist-credentials: false
+      - name: Validate GitHub-hosted isolated build environment
+        shell: bash
+        run: |
+          test -f scripts/ci/run-github-full-ci.sh
+          test -f scripts/ci/Dockerfile.postgres-client
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          docker info
+          bash -n scripts/ci/run-github-full-ci.sh
+          echo "GitHub-hosted VM builds disposable CI Docker containers; not production."
+      - name: Run complete isolated QA suite
+        shell: bash
+        run: bash scripts/ci/run-github-full-ci.sh
+      - name: Upload exact-SHA QA PASS FAIL NOT RUN ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turansec-edr-github-hosted-qa-ledger
+          path: qa-full-ci-results.txt
+          if-no-files-found: warn
+          retention-days: 14
