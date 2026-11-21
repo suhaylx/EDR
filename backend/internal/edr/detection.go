@@ -20,6 +20,10 @@ type Detection struct {
 	ProcessImage      string    `json:"process_image"`
 	ModulePath        string    `json:"module_path"`
 	LoadEventID       string    `json:"load_event_id"`
+	// SourceRecordID is sender-reported and unauthenticated in the lab API.
+	LoadSourceRecordID string    `json:"load_source_record_id,omitempty"`
+	LoadTimeOrigin     string    `json:"load_time_origin"`
+	LoadReceivedAt     time.Time `json:"load_received_at"`
 	FileCreateEventID string    `json:"file_create_event_id,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
@@ -83,6 +87,8 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 			DeviceID: event.DeviceID, ProcessGUID: event.ProcessGUID,
 			ProcessImage: event.Image, ModulePath: event.FilePath,
 			LoadEventID: event.ID, ObservedAt: event.Time,
+			LoadSourceRecordID: event.SourceRecordID,
+			LoadTimeOrigin: event.TimeOrigin, LoadReceivedAt: event.ReceivedAt,
 			Explanation: "A DLL load was observed from a potentially user-writable path; verify signer, provenance and application context before responding.",
 		}
 		// A prior file-create observation can enrich the alert, but is not
