@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeScanJobs, fetchLabScanJobs } from '../.test-dist/lab-api.js';
+import { decodeScanJobs, decodeLabScanReviewJobs, fetchLabScanJobs } from '../.test-dist/lab-api.js';
 
 const job = {id:'j1',agent_id:'win-lab',status:'completed',verdict:'clean_by_signature'};
 test('decodes exact lab scan fields without deriving protection', () => {
@@ -21,11 +21,11 @@ test('uses an explicit bearer token in a no-store read-only request', async () =
   let captured;
   const fetcher = async (path, options) => {
     captured = {path,options};
-    return {ok:true,json:async () => [job]};
+    return {ok:true,json:async () => [{...job,signature_reported:false}]};
   };
   const data = await fetchLabScanJobs('a'.repeat(16), undefined, fetcher);
   assert.equal(data.length, 1);
-  assert.equal(captured.path, '/api/scan-jobs');
+  assert.equal(captured.path, '/api/scan-job-metadata');
   assert.equal(captured.options.method, 'GET');
   assert.equal(captured.options.credentials, 'omit');
   assert.equal(captured.options.cache, 'no-store');
