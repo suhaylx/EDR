@@ -97,4 +97,48 @@ BEGIN
 END $disabled_tenant$;
 ROLLBACK;
 SQL
+# Cross-connection race: revocation already owns the agent row lock when
+# a second session attempts to claim its pending job. A snapshot-only JOIN
+# would return the job before revocation commits; the claim must instead
+# wait for revocation and return zero rows.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO edr_tenants(tenant_id,display_name)
+VALUES ('tenantRace','Race test');
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantRace','win01','windows');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES ('55555555-5555-4555-8555-555555555555','tenantRace','win01','C:/Race');
+SQL
+
+PGAPPNAME=edr-queue-ci-revoker psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL' >/dev/null 2>&1 &
+BEGIN;
+UPDATE edr_agents SET revoked_at=clock_timestamp()
+WHERE tenant_id='tenantRace' AND agent_id='win01';
+SELECT pg_sleep(3);
+COMMIT;
+SQL
+revoker_pid=$!
+ready=0
+for _ in $(seq 1 60); do
+  activity="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT COUNT(*) FROM pg_stat_activity WHERE application_name='edr-queue-ci-revoker' AND state='active' AND query LIKE '%pg_sleep(3)%'")"
+  if [[ "$activity" == "1" ]]; then ready=1; break; fi
+  sleep 0.1
+done
+if [[ "$ready" != "1" ]]; then
+  wait "$revoker_pid" || true
+  echo "Could not establish revocation race fixture" >&2
+  exit 1
+fi
+claimed="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SET statement_timeout='10s'; SELECT COUNT(*) FROM edr_claim_scan_job('tenantRace','win01','race-ci','66666666-6666-4666-8666-666666666666',30)")"
+wait "$revoker_pid"
+if [[ "$(printf '%s\n' "$claimed" | tail -n 1)" != "0" ]]; then
+  echo "Revocation race: claim returned a job after revocation began" >&2
+  exit 1
+fi
+state="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT state FROM edr_scan_jobs WHERE tenant_id='tenantRace' AND agent_id='win01'")"
+if [[ "$state" != "pending" ]]; then
+  echo "Revocation race: rejected claim changed job state" >&2
+  exit 1
+fi
+
 echo "Durable scan-job queue integration passed"
