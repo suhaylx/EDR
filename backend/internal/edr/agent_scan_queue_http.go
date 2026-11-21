@@ -74,6 +74,40 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
             w.WriteHeader(http.StatusNoContent)
             return
         }
+        if operation=="scan-jobs/complete-result" {
+            if r.Method!=http.MethodPost {
+                w.Header().Set("Allow","POST")
+                http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return
+            }
+            r.Body=http.MaxBytesReader(w,r.Body,4096)
+            var payload struct {
+                JobID string `json:"job_id"`
+                LeaseToken string `json:"lease_token"`
+                Verdict string `json:"verdict"`
+                ThreatName string `json:"threat_name"`
+                Detail string `json:"detail"`
+            }
+            decoder:=json.NewDecoder(r.Body)
+            decoder.DisallowUnknownFields()
+            if err:=decoder.Decode(&payload);err!=nil{
+                http.Error(w,"invalid payload",http.StatusBadRequest);return
+            }
+            var extra json.RawMessage
+            if err:=decoder.Decode(&extra);err!=io.EOF {
+                http.Error(w,"multiple payloads",http.StatusBadRequest);return
+            }
+            if !validUUID(payload.JobID)||!validUUID(payload.LeaseToken)||
+                !validScanResult(payload.Verdict,payload.ThreatName,payload.Detail){
+                http.Error(w,"invalid payload",http.StatusBadRequest);return
+            }
+            saved,err:=queue.CompleteWithResult(r.Context(),principal.TenantID,
+                principal.AgentID,payload.JobID,payload.LeaseToken,
+                payload.Verdict,payload.ThreatName,payload.Detail)
+            if err!=nil{http.Error(w,"service unavailable",http.StatusServiceUnavailable);return}
+            if !saved{http.Error(w,"job not found or lease expired",http.StatusConflict);return}
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
         if operation=="scan-jobs/complete" {
             if r.Method!=http.MethodPost {w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return}
             r.Body=http.MaxBytesReader(w,r.Body,4096)
