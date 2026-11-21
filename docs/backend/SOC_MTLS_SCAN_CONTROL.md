@@ -59,3 +59,32 @@ query. These APIs are for operator mTLS clients only; they are not mounted
 in the shared development-token dashboard. Offset pagination is suitable for
 the initial lab; snapshot/keyset pagination for high-volume production
 remains a performance improvement.
+
+## Malicious ClamAV alert lifecycle (BE-136–140)
+
+Migration `0011_soc_malware_alerts.up.sql` automatically inserts one durable
+tenant-bound SOC alert when a scan result is committed as `malicious`.
+`clean_by_signature`, `error` and `unscanned` do not generate a confirmed
+malware-signature alert. No endpoint action is triggered.
+
+On the operator mTLS listener:
+
+- `GET /soc/v1/tenants/{tenant}/alerts?state=open&limit=25&offset=0`
+  lists the tenant's alerts (viewer/scanner roles).
+- `GET /soc/v1/tenants/{tenant}/alerts/{uuid}` gives a single alert.
+- `POST /soc/v1/tenants/{tenant}/alerts/{uuid}/ack`
+  acknowledges an open alert (scanner role).
+- `POST /soc/v1/tenants/{tenant}/alerts/{uuid}/resolve`
+  with `{"note":"Reviewed in SOC lab"}` resolves an acknowledged alert;
+  a nonempty audit note is required (scanner role).
+- `POST /soc/v1/tenants/{tenant}/alerts/{uuid}/reopen` reopens a resolved
+  alert for further investigation (scanner role).
+- `GET /soc/v1/tenants/{tenant}/alert-stats` summarizes open,
+  acknowledged and resolved alerts.
+
+Every state change records the operator ID in PostgreSQL and requires a
+verified, active operator role. Transitions are conditional on the current
+state, reject stale repetitions, and never allow cross-tenant mutation.
+This is analyst workflow state only, not an automated investigation or
+remediation engine. Production identity provisioning, SOC frontend integration,
+alert delivery, case management and retention policy still require approval.
