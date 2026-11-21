@@ -65,6 +65,13 @@ type Event struct {
 	DNSAnswers        []string  `json:"dns_answers,omitempty"`
 	DestinationIP     string    `json:"destination_ip,omitempty"`
 	DestinationPort   int       `json:"destination_port,omitempty"`
+	// EID8/EID10 source and target identities remain sender-reported in this lab.
+	SourceProcessGUID string    `json:"source_process_guid,omitempty"`
+	TargetProcessGUID string    `json:"target_process_guid,omitempty"`
+	// GrantedAccess is the EID10 hexadecimal process-handle access mask.
+	GrantedAccess     string    `json:"granted_access,omitempty"`
+	// EID8 new remote thread identifier; nonzero required for this heuristic.
+	RemoteThreadID    uint32    `json:"remote_thread_id,omitempty"`
 	Detail            string    `json:"detail,omitempty"`
 }
 type Snapshot struct {
@@ -329,6 +336,8 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
 		len(e.FilePath) > 32768 || len(e.Hash) > 256 ||
 		len(e.DNSQuery) > 253 || len(e.DestinationIP) > 64 || len(e.DNSAnswers) > 16 ||
+		len(e.SourceProcessGUID) > 128 || len(e.TargetProcessGUID) > 128 ||
+		len(e.GrantedAccess) > 10 ||
 		e.SysmonEventID < 0 || e.SysmonEventID > 255 ||
 		e.DestinationPort < 0 || e.DestinationPort > 65535 {
 		return Event{}, errors.New("invalid event fields")
@@ -363,6 +372,19 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		return r < 0x21 || r > 0x7e
 	}) >= 0 || strings.ContainsAny(e.DNSQuery, "/\\\"<>") {
 		return Event{}, errors.New("invalid DNS query")
+	}
+	// Never trust malformed process-pair identity or arbitrary mask text.
+	for _, guid := range []string{e.SourceProcessGUID, e.TargetProcessGUID} {
+		if strings.TrimSpace(guid) != guid || strings.IndexFunc(guid, func(r rune) bool {
+			return r < 0x20 || r == 0x7f || r == 0xfffd
+		}) >= 0 {
+			return Event{}, errors.New("invalid source/target process GUID")
+		}
+	}
+	if e.GrantedAccess != "" {
+		if _, ok := parseProcessAccessMask(e.GrantedAccess); !ok {
+			return Event{}, errors.New("invalid process access mask")
+		}
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always
 	// stamp server receipt time and overwrite client-controlled provenance tags.
