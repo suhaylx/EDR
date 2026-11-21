@@ -439,3 +439,56 @@
 - [Issue #103 mTLS startup](https://github.com/suhaylx/EDR/issues/103), [#104 durable telemetry](https://github.com/suhaylx/EDR/issues/104), [#105 Sysmon isolation](https://github.com/suhaylx/EDR/issues/105), [#106 AD/LDAPS](https://github.com/suhaylx/EDR/issues/106).
 
 **Release:** NO-GO for any customer/production use. No live endpoint or domain controller contacted by QA.
+
+
+---
+
+# M51–M75: Agent API negative-security acceptance milestones
+
+**Status:** 25 named, executable in-process Go table-driven subtests committed as a single QA-only file in [draft PR #132](https://github.com/suhaylx/EDR/pull/132), test-bearing SHA `50ad5211fc03e7cdbc548243acdc91f16e28d33f`. [Starter CI](https://github.com/suhaylx/EDR/actions/runs/44932955330) completed successfully, exercising the Go and Rust tests. The lab handler receives an injected test principal; this is **not** evidence that real mTLS endpoint enrollment or multi-tenant deployment works. These are independent negative-response contracts within one test suite, **not 25 completed enterprise product features**.
+
+**Each gate additionally requires:** `Cache-Control: no-store`, no serialized lease token or scan root on denied requests, and `Allow: POST` for incorrect HTTP methods. All tests use a deliberately unconnected storage adapter, preventing external DB mutation.
+
+| Gate | Test requirement | Expected HTTP status |
+|---|---|---|
+| M51 | Missing identity cannot claim | 401 |
+| M52 | Missing identity cannot complete | 401 |
+| M53 | Wrong-tenant claim denied | 403 |
+| M54 | Wrong-device claim denied | 403 |
+| M55 | Wrong-tenant completion denied | 403 |
+| M56 | Wrong-device completion denied | 403 |
+| M57 | GET cannot claim | 405 |
+| M58 | PUT cannot claim | 405 |
+| M59 | DELETE cannot claim | 405 |
+| M60 | GET cannot complete | 405 |
+| M61 | PATCH cannot complete | 405 |
+| M62 | Unknown high-risk command never exposed | 404 |
+| M63 | Claim query override rejected | 400 |
+| M64 | Completion query override rejected | 400 |
+| M65 | Empty completion body rejected | 400 |
+| M66 | Malformed JSON rejected | 400 |
+| M67 | JSON array in place of object rejected | 400 |
+| M68 | Null completion object rejected | 400 |
+| M69 | Missing success flag rejected | 400 |
+| M70 | Null success flag rejected | 400 |
+| M71 | String masquerading as boolean rejected | 400 |
+| M72 | Malformed job UUID rejected | 400 |
+| M73 | Malformed lease token rejected | 400 |
+| M74 | Unexpected tenant field rejected | 400 |
+| M75 | Trailing JSON object rejected | 400 |
+
+## Additional P1 evidence from this checkpoint
+
+- [Draft PR #132](https://github.com/suhaylx/EDR/pull/132) also includes Rust **synthetic** ClamAV parsing regressions: malformed/invalid bytes, scanner ERROR not CLEAN, named EICAR signature reply, cap/truncation and oversized-response denial. These tests do **not** run an official ClamAV daemon or signature database.
+- [Draft PR #134](https://github.com/suhaylx/EDR/pull/134) adds Event 7 / Event 11 pure Go evidence tests: no FileCreate-as-execution, source identity, hash/boot/process/time scope, duplicate suppression and no confirmed infection claims. **Real Windows collection and Event 7 noise measurements NOT RUN**.
+- The previous P0 tenant/agent claim and completion revocation race is addressed for review in [draft PR #123](https://github.com/suhaylx/EDR/pull/123) with [disposable PostgreSQL CI PASS](https://github.com/suhaylx/EDR/actions/runs/44932462150).
+
+## Outstanding gates after M75
+
+- [#103](https://github.com/suhaylx/EDR/issues/103): production device mTLS startup/client, tenant-bound auth and replay on real endpoints.
+- [#104](https://github.com/suhaylx/EDR/issues/104): durable event/spool, acknowledgement/dedup and restart recovery (database *scan jobs* are already separately tested).
+- [#105](https://github.com/suhaylx/EDR/issues/105): Sysmon config update rollback, worker isolation/resource limits, Event 7 tuning on Windows.
+- [#106](https://github.com/suhaylx/EDR/issues/106): AD/LDAPS read-only discovery and GPO dry-run, pending domain lab.
+- [#4](https://github.com/suhaylx/EDR/issues/4): Agent 5 browser keyboard/screen-reader/font-scaling, desktop local UI crash-isolation acceptance; no real browser execution claimed.
+
+**QA decision: PRODUCTION NO-GO.** Deployment belongs to Agent 2; real Windows/Linux, official EICAR-only ClamAV and AD host tests remain with the owner tomorrow. All code/CI review must be pinned to exact SHA; do not infer PASS for newly edited heads.
