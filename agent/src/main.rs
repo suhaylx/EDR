@@ -2,6 +2,7 @@
 //! Sysmon capabilities; this is not a production endpoint service.
 mod clamav;
 mod worker;
+mod telemetry;
 
 use std::fs::File;
 use std::io;
@@ -84,6 +85,17 @@ fn scan_file_cli(args: &[String]) -> io::Result<()> {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
+        if args[1] == "--telemetry-once" || args[1] == "--telemetry-loop" {
+            if args.len() != 3 {
+                eprintln!("usage: --telemetry-once <lab-agent-id> or --telemetry-loop <lab-agent-id>");
+                std::process::exit(2);
+            }
+            if let Err(e) = telemetry::run(&args[2], args[1] == "--telemetry-loop") {
+                eprintln!("lab_telemetry_error={e}");
+                std::process::exit(2);
+            }
+            return;
+        }
         if args[1] == "--lease-and-scan" {
             if args.len() != 3 {
                 eprintln!("usage: --lease-and-scan <registered-lab-agent-id>");
@@ -102,7 +114,7 @@ fn main() {
             }
             return;
         }
-        eprintln!("unknown arguments; use --scan-file <absolute-path> or --lease-and-scan <agent-id>");
+        eprintln!("unknown arguments; use --telemetry-once/--telemetry-loop <agent-id>, --scan-file <absolute-path>, or --lease-and-scan <agent-id>");
         std::process::exit(2);
     }
     println!("TuranSec EDR agent LAB scaffold -- background protection is NOT active");
