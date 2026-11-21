@@ -48,8 +48,8 @@ func TestDay4EventDisplayLimitsMatchFrontend(t *testing.T) {
     for _,tc:=range cases {
         t.Run(tc.name,func(t *testing.T){
             store:=NewStore()
-            if _,err:=store.CheckIn(Agent{ID:"linux-qa-01",Platform:"linux"});err!=nil{t.Fatal(err)}
             e:=makeEvent();tc.mutate(&e)
+            if _,err:=store.CheckIn(Agent{ID:"linux-qa-01",Platform:e.Platform});err!=nil{t.Fatal(err)}
             result,err:=store.Ingest(e)
             if !tc.allowed {
                 if err==nil {t.Fatalf("malformed source accepted: %+v",result)}
