@@ -39,6 +39,9 @@ test('requires explicit source evidence and rejects private payloads',()=>{
   assert.throws(()=>decodeLabTelemetry([event({source:'procfs',platform:'linux',source_event_id:3})]),/Inconsistent/);
   assert.throws(()=>decodeLabTelemetry([event({source_event_id:30})]),/Inconsistent/);
   assert.throws(()=>decodeLabTelemetry([event({source_fields:{query_name:'line\nbreak'}})]),/Invalid/);
+  assert.throws(()=>decodeLabTelemetry([event({source_fields:{query_name:'line\rbreak'}})]),/Invalid/);
+  assert.throws(()=>decodeLabTelemetry([event({source_fields:{query_name:'line\tbreak'}})]),/Invalid/);
+  assert.throws(()=>decodeLabTelemetry([event({detail:'forged\nmultiline'})]),/Invalid/);
   assert.throws(()=>decodeLabTelemetry([event({id:'ev1'}),event({id:'ev1'})]),/duplicated/);
 });
 test('legacy missing numerical ID remains an unclassified source event',()=>{

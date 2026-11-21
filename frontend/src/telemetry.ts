@@ -40,7 +40,7 @@ function record(value: unknown, label: string): Rec {
 }
 function bounded(value: unknown, name: string, max = 1024, fallback = ''): string {
   if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string' || value.length > max || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value))
+  if (typeof value !== 'string' || value.length > max || /[\x00-\x1f\x7f]/.test(value))
     throw new Error('Invalid lab telemetry field ' + name);
   return value;
 }
