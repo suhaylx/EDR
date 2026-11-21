@@ -70,7 +70,7 @@ END $$;
 
 -- Registry enrollment authorization must be limited to its database validity window.
 -- This SQL predicate mirrors lookupAgentCertificateSQL; Go contract tests guard drift.
-DO $
+DO $validity$
 DECLARE allowed_count integer;
 BEGIN
   SELECT count(*) INTO allowed_count FROM edr_agent_certificates AS c
@@ -97,7 +97,7 @@ BEGIN
 
   UPDATE edr_agent_certificates SET not_before=now()-interval '1 hour', not_after=now()+interval '1 day'
   WHERE tenant_id='tenantA' AND agent_id='win01';
-END $;
+END $validity$;
 
 -- Certificate rotation: revoke old leaf, then enroll new leaf atomically.
 UPDATE edr_agent_certificates
