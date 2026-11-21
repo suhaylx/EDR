@@ -117,3 +117,16 @@ New checkpoint times Asia/Tashkent: Agent 1 23:10; Agent 2 23:20; Agent 3 23:30;
 **Recent role evidence:** [Backend #125](https://github.com/suhaylx/EDR/pull/125) immutable result integrity CI in progress at early check, [#127](https://github.com/suhaylx/EDR/pull/127) real-mTLS result regression CI in progress, [QA #123](https://github.com/suhaylx/EDR/pull/123) multi-session revocation concurrency checks partially green, [InfoSec #126](https://github.com/suhaylx/EDR/pull/126) 3/3 CI PASS, [Frontend #124](https://github.com/suhaylx/EDR/pull/124) 3/3 CI PASS. These are draft source/CI proof, **not** independent release signoffs.
 
 **Release decision NO-GO:** runnable Go/PG daemon + approved dependency provenance missing; two-server real ClamAV and Sysmon evidence, security/QA approvals, Windows ACL/installer and signed rollback NOT RUN. No main merge or live customer endpoint installation. Canonical ChatGPT Page direct write not supported by current toolset; keep **Page sync BLOCKED**.
+
+
+## Accelerated three-day sprint execution — 21 November 2026, 23:xx Asia/Tashkent
+
+**Live evidence report:** [ACCELERATED_3_DAY_SPRINT_20261121.md](ACCELERATED_3_DAY_SPRINT_20261121.md). User requested all possible Day 1–3 work now; this is a **compressed execution pass on Nov 21**, not a statement that Nov 22/23 elapsed or that live endpoint acceptance occurred.
+
+**Day 1 P0 code delivered:** [draft PR #142](https://github.com/suhaylx/EDR/pull/142) carries validated listener loopback/private CA/keypair and trusted TLS identity-header stripping onto latest [Backend heartbeat #136](https://github.com/suhaylx/EDR/pull/136). Original isolated [PR #129](https://github.com/suhaylx/EDR/pull/129) 2/2 exact-head workflow CI PASS; this earlier green is **not** a substitute for new PR #142 CI.
+
+**Day 2 P0 integration tests delivered:** new `backend/internal/edr/agent_heartbeat_real_mtls_test.go` tests a genuine TLS1.3 certificate handshake + fake SQL backend, forged headers/cross-tenant route, missing client cert and **revoked device on previously accepted HTTPS connection**. PR #142 current head `d2ed639e62dfd0d1a2bc268e9be045e86e5f255b`. Parent PR #136 9/9 workflows SUCCESS, but current PR #142 **CI FAIL/BLOCKED** with empty/no-runner jobs; no test execution observed. Preserve this red status.
+
+**Day 3 QA/release:** saved report and negative/host matrix. Latest PR #142 [starter 44933982956](https://github.com/suhaylx/EDR/actions/runs/44933982956) and [Go listener 44933983003](https://github.com/suhaylx/EDR/actions/runs/44933983003) both conclude failure **without runner_id, steps, logs**; earlier [44933823000](https://github.com/suhaylx/EDR/actions/runs/44933823000)/[44933823037](https://github.com/suhaylx/EDR/actions/runs/44933823037) failed similarly and attempted reruns failed. Root cause unknown; cannot label as code failure or PASS. Resolve runner allocation, exact-head rerun, then InfoSec and QA formal review. Real PostgreSQL mTLS daemon, ClamAV EICAR, Sysmon Win2022/Ubuntu, React browser a11y, signed installer, rollback still **NOT RUN**.
+
+**Priority:** Agent 2 executable PostgreSQL-backed Go mTLS server remains P0 blocker; Agent 1 PKI/Sysmon review, Agent 3 GitHub CI+real negative lab, Agent 5 authenticated status truthfulness, Agent 4 PM evidence. **Release NO-GO; no main merge, no deployment.**
