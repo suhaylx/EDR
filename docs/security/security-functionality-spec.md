@@ -46,6 +46,22 @@ The endpoint uses the existing development-only bearer token, and events
 originate from an in-memory, unauthenticated-device lab model. This is NOT a
 production-safe source of detections and cannot be deployed to customer hosts.
 
+### Event provenance fields (laboratory only)
+
+Ingested `Event` records include `received_at` (server-stamped UTC receipt
+instant), `time_origin` (`sender_reported_unverified` or `server_received`),
+and optional `source_record_id` (up to 256 bytes, no CR/LF/NUL). The existing
+`time` field is a sender-provided observation time when supplied; otherwise
+it falls back to receipt time. Incoming `received_at` and `time_origin`
+values are overwritten server-side. The server-generated `id` is an ingest
+record ID, **not** a source Sysmon EventRecordID. The optional source record
+identifier is an unverified sender claim, not cryptographic provenance.
+
+These fields improve investigative transparency only: they do not implement
+mTLS, source authentication, tenant scoping, replay protection, boot/session
+identity or tamper-proof evidence. Detection remains provisional and must not
+be used to trigger automated remediation.
+
 ### QA acceptance
 
 1. FileCreate without ImageLoad => zero detections.
