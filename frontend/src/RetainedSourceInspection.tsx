@@ -1,20 +1,28 @@
+import { useEffect, useRef } from 'react';
 import type { LabTelemetryEvent } from './telemetry.js';
 import { SYSMON_EVENT_NAMES } from './telemetry.js';
 import { locateRetainedSource } from './retained-source.js';
+import { otherReportedProcessEvents } from './evidence-gaps.js';
 import type { RetainedSourceSelection } from './multisignal-alert-triage.js';
 import type { InvestigationSeed } from './investigation.js';
 
 /** Only the last 100 lab API events are available; no historical-source claim. */
-export function RetainedSourceInspection({events,selection,onBack,onInvestigate}: {
+export function RetainedSourceInspection({events,selection,onBack,onInvestigate,onInspectSource}: {
   events: readonly LabTelemetryEvent[];
   selection: RetainedSourceSelection;
   onBack: () => void;
   onInvestigate: (seed: InvestigationSeed) => void;
+  onInspectSource?: (selection: RetainedSourceSelection) => void;
 }) {
   const event = locateRetainedSource(events,selection);
   const sysmon = event?.source === 'sysmon' && event.source_event_id > 0;
+  const expectedMismatch = !!event && selection.expectedSysmonID !== undefined &&
+    (event.source !== 'sysmon' || event.source_event_id !== selection.expectedSysmonID);
+  const coObserved = event ? otherReportedProcessEvents(event,events,10) : {events:[],total:0};
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(()=>{heading.current?.focus();},[selection.deviceID,selection.eventID]);
   return <section className="panel" aria-labelledby="source-inspection-title">
-    <h2 id="source-inspection-title">Inspect retained source event</h2>
+    <h2 id="source-inspection-title" ref={heading} tabIndex={-1}>Inspect retained source event</h2>
     <p>Selected Go event ID <strong>{selection.eventID}</strong> on endpoint
       <strong> {selection.deviceID}</strong>. This lookup uses both identifiers;
       it does not match other endpoints or guess from a Windows EventRecordID.</p>
@@ -26,6 +34,12 @@ export function RetainedSourceInspection({events,selection,onBack,onInvestigate}
         Matching event is present among the {events.length} returned lab event record(s).
         Source identity and telemetry are reported, not authenticated endpoint evidence.
       </p>
+      {selection.expectedSysmonID === 11 &&
+        <p className={expectedMismatch ? 'graph-warning' : 'minor'} role="status">
+          {expectedMismatch
+            ? 'Claimed FileCreate reference does not match a returned Windows Sysmon Event 11. Do not treat it as file-creation evidence.'
+            : 'This is a claimed linked FileCreate reference. Matching Event 11 classification does not attest authenticity or DLL execution.'}
+        </p>}
       <dl className="source-inspection-details">
         <div><dt>Go event ID</dt><dd>{event.id}</dd></div>
         <div><dt>Endpoint / platform</dt><dd>{event.device_id} / {event.platform}</dd></div>
@@ -54,6 +68,23 @@ export function RetainedSourceInspection({events,selection,onBack,onInvestigate}
               <div key={key}><dt>{key.replaceAll('_',' ')}</dt><dd>{value}</dd></div>)}</dl>
           </details>}
         </>}
+      {event.process_guid && coObserved.total > 0 &&
+        <section className="related-source-context" aria-labelledby="related-source-title">
+          <h3 id="related-source-title">Other co-observed events in this response</h3>
+          <p>These {coObserved.total} event(s) share the same reported endpoint
+            and process GUID. They do not prove causality, ancestry or completeness.
+            Showing at most 10 from the returned 100-record sample.</p>
+          <ul>{coObserved.events.map(related=><li key={related.id}>
+            <strong>{related.type || 'Unclassified event'}</strong>
+            <span className="minor">Go event: {related.id}; source: {related.source || 'unknown'};
+              received: {related.received_at || 'unknown'}</span>
+            {onInspectSource &&
+              <button type="button" className="source-button"
+                onClick={()=>onInspectSource({deviceID:related.device_id,eventID:related.id})}
+                aria-label={'Inspect co-observed Go event '+related.id+' on '+related.device_id}>
+                Inspect co-observed event</button>}
+          </li>)}</ul>
+        </section>}
       {event.process_guid
         ? <button className="source-button" type="button" onClick={() =>
             onInvestigate({deviceID:event.device_id,kind:'process',processGUID:event.process_guid})}>

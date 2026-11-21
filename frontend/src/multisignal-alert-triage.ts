@@ -6,7 +6,7 @@ import type { LabDetection } from './detections.js';
 export type SeverityFilter = 'all' | 'critical_high' | 'medium' | 'low' | 'other';
 export type SourceFilter = 'all' | 'with_event_type' | 'unknown_event_type';
 export type SeverityBucket = 'critical' | 'high' | 'medium' | 'low' | 'other';
-export type RetainedSourceSelection = Readonly<{deviceID: string; eventID: string}>;
+export type RetainedSourceSelection = Readonly<{deviceID: string; eventID: string; expectedSysmonID?: number}>;
 
 export function severityBucket(value: string): SeverityBucket {
   const normalized = value.trim().toLowerCase();
@@ -48,4 +48,12 @@ export function filteredRetainedAlerts(
       String(detection.evidence_source_event_id),
     ].some(field => field.toLocaleLowerCase().includes(term));
   });
+}
+
+/** A separate FileCreate reference is a sender-reported linkage, not an attested Event 11. */
+export function linkedFileCreateSource(detection: LabDetection): RetainedSourceSelection | null {
+  const id = detection.file_create_event_id.trim();
+  const primary = primaryDetectionSource(detection);
+  if (!id || id === primary?.eventID) return null;
+  return {deviceID:detection.device_id,eventID:id,expectedSysmonID:11};
 }

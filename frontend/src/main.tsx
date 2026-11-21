@@ -196,7 +196,7 @@ function App() {
       setDetections([]);
       setEvents([]);
       setInvestigationSeed(null);
-    setSourceSelection(null);
+      setSourceSelection(null);
       setOverview(null);
       setLoadedAt(null);
       setStatus('error');
@@ -296,13 +296,15 @@ function App() {
           ? sourceSelection
             ? <RetainedSourceInspection events={events} selection={sourceSelection}
                 onBack={() => setSourceSelection(null)}
+                onInspectSource={selection => setSourceSelection(selection)}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
             : <SysmonCoverage events={events}
+                onInspectSource={selection => setSourceSelection(selection)}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
           : <section className="panel"><p className="empty">Connect and refresh to inspect retained Sysmon and Linux source events. No telemetry means visibility is unknown, not safe.</p></section>)
         : view === 'alerts' ?
         (status === 'ready' && overview
-          ? <MultisignalAlertTriage detections={detections} generatedAt={overview.generated_at} days={days}
+          ? <MultisignalAlertTriage detections={detections} events={events} generatedAt={overview.generated_at} days={days}
             onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}
             onInspectSource={selection => {setSourceSelection(selection);setView('telemetry');}} />
           : <section className="panel"><p className="empty">Connect and refresh to retrieve retained lab detection evidence.</p></section>)

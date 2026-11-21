@@ -118,3 +118,30 @@
 @media(max-width:650px){.alert-triage-summary,.source-inspection-details,.alert-triage-filters{grid-template-columns:1fr}
   .alert-triage-filters .field:last-child{grid-column:auto}}
 @media(forced-colors:active){.alert-triage-summary>div,.source-inspection-details>div,.alert-triage-filters select{border-color:CanvasText}}
+
+/* Agent 5 evidence-only worklist: native inputs and comfortable keyboard targets. */
+.analyst-filters{margin:16px 0;border:1px solid var(--border);border-radius:12px;padding:14px}
+.analyst-filters>summary{cursor:pointer;padding:10px 4px;min-height:44px;font-weight:750}
+.analyst-filters>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.analyst-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:15px 0}
+.analyst-filter-grid .field,.analyst-sorting .field{display:grid;gap:8px;min-width:0}
+.analyst-filter-grid select,.analyst-sorting select{width:100%;min-width:0;min-height:44px;padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:9px}
+.analyst-filter-grid input{max-width:100%}
+.analyst-filter-grid select:focus-visible,.analyst-sorting select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.analyst-sorting{display:grid;grid-template-columns:minmax(180px,2fr) minmax(150px,1fr);gap:14px;max-width:650px;margin:14px 0}
+.alert-evidence-gap-summary{border:1px solid var(--border);border-radius:12px;padding:18px;margin:20px 0;background:var(--bg)}
+.alert-evidence-gap-summary h3{font-size:1rem;margin:0 0 12px}
+.alert-evidence-gap-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+.alert-evidence-gap-summary dl>div{display:flex;flex-direction:column;min-width:0;gap:5px;overflow-wrap:anywhere}
+.alert-evidence-gap-summary dt{font-size:.82rem;color:var(--muted)}
+.alert-evidence-gap-summary dd{margin:0;font-weight:800;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.analyst-paging{display:flex;flex-wrap:wrap;align-items:center;gap:15px;margin:17px 0}
+.analyst-paging>span{font-weight:750;font-variant-numeric:tabular-nums}
+.related-source-context{margin:18px 0;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px}
+.related-source-context h3{font-size:1rem}
+.related-source-context ul{padding-left:20px}
+.related-source-context li{padding:9px 0;overflow-wrap:anywhere}
+@media(max-width:1050px){.analyst-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.alert-evidence-gap-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.analyst-filter-grid,.analyst-sorting,.alert-evidence-gap-summary dl{grid-template-columns:1fr}}
+@media(forced-colors:active){.analyst-filters,.alert-evidence-gap-summary,.related-source-context{border-color:CanvasText}}

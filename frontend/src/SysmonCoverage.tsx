@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { observedSysmonCounts, SYSMON_EVENT_NAMES, type LabTelemetryEvent } from './telemetry.js';
 import type { InvestigationSeed } from './investigation.js';
+import type { RetainedSourceSelection } from './multisignal-alert-triage.js';
 
 /** Read-only SOC evidence view. No inferred infection edges or coverage claims. */
-export function SysmonCoverage({events,onInvestigate}:{
+export function SysmonCoverage({events,onInvestigate,onInspectSource}:{
   events:readonly LabTelemetryEvent[];
   onInvestigate:(seed:InvestigationSeed)=>void;
+  onInspectSource?: (selection:RetainedSourceSelection)=>void;
 }) {
   const [device,setDevice]=useState('');
   const [category,setCategory]=useState<'all'|'sysmon'|'procfs'>('all');
@@ -72,7 +74,7 @@ export function SysmonCoverage({events,onInvestigate}:{
     </section>
     <section className="panel" aria-labelledby="telemetry-evidence-title">
       <div className="heading"><h2 id="telemetry-evidence-title">Retained source events</h2>
-        <span className="subtle">{filtered.length} / {events.length} records shown</span></div>
+        <span className="subtle" role="status" aria-live="polite">{filtered.length} / {events.length} records shown</span></div>
       {filtered.length === 0
         ? <p className="empty">No matching retained source evidence. This does not establish the endpoint or network is safe.</p>
         : <div className="table-scroll"><table>
@@ -96,7 +98,11 @@ export function SysmonCoverage({events,onInvestigate}:{
               {e.file_path&&e.image&&<span className="minor">Object: {e.file_path}</span>}
               <span className="minor">Process GUID: {e.process_guid||'not reported'}</span>
               <span className="minor">Parent: {e.source_event_id===1?e.parent_process_guid||'not reported':'not asserted by this event'}</span></td>
-            <td>{e.process_guid
+            <td>{onInspectSource && <button type="button" className="source-button"
+                aria-label={'Inspect retained Go event '+e.id+' on '+e.device_id}
+                onClick={()=>onInspectSource({deviceID:e.device_id,eventID:e.id})}>
+                Inspect source event</button>}
+              {e.process_guid
               ? <button type="button" className="secondary" onClick={()=>onInvestigate({deviceID:e.device_id,kind:'process',processGUID:e.process_guid})}>Inspect process evidence</button>
               : <span className="subtle">No reported process GUID</span>}</td>
           </tr>)}</tbody>
