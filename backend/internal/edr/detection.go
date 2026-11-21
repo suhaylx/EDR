@@ -88,7 +88,7 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 		}
 		// The real collector must expose source-event identity, provenance and
 		// tamper resistant device authentication before production use.
-		fingerprint := event.DeviceID + "|" + event.ProcessGUID + "|" +
+		fingerprint := event.DeviceID + "|" + event.BootID + "|" + event.ProcessGUID + "|" +
 			windowsPath(event.FilePath) + "|" + event.ID
 		if seen[fingerprint] {
 			continue
