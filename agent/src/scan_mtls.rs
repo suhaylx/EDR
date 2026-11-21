@@ -1,6 +1,6 @@
 //! BE-076..080: enrolled-device HTTPS transport; no bearer/dev-token fallback.
 //! Caller must provision a verified client cert/key and trusted TuranSec CA.
-use crate::scan_jobs::{parse_claim, valid_identity, ClaimedJob, CompleteRequest, RenewRequest};
+use crate::scan_jobs::{parse_claim, valid_identity, ClaimedJob, CompleteRequest, RenewRequest, unsafe_scan_text};
 use reqwest::blocking::Client;
 use reqwest::tls::Version;
 use reqwest::{Certificate, Identity, Url};
@@ -149,7 +149,9 @@ impl AgentClient {
         }
         if !["windows","linux"].contains(&platform) || agent_version.is_empty()
            || agent_version.len()>64 || clamav_version.len()>64 ||
-           signature_version.len()>96 {
+           signature_version.len()>96 ||
+           unsafe_scan_text(agent_version) || unsafe_scan_text(clamav_version) ||
+           unsafe_scan_text(signature_version) {
             return Err(reject("invalid heartbeat capability report"));
         }
         let response = self.http.post(self.endpoint_heartbeat())
@@ -230,7 +232,7 @@ impl AgentClient {
             _ => false,
         };
         if !valid_verdict || threat_name.len() > 256 || detail.len() > 1024
-           || threat_name.contains('\0') || detail.contains('\0') {
+           || unsafe_scan_text(threat_name) || unsafe_scan_text(detail) {
             return Err(reject("invalid ClamAV result"));
         }
         #[derive(serde::Serialize)]
