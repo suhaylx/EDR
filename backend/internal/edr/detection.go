@@ -84,6 +84,7 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 		if event.Platform != "windows" || event.Type != "module_load" ||
 			event.DeviceID == "" || event.ProcessGUID == "" || event.Image == "" ||
 			event.ID == "" || event.Time.IsZero() ||
+			strings.TrimSpace(event.ID) != event.ID ||
 			!suspiciousDLLPath(event.FilePath) {
 			continue
 		}
