@@ -15,9 +15,11 @@ const maxLength: Record<string,number> = {
   scan_type: 32, created_at: 64, engine: 128,
   engine_version: 96, database_version: 96, threat_name: 256, detail: 1024,
 };
-const safeField = (name: string, value: unknown): boolean =>
-  typeof value === 'string' && value.length <= maxLength[name] &&
-  !/[\\x00-\\x1f\\x7f]/.test(value);
+const safeField = (name: string, value: unknown): boolean => {
+  const limit = maxLength[name];
+  return typeof value === 'string' && limit !== undefined && value.length <= limit &&
+    !/[\x00-\x1f\x7f]/.test(value);
+};
 
 export type LabScanJob = ScanJob & { scan_type?: string; created_at?: string };
 
