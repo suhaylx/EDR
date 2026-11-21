@@ -4,21 +4,21 @@
 
 **Scope:** software, tests, CI and safe design until the owner runs isolated Windows Server 2022/Ubuntu endpoint tests on 22 November. Never run live malware; EICAR only. Never contact the public lab hosts or use credentials in chat. Agent 2 owns deployment. Agent 1 owns security signoff. Agent 5 owns UI implementation. QA owns objective evidence.
 
-**Legend:** CI PASS prior PR96 SHA = confirmed earlier CI only; CI PENDING new SHA = new tests wired but not yet reported; CI UNIT ONLY = synthetic/unit evidence only; CI BUILD ONLY = compilation, not OS integration; CI STUB ONLY = simulated ClamAV, not official signatures; BLOCKED = missing required production integration; NOT RUN = no execution evidence; HOST NOT RUN = deferred to owner lab.
+**Legend:** CI PASS @bd240 = verified at test-bearing SHA `bd240bd6ac6e0c3a9888b5ff2fd8489d6c582e8a` (subsequent documentation commits require separate exact-head CI); CI UNIT ONLY = synthetic/unit evidence only; CI BUILD ONLY = compilation, not OS integration; CI STUB ONLY = simulated ClamAV, not official signatures; BLOCKED = missing required production integration; NOT RUN = no execution evidence; HOST NOT RUN = deferred to owner lab.
 
 ## 25 sequential checkpoints and solutions
 
 ### M01 — mTLS listener and enrollment (P0)
 
-**Owner:** Agent 2 + Agent 1. **Status:** BLOCKED.
+**Owner:** Agent 2 + Agent 1. **Status:** PARTIAL — mTLS constructor and guard tests exist; production startup and Rust client are blocked.
 
-**Resolution:** Replace shared bearer endpoint channel with RequireAndVerifyClientCert, trusted CA pinning, fingerprint + SAN device mapping; reject no/malformed/unknown cert.
+**Resolution:** Wire existing `NewAgentMTLSServer` and `AgentHTTPGuard` into an operator-controlled dedicated agent service with trusted client CA, fingerprint + SAN registry binding and real Rust TLS client; keep bearer-only lab API on loopback.
 
 **Acceptance:** Go httptest TLS: no cert/expired/unknown denied, valid mapped cert accepted; real host tomorrow.
 
 ### M02 — Tenant-bound API authorization (P0)
 
-**Owner:** Agent 2. **Status:** BLOCKED.
+**Owner:** Agent 2. **Status:** PARTIAL — guarded PostgreSQL scan-queue route exists; the shared-token SOC API is not tenant-scoped.
 
 **Resolution:** Derive tenant and device only from validated certificate; enforce tenant scope in every read/write/query, never client-supplied tenant.
 
@@ -50,7 +50,7 @@
 
 ### M06 — Concurrent PostgreSQL lease claim (P0)
 
-**Owner:** Agent 3. **Status:** CI PASS prior PR96 SHA.
+**Owner:** Agent 3. **Status:** CI PASS @bd240.
 
 **Resolution:** Two connections contend on one row using SKIP LOCKED; winner-only completion; disposable CI database.
 
@@ -58,7 +58,7 @@
 
 ### M07 — Expired lease replay resistance (P0)
 
-**Owner:** Agent 3. **Status:** CI PENDING new SHA.
+**Owner:** Agent 3. **Status:** CI PASS @bd240.
 
 **Resolution:** Commit lease A, expire, recover, claim B, reject A, accept B, reject duplicate.
 
@@ -66,7 +66,7 @@
 
 ### M08 — Retry exhaustion terminal state (P0)
 
-**Owner:** Agent 3. **Status:** CI PENDING new SHA.
+**Owner:** Agent 3. **Status:** CI PASS @bd240.
 
 **Resolution:** Max attempts=1; expire and recover to failed, never requeue or claim again.
 
@@ -74,11 +74,11 @@
 
 ### M09 — Database restart and queue recovery (P0)
 
-**Owner:** Agent 2 + Agent 3. **Status:** NOT RUN.
+**Owner:** Agent 2 + Agent 3. **Status:** CI PASS @bd240 — actual disposable PostgreSQL service restart; application/endpoint restart NOT RUN.
 
-**Resolution:** Use disposable DB restart with committed pending/leased rows; recover expired lease and verify monotonic attempts.
+**Resolution:** Maintain the disposable CI PostgreSQL container restart regression and separately add Go service/Rust endpoint restart and offline spool tests.
 
-**Acceptance:** CI service restart or container recreate with persisted volume; verify before/after SQL snapshots; host test tomorrow.
+**Acceptance:** [GitHub Actions 44931373801](https://github.com/suhaylx/EDR/actions/runs/44931373801) verifies committed pending/leased/expired rows, post-restart claim, recovery, stale token denial and valid completion. This does not prove SOC event persistence or endpoint recovery.
 
 ### M10 — Offline durable telemetry spool (P0)
 
@@ -211,14 +211,15 @@
 ## Release gating and sequencing
 
 1. **First resolve M01–M05** (device mTLS, tenant RBAC, command replay, revocation). Do not expose the shared development bearer API outside localhost/SSH tunnel. PostgreSQL registry alone is not a production identity boundary.
-2. **Verify M06–M08 in CI on exact QA head**, then implement M09 restart persistence and M10 offline spool. Do not confuse separate SQL connections with a database restart.
+2. **M06–M09 passed in disposable PostgreSQL CI at `bd240`**, including an actual CI container restart. Next implement M10 offline telemetry spool and Go/agent restart tests. Do not confuse PostgreSQL scan-job persistence with durable SOC events.
 3. **Prove M11–M15** for truthful telemetry, worker failure isolation and independent security approval before any customer data or rollout.
 4. **M16–M25** require CI plus later OS/domain/browser-specific acceptance. EICAR only; no live malware in ordinary endpoint labs.
 
 ## Evidence references
 
 - [PR #49 integrated lab candidate](https://github.com/suhaylx/EDR/pull/49) — 7 reported green workflows at `0466e7c4`; production mTLS and persistent SOC telemetry not established.
-- [PR #96 QA lease concurrency and replay](https://github.com/suhaylx/EDR/pull/96) — exact new-head CI required before marking new replay/exhaustion tests PASS.
+- [PR #96 QA concurrency, replay, DB restart and mTLS constructor tests](https://github.com/suhaylx/EDR/pull/96) — [PostgreSQL CI PASS](https://github.com/suhaylx/EDR/actions/runs/44931373801) and [Go race/starter CI PASS](https://github.com/suhaylx/EDR/actions/runs/44931373689) at `bd240`; verify any newer exact head before release.
 - [Issue #2 backend enrollment](https://github.com/suhaylx/EDR/issues/2), [Issue #3 QA](https://github.com/suhaylx/EDR/issues/3), [Issue #4 UX](https://github.com/suhaylx/EDR/issues/4), [Issue #17 ClamAV](https://github.com/suhaylx/EDR/issues/17).
+- Implementation blockers: [#103 mTLS startup/client](https://github.com/suhaylx/EDR/issues/103), [#104 durable telemetry](https://github.com/suhaylx/EDR/issues/104), [#105 Sysmon policy isolation](https://github.com/suhaylx/EDR/issues/105), [#106 AD/LDAPS dry-run](https://github.com/suhaylx/EDR/issues/106).
 
 **Production verdict: NO-GO.** Passing development CI authorizes only a controlled lab candidate for review, not enterprise/customer deployment.
