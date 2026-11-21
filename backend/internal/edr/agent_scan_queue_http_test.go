@@ -119,3 +119,15 @@ func TestAgentScanQueueRenewalConflictAndDatabaseFailure(t *testing.T){
         })
     }
 }
+
+func TestAgentScanQueueRenewalNeverReportsSuccessOnFalse(t *testing.T){
+    db:=scanDB(t,func(string,[]driver.NamedValue)(driver.Rows,error){
+        return &scanRows{columns:[]string{"ok"},values:[][]driver.Value{{false}}},nil
+    })
+    body:=`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}`
+    w:=httptest.NewRecorder()
+    AgentScanQueueHandler(PostgresScanJobQueue{DB:db}).ServeHTTP(w,
+        scanRequest("POST","/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew",
+            body,&AgentIdentity{TenantID:"tenantA",AgentID:"win01"}))
+    if w.Code!=http.StatusConflict {t.Fatalf("stale token must fail closed: %d",w.Code)}
+}
