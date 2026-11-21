@@ -4,6 +4,7 @@
 //! ClamAV daemon with genuine signature databases. The caller must authorize a
 //! scan target before opening it and enforce policy-driven scan limits.
 use std::io::{self, Read, Write};
+use crate::scan_jobs::unsafe_scan_text;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Verdict {
@@ -23,12 +24,12 @@ fn parse_reply(bytes: &[u8]) -> io::Result<Verdict> {
     if result == "OK" {
         Ok(Verdict::CleanBySignature) // signature absence is NOT proof of safety
     } else if let Some(sig) = result.strip_suffix(" FOUND") {
-        if sig.is_empty() || sig.len() > 256 || sig.chars().any(char::is_control) {
+        if sig.is_empty() || sig.len() > 256 || unsafe_scan_text(sig) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid clamd signature name"));
         }
         Ok(Verdict::Malicious(sig.to_owned()))
     } else if let Some(error) = result.strip_suffix(" ERROR") {
-        if error.is_empty() || error.len() > 1024 || error.chars().any(char::is_control) {
+        if error.is_empty() || error.len() > 1024 || unsafe_scan_text(error) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid clamd error text"));
         }
         Ok(Verdict::ScannerError(error.to_owned()))
@@ -125,6 +126,7 @@ mod tests {
     fn be097_rejects_control_characters_in_signature_and_error() {
         assert!(parse_reply(b"stream: injected\rname FOUND").is_err());
         assert!(parse_reply(b"stream: internal\nproblem ERROR").is_err());
+        assert!(parse_reply("stream: obfuscated\u{202e}name FOUND".as_bytes()).is_err());
     }
     #[test]
     fn be098_rejects_oversized_signature() {
