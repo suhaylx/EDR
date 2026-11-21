@@ -1,6 +1,7 @@
 package edr
 
 import (
+	"fmt"
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
@@ -20,6 +21,12 @@ type Detection struct {
 	ProcessImage      string    `json:"process_image"`
 	ModulePath        string    `json:"module_path"`
 	LoadEventID       string    `json:"load_event_id"`
+	// SourceRecordID is sender-reported and unauthenticated in the lab API.
+	LoadSourceRecordID string    `json:"load_source_record_id,omitempty"`
+	// A sender-reported boot marker; absence means the alert is not boot-scoped.
+	LoadBootID        string    `json:"load_boot_id,omitempty"`
+	LoadTimeOrigin     string    `json:"load_time_origin"`
+	LoadReceivedAt     time.Time `json:"load_received_at"`
 	FileCreateEventID string    `json:"file_create_event_id,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
@@ -33,6 +40,20 @@ func windowsPath(s string) string {
 
 // The initial rule deliberately limits scope to likely user-writable folders.
 // These are heuristic signals only; legitimate installers may also match.
+// validSHA256Digest accepts only a complete hexadecimal SHA-256 digest.
+// Hashes are still sender-reported and unauthenticated in this prototype.
+func validSHA256Digest(hash string) bool {
+	if len(hash) != 64 {
+		return false
+	}
+	for _, c := range hash {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
 func suspiciousDLLPath(path string) bool {
 	p := windowsPath(path)
 	if !strings.HasSuffix(p, ".dll") {
@@ -52,7 +73,8 @@ func suspiciousDLLPath(path string) bool {
 func DetectSuspiciousDLLLoads(events []Event) []Detection {
 	created := make(map[string][]Event)
 	for _, event := range events {
-		if event.Platform != "windows" || event.Type != "file_create" || event.DeviceID == "" || event.FilePath == "" {
+		if event.Platform != "windows" || event.Type != "file_create" || event.DeviceID == "" || event.FilePath == "" ||
+			event.ID == "" || strings.TrimSpace(event.ID) != event.ID || event.Time.IsZero() {
 			continue
 		}
 		key := event.DeviceID + "|" + windowsPath(event.FilePath)
@@ -63,13 +85,20 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 	for _, event := range events {
 		if event.Platform != "windows" || event.Type != "module_load" ||
 			event.DeviceID == "" || event.ProcessGUID == "" || event.Image == "" ||
+			event.ID == "" || event.Time.IsZero() ||
+			strings.TrimSpace(event.ID) != event.ID ||
 			!suspiciousDLLPath(event.FilePath) {
 			continue
 		}
 		// The real collector must expose source-event identity, provenance and
 		// tamper resistant device authentication before production use.
-		fingerprint := event.DeviceID + "|" + event.ProcessGUID + "|" +
-			windowsPath(event.FilePath) + "|" + event.ID
+		// Length-prefix each untrusted field so embedded delimiters cannot
+		// make distinct event tuples share the same detection identity.
+		fingerprint := fmt.Sprintf("%d:%s%d:%s%d:%s%d:%s%d:%s",
+			len(event.DeviceID), event.DeviceID, len(event.BootID), event.BootID,
+			len(event.ProcessGUID), event.ProcessGUID,
+			len(windowsPath(event.FilePath)), windowsPath(event.FilePath),
+			len(event.ID), event.ID)
 		if seen[fingerprint] {
 			continue
 		}
@@ -81,6 +110,9 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 			DeviceID: event.DeviceID, ProcessGUID: event.ProcessGUID,
 			ProcessImage: event.Image, ModulePath: event.FilePath,
 			LoadEventID: event.ID, ObservedAt: event.Time,
+			LoadSourceRecordID: event.SourceRecordID,
+			LoadBootID: event.BootID,
+			LoadTimeOrigin: event.TimeOrigin, LoadReceivedAt: event.ReceivedAt,
 			Explanation: "A DLL load was observed from a potentially user-writable path; verify signer, provenance and application context before responding.",
 		}
 		// A prior file-create observation can enrich the alert, but is not
@@ -88,11 +120,23 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 		key := event.DeviceID + "|" + windowsPath(event.FilePath)
 		var nearest time.Time
 		for _, prev := range created[key] {
+			// Never correlate file evidence across missing or different boot scopes.
+			// BootID is sender-reported in this lab and is not proof of origin.
+			if event.BootID == "" || prev.BootID == "" || event.BootID != prev.BootID {
+				continue
+			}
+			// When both observations declare process identity, disagreement
+			// means the create event cannot safely enrich this load.
+			if event.ProcessGUID != "" && prev.ProcessGUID != "" && event.ProcessGUID != prev.ProcessGUID {
+				continue
+			}
 			delta := event.Time.Sub(prev.Time)
 			if delta < 0 || delta > 24*time.Hour || !prev.Time.After(nearest) {
 				continue
 			}
-			if event.Hash != "" && prev.Hash != "" && !strings.EqualFold(event.Hash, prev.Hash) {
+			// A missing hash cannot establish that a prior path occupant is
+			// the module actually loaded. Keep the load alert unlinked.
+			if !validSHA256Digest(event.Hash) || !validSHA256Digest(prev.Hash) || !strings.EqualFold(event.Hash, prev.Hash) {
 				continue
 			}
 			nearest = prev.Time

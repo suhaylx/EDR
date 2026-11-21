@@ -46,6 +46,12 @@ type Event struct {
 	Source            string    `json:"source"`
 	Type              string    `json:"type"`
 	Time              time.Time `json:"time"`
+	ReceivedAt        time.Time `json:"received_at"`
+	TimeOrigin        string    `json:"time_origin"`
+	// A sender-reported source record identifier; not an authenticated Sysmon proof.
+	SourceRecordID    string    `json:"source_record_id,omitempty"`
+	// Sender-reported boot/session marker, not cryptographically authenticated.
+	BootID            string    `json:"boot_id,omitempty"`
 	ProcessGUID       string    `json:"process_guid,omitempty"`
 	ParentProcessGUID string    `json:"parent_process_guid,omitempty"`
 	Image             string    `json:"image,omitempty"`
@@ -310,13 +316,33 @@ func (s *Store) Ingest(e Event) (Event, error) {
 	if !validID(e.DeviceID) {
 		return Event{}, errors.New("invalid device id")
 	}
-	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 {
+	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 ||
+		len(e.Source) > 128 || len(e.BootID) > 128 || len(e.ProcessGUID) > 128 ||
+		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
+		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
 	}
-	if e.Time.IsZero() {
-		e.Time = time.Now().UTC()
+	if len(e.BootID) > 128 || strings.IndexFunc(e.BootID, func(r rune) bool {
+		return r < 0x20 || r == 0x7f || r == 0xfffd
+	}) >= 0 {
+		return Event{}, errors.New("invalid sender-reported boot id")
 	}
-	if e.Time.After(time.Now().Add(5 * time.Minute)) {
+	if len(e.SourceRecordID) > 256 || strings.IndexFunc(e.SourceRecordID, func(r rune) bool {
+		return r < 0x20 || r == 0x7f || r == 0xfffd
+	}) >= 0 {
+		return Event{}, errors.New("invalid sender-reported source record id")
+	}
+	// Time and source IDs sent by a lab client are unverified claims. Always
+	// stamp server receipt time and overwrite client-controlled provenance tags.
+	now := time.Now().UTC()
+	e.ReceivedAt = now
+	if e.Time.IsZero() {
+		e.Time = now
+		e.TimeOrigin = "server_received"
+	} else {
+		e.TimeOrigin = "sender_reported_unverified"
+	}
+	if e.Time.After(now.Add(5 * time.Minute)) {
 		return Event{}, errors.New("event timestamp too far in future")
 	}
 	newid, err := id()
