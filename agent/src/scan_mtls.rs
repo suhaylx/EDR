@@ -5,7 +5,8 @@ use reqwest::blocking::Client;
 use reqwest::tls::Version;
 use reqwest::{Certificate, Identity, Url};
 use std::env;
-use std::fs;
+use std::fs::{self, File, OpenOptions};
+use std::io::Read;
 use std::io::{self};
 use std::path::Path;
 use std::time::Duration;
@@ -26,19 +27,49 @@ pub fn validated_origin(s: &str) -> io::Result<Url> {
     Ok(u)
 }
 
-fn read_key(path: &Path) -> io::Result<Vec<u8>> {
+const MAX_PEM_BYTES: u64 = 1024 * 1024;
+
+// BE-106..110: bounded, no-follow PEM reads; private keys must be owner-only
+// on Unix. Windows ACL enforcement is an explicit release gate.
+fn read_pem(path: &Path, private: bool) -> io::Result<Vec<u8>> {
     let meta = fs::symlink_metadata(path)?;
-    if !meta.is_file() || meta.file_type().is_symlink() {
-        return Err(reject("private key path must be a regular file"));
+    if !meta.is_file() || meta.file_type().is_symlink()
+        || meta.len() == 0 || meta.len() > MAX_PEM_BYTES {
+        return Err(reject("credential file must be bounded, regular and non-symlink"));
     }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        if meta.permissions().mode() & 0o077 != 0 {
-            return Err(reject("client key must not be group/world accessible"));
+        if private && meta.permissions().mode() & 0o077 != 0 {
+            return Err(reject("private key must not be group/world accessible"));
         }
     }
-    fs::read(path)
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW);
+    }
+    let file: File = options.open(path)?;
+    let opened = file.metadata()?;
+    if !opened.is_file() || opened.len() == 0 || opened.len() > MAX_PEM_BYTES {
+        return Err(reject("credential file changed while opening"));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        if opened.dev() != meta.dev() || opened.ino() != meta.ino()
+           || (private && opened.permissions().mode() & 0o077 != 0) {
+            return Err(reject("credential file changed or permissions unsafe"));
+        }
+    }
+    let mut bytes = Vec::new();
+    file.take(MAX_PEM_BYTES + 1).read_to_end(&mut bytes)?;
+    if bytes.is_empty() || bytes.len() as u64 > MAX_PEM_BYTES {
+        return Err(reject("credential content is empty or oversized"));
+    }
+    Ok(bytes)
 }
 
 fn env_required(name: &str) -> io::Result<String> {
@@ -58,9 +89,9 @@ impl AgentClient {
         let origin = env_required("TURANSEC_MTLS_ORIGIN")?;
         let tenant = env_required("TURANSEC_MTLS_TENANT_ID")?;
         let agent = env_required("TURANSEC_MTLS_AGENT_ID")?;
-        let ca = fs::read(env_required("TURANSEC_MTLS_CA_PEM")?)?;
-        let cert = fs::read(env_required("TURANSEC_MTLS_CERT_PEM")?)?;
-        let key = read_key(Path::new(&env_required("TURANSEC_MTLS_KEY_PEM")?))?;
+        let ca = read_pem(Path::new(&env_required("TURANSEC_MTLS_CA_PEM")?),false)?;
+        let cert = read_pem(Path::new(&env_required("TURANSEC_MTLS_CERT_PEM")?),false)?;
+        let key = read_pem(Path::new(&env_required("TURANSEC_MTLS_KEY_PEM")?),true)?;
         Self::new(&origin, &tenant, &agent, &ca, &cert, &key)
     }
 
@@ -167,6 +198,60 @@ impl AgentClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize,Ordering};
+    static PEM_ID: AtomicUsize = AtomicUsize::new(0);
+    fn fixture(data: &[u8]) -> std::path::PathBuf {
+        let n = PEM_ID.fetch_add(1,Ordering::SeqCst);
+        let path=std::env::temp_dir().join(format!(
+            "turansec-agent-cred-{}-{n}.pem",std::process::id()));
+        fs::write(&path,data).unwrap();
+        path
+    }
+    #[test]
+    fn be106_reads_small_regular_pem_file() {
+        let path=fixture(b"test-pem-data");
+        assert_eq!(read_pem(&path,false).unwrap(),b"test-pem-data");
+        fs::remove_file(path).unwrap();
+    }
+    #[test]
+    fn be107_rejects_empty_and_oversized_pem() {
+        let empty=fixture(b"");
+        assert!(read_pem(&empty,false).is_err());
+        fs::remove_file(empty).unwrap();
+        let big=fixture(b"x");
+        File::options().write(true).open(&big).unwrap()
+            .set_len(MAX_PEM_BYTES+1).unwrap();
+        assert!(read_pem(&big,false).is_err());
+        fs::remove_file(big).unwrap();
+    }
+    #[cfg(unix)]
+    #[test]
+    fn be108_rejects_symlinked_ca_or_private_key() {
+        use std::os::unix::fs::symlink;
+        let path=fixture(b"test-pem-data");
+        let link=path.with_extension("link");
+        symlink(&path,&link).unwrap();
+        assert!(read_pem(&link,false).is_err());
+        assert!(read_pem(&link,true).is_err());
+        fs::remove_file(link).unwrap();
+        fs::remove_file(path).unwrap();
+    }
+    #[cfg(unix)]
+    #[test]
+    fn be109_requires_owner_only_private_key() {
+        use std::os::unix::fs::PermissionsExt;
+        let path=fixture(b"test-pem-data");
+        fs::set_permissions(&path,fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_pem(&path,true).is_err());
+        fs::set_permissions(&path,fs::Permissions::from_mode(0o600)).unwrap();
+        assert!(read_pem(&path,true).is_ok());
+        fs::remove_file(path).unwrap();
+    }
+    #[test]
+    fn be110_rejects_directory_as_credential() {
+        let dir=std::env::temp_dir();
+        assert!(read_pem(&dir,false).is_err());
+    }
     #[test]
     fn be076_rejects_plaintext() {
         assert!(validated_origin("http://localhost:8080").is_err());
