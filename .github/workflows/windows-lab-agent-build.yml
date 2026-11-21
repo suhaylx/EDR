@@ -1,0 +1,52 @@
+name: windows-lab-agent-build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-lab-agent:
+    name: Build and smoke-test Windows Server 2022 x64 lab EXE
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Show compiler and OS
+        shell: pwsh
+        run: |
+          rustc --version
+          cargo --version
+          (Get-CimInstance Win32_OperatingSystem).Caption
+      - name: Windows Rust unit tests
+        shell: pwsh
+        run: cargo test --manifest-path agent/Cargo.toml
+      - name: Compile release Windows executable
+        shell: pwsh
+        run: cargo build --manifest-path agent/Cargo.toml --release
+      - name: Smoke-test and stage artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = 'agent/target/release/turansec-edr-agent.exe'
+          if (-not (Test-Path -LiteralPath $source)) { throw "Windows agent EXE missing" }
+          New-Item -ItemType Directory -Force dist/win-x64-lab | Out-Null
+          $exe = 'dist/win-x64-lab/TuranSec-EDR-Lab-Agent.exe'
+          Copy-Item -LiteralPath $source -Destination $exe
+          & $exe
+          if ($LASTEXITCODE -ne 0) { throw "Windows agent CLI smoke test failed" }
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  TuranSec-EDR-Lab-Agent.exe" | Set-Content -Path dist/win-x64-lab/SHA256SUMS.txt -Encoding Ascii
+          Copy-Item docs/WINDOWS_AGENT_QUICKSTART.md dist/win-x64-lab/README.md
+          Write-Output "Windows executable SHA256: $hash"
+      - name: Publish unsigned lab portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuranSec-EDR-Lab-Windows-x64
+          path: dist/win-x64-lab/
+          if-no-files-found: error
+          retention-days: 14
