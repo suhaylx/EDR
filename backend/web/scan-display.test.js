@@ -25,8 +25,7 @@ test('malicious, suspicious and malformed completions remain reported', () => {
   assert.equal(describeScan(job('completed', 'malicious', {threat_name: 'Test.EICAR'})).tone, 'danger');
   assert.match(describeScan(job('completed', 'malicious')).explanation, /without a signature name/);
   assert.equal(describeScan(job('completed', 'suspicious')).tone, 'warning');
-  assert.equal(describeScan(job('completed', 'unscanned')).heading, 'Result not verified');
-  assert.equal(describeScan(job('completed', 'error')).heading, 'Result not verified');
+  assert.equal(describeScan(job('completed')).heading, 'Result not verified');
   assert.equal(describeScan(job('unexpected', 'clean_by_signature')).heading, 'Unknown job state');
 });
 test('engine fields are reported-only and never claim DB freshness', () => {
@@ -39,4 +38,14 @@ test('malicious signature name is data, not formatted as HTML by the helper', ()
   const text = describeScan(job('completed', 'malicious', {threat_name:'<img src=x onerror=alert(1)>'})).explanation;
   assert.match(text, /<img/);
   // It is deliberately plain text: app.js rows() HTML-escapes before insertion.
+});
+
+test('completed scanner errors and unperformed scans remain explicit and unattested', () => {
+  for (const [verdict, heading, tone] of [['error', 'Scanner error', 'danger'], ['unscanned', 'Unscanned', 'warning']]) {
+    const result = describeScan(job('completed', verdict));
+    assert.equal(result.heading, heading);
+    assert.equal(result.tone, tone);
+    assert.equal(result.attested, false);
+    assert.match(result.explanation, /No successful scan|not performed/i);
+  }
 });
