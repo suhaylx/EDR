@@ -124,3 +124,17 @@
 | **4 PM** | PM-001 board, issue work orders, review-only PR #59; **23:50** | [PM issue #6](https://github.com/suhaylx/EDR/issues/6#issuecomment-7066396873); this board/backlog version, linked PR #59 code SHA | **EVIDENCED once saved/read back**; canonical ChatGPT Page edit **BLOCKED** by no available Page write tool |
 
 **Role-specific independent acceptance count: 0/4.** No deployment evidence, no formal security or QA approval. Security gate FAIL TO CLEAR (NOT RUN), not proof security tests failed. No main merge, no secrets.
+
+## New M13–M37 engineering activity checkpoint — 21 Nov 2026, ~22:38 Asia/Tashkent
+
+Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared PM-coordinated [draft PR #101](https://github.com/suhaylx/EDR/pull/101) head 8776c6409703712d7cc2900005602897d9d18f3d; tests committed; new exact-head CI initially IN PROGRESS. It does not prove Agent 2 independently coded. Real Windows/Linux endpoint tests and release approval NOT RUN.
+
+| Role | Exact deliverable / checkpoint (Asia/Tashkent) | Verified role-specific output, test | Status / corrective action |
+| --- | --- | --- | --- |
+| **1 InfoSec** | SEC-FUNC-02/04 original DLL rule, safe fixtures; review PR #101 trust; **23:10** | [PR #58](https://github.com/suhaylx/EDR/pull/58) original 17-case fixture/rule; [#99](https://github.com/suhaylx/EDR/pull/99) latest EID25 detector CI initially IN PROGRESS; PR #101 formal security review NOT RUN | **EVIDENCED prior code, approval PENDING**; give line-specific findings and replay tests |
+| **2 Backend/Deployment** | BE-001 runnable separate Go mTLS agent server and PG, single Rust identity; **23:20** | [PR #65](https://github.com/suhaylx/EDR/pull/65) 10/10 CI PASS, [#98](https://github.com/suhaylx/EDR/pull/98) queue regressions starter PASS; #101 shared PM patch | **EVIDENCED code, live deployment BLOCKED**; show server binary, PG/TLS negative tests, rollback |
+| **3 QA** | QA-001 independent TLS/PG and host test matrix; **23:30** | [PR #96](https://github.com/suhaylx/EDR/pull/96) head 4f728b269067d1d9d719ec9da8f657ceff7ba61b 3/3 CI PASS; PR #101 QA signoff NOT RUN | **EVIDENCED test PR, RELEASE QA BLOCKED**; test loopback, tenant, replay, real EICAR/Sysmon only when host available |
+| **5 Frontend/UX** | UX-001 original React SOC and Windows/Linux companion, unknown state; **23:40** | [PR #76](https://github.com/suhaylx/EDR/pull/76) 3/3 CI PASS; [#100](https://github.com/suhaylx/EDR/pull/100) latest worklist head d55434ec5408b7b1e77ef3a6dd093ae81332a0a6, final CI not yet verified | **EVIDENCED source, a11y/lab BLOCKED**; 401/503, focus, keyboard, original UI verification |
+| **4 PM** | PM-001 save next 25 board, backlog and evidence; **23:50** | [PM PR #7](https://github.com/suhaylx/EDR/pull/7) with new 25 board, issue #6 evidence | **EVIDENCED upon commit/readback**; canonical ChatGPT Page write BLOCKED in current toolset |
+
+**Counts:** four roles have prior source/CI evidence; **0/4 independently approved the new PR #101**. Automation scheduling does not imply background engineering. Do not flag missed checkpoints until they pass. Release NO-GO.
