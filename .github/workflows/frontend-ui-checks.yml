@@ -1,0 +1,33 @@
+name: frontend-ui-checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/web/**'
+      - 'frontend/**'
+      - '.github/workflows/frontend-ui-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab-ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify lab UI script syntax
+        run: |
+          node --check backend/web/app.js
+          node --check backend/web/graph-controls.js
+          node --check backend/web/scan-display.js
+      - name: Run Node-native display and graph regression tests
+        run: |
+          node --test backend/web/graph-controls.test.js backend/web/scan-display.test.js
+      - name: Ensure TypeScript scan presenter remains syntax-checked
+        run: |
+          echo 'Standalone frontend TypeScript checks require a pinned toolchain in follow-up work.'
+          test -f frontend/src/scan-state.ts
