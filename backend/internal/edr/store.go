@@ -358,7 +358,7 @@ func validateEventProvider(e Event) error {
     if len(e.SourceProvider) > 96 || len(e.SourceChannel) > 128 {
         return errors.New("source provider/channel too long")
     }
-    if e.Source == "sysmon" && e.Platform == "windows" &&
+    if e.Source == "sysmon" && e.Platform == "windows" && e.SourceEventID != 0 &&
         e.SourceProvider == "Microsoft-Windows-Sysmon" &&
         e.SourceChannel == "Microsoft-Windows-Sysmon/Operational" {
         return nil
@@ -445,6 +445,9 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		return r < 0x20 || r == 0x7f || r == 0xfffd
 	}) >= 0 {
 		return Event{}, errors.New("invalid sender-reported source record id")
+	}
+	if err := stripSysmonClipboardDetail(&e); err != nil {
+		return Event{}, err
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always
 	// stamp server receipt time and overwrite client-controlled provenance tags.
