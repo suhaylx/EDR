@@ -57,6 +57,9 @@ type Detection struct {
 	StreamEventID string       `json:"stream_event_id,omitempty"`
 	StreamPath string          `json:"stream_path,omitempty"`
 	StreamName string          `json:"stream_name,omitempty"`
+	ExecutableFilePath string   `json:"executable_file_path,omitempty"`
+	FileDropCreateEventID string `json:"file_drop_create_event_id,omitempty"`
+	ExecutableDetectedEventID string `json:"executable_detected_event_id,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
