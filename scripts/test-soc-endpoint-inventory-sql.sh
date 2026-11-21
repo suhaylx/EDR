@@ -7,7 +7,40 @@ if [[ "${EDR_QA_DISPOSABLE_DB:-}" != "yes" ]]; then
   echo "EDR_QA_DISPOSABLE_DB=yes is required" >&2
   exit 2
 fi
-command -v python3 >/dev/null
+# These QA tests insert fixtures and are approved ONLY against the local
+# disposable migration-chain database; an opt-in variable alone is not proof
+# that EDR_TEST_DATABASE_URL points to a safe database.
+python3 - <<'PY'
+import os
+from urllib.parse import urlsplit
+value = os.environ["EDR_TEST_DATABASE_URL"]
+try:
+    target = urlsplit(value)
+    safe = (
+        target.scheme == "postgresql"
+        and target.hostname in ("127.0.0.1", "::1")
+        and target.port == 5432
+        and target.path == "/edr_chain_test"
+        and bool(target.username)
+        and target.query in ("", "sslmode=disable")
+        and not target.fragment
+    )
+except (ValueError, TypeError):
+    safe = False
+if not safe:
+    raise SystemExit("Refusing non-local or non-disposable PostgreSQL QA target")
+PY
+case "${1:-}" in
+  --preflight-only)
+    if (( $# != 1 )); then echo "Unexpected argument" >&2; exit 2; fi
+    echo "PASS: isolated QA PostgreSQL URL preflight (no connection attempted)"
+    exit 0
+    ;;
+  "")
+    if (( $# != 0 )); then echo "Unexpected argument" >&2; exit 2; fi
+    ;;
+  *) echo "Unexpected argument" >&2; exit 2 ;;
+esac
 command -v psql >/dev/null
 python3 - <<'PY' | psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1
 import pathlib
