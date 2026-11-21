@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+**/target/
+**/node_modules/
+**/dist/
+*.exe
+*.bin
+.DS_Store
+.Docker/
+secrets/
+# GPL-licensed upstream sources fetched on a developer machine; never vendor silently.
+/vendor-src/
+/vendor-study/

@@ -1,0 +1,9 @@
+[package]
+name = "turansec-edr-agent"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+# Intentionally std-only scaffold. Real Sysmon collectors, secure enrollment,
+# and ClamAV integration are not yet implemented.
