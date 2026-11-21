@@ -1,0 +1,57 @@
+name: isolated-qa-full-ci
+
+# Manual on the default branch after review; also runs on this dedicated
+# trusted QA branch when a self-hosted runner is registered.
+# Do not expose the runner to fork/PR code or real endpoint networks.
+on:
+  push:
+    branches:
+      - qa/github-actions-isolated-full-ci-20261121
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turansec-edr-isolated-qa
+  cancel-in-progress: true
+
+jobs:
+  full-security-and-regression-suite:
+    if: github.repository == 'suhaylx/EDR'
+    runs-on: [self-hosted, linux, x64, turansec-edr-qa]
+    timeout-minutes: 120
+    env:
+      GIT_TERMINAL_PROMPT: '0'
+      CI: 'true'
+    steps:
+      - name: Checkout exact reviewed GitHub source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout separate historical React lab snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: 0466e7c47f098ffdb83f7818eb6571e0d941aebe
+          path: _frontend_lab_snapshot
+          persist-credentials: false
+      - name: Validate isolated runner before executing source code
+        shell: bash
+        run: |
+          test -f scripts/ci/run-github-full-ci.sh
+          test -f scripts/ci/Dockerfile.postgres-client
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          docker version
+          bash -n scripts/ci/run-github-full-ci.sh
+          echo "Docker test environment is ready; no production hosts are addressed"
+      - name: Run full isolated Go Rust frontend and PostgreSQL security tests
+        shell: bash
+        run: bash scripts/ci/run-github-full-ci.sh
+      - name: Publish PASS FAIL NOT RUN and exact SHA ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turansec-edr-isolated-qa-ledger
+          path: qa-full-ci-results.txt
+          if-no-files-found: warn
+          retention-days: 14
