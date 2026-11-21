@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
 import { describeScan, scanEngineEvidence } from './scan-state.js';
+import { filterScanHistory, type ScanHistoryFilter } from './scan-history.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
 import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
@@ -12,21 +13,49 @@ import './styles.css';
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
 
 function ScanHistory({ jobs }: { jobs: LabScanJob[] }) {
+  const [filter, setFilter] = useState<ScanHistoryFilter>('all');
+  const [query, setQuery] = useState('');
+  const matching = filterScanHistory(jobs, filter, query);
   if (jobs.length === 0) return <p className="empty">No scan jobs returned by this lab API. This does not establish endpoint coverage or safety.</p>;
-  return <div className="table-scroll"><table>
-    <caption>Latest server-reported scan jobs; authenticity and freshness are not verified.</caption>
-    <thead><tr><th scope="col">Requested</th><th scope="col">Endpoint</th><th scope="col">Mode</th><th scope="col">State</th><th scope="col">Analyst interpretation</th><th scope="col">Claimed scanner</th></tr></thead>
-    <tbody>{[...jobs].reverse().map((job, index) => {
-      const result = describeScan(job);
-      return <tr key={job.id + ':' + index}>
-        <td>{job.created_at || 'Not reported'}</td>
-        <td>{job.agent_id}</td><td>{job.scan_type || 'Unknown'}</td>
-        <td><span className={'status status--' + result.tone}>{result.heading}</span><span className="minor">Raw state: {job.status}; verdict: {job.verdict || 'not reported'}</span></td>
-        <td>{result.explanation}{job.detail && <span className="minor">Worker detail: {job.detail}</span>}</td>
-        <td>{scanEngineEvidence(job)}</td>
-      </tr>;
-    })}</tbody>
-  </table></div>;
+  return <>
+    <div className="scan-history-filters">
+      <div className="field">
+        <label htmlFor="scan-history-state">Reported scan state / verdict</label>
+        <select id="scan-history-state" value={filter} onChange={event => setFilter(event.target.value as ScanHistoryFilter)}>
+          <option value="all">All lab job records</option>
+          <option value="pending">Queued or leased (not completed)</option>
+          <option value="failed_or_error">Failed, expired or scanner error</option>
+          <option value="unscanned">Worker-reported unscanned</option>
+          <option value="reported_match">Completed: signature match reported</option>
+          <option value="signature_negative">Completed: no signature match (NOT SAFE)</option>
+          <option value="unrecognized">Unrecognized / inconsistent result</option>
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="scan-history-query">Search returned job, endpoint or scanner metadata</label>
+        <input id="scan-history-query" type="search" maxLength={200} autoComplete="off"
+          value={query} onChange={event => setQuery(event.target.value)}
+          aria-describedby="scan-filter-note"/>
+      </div>
+    </div>
+    <p className="minor" id="scan-filter-note">Filters apply only to the currently returned lab records. No new scan, endpoint command, or network request is triggered.</p>
+    <p role="status" aria-live="polite">{matching.length} of {jobs.length} returned scan job record(s) shown.</p>
+    {matching.length === 0 ? <p className="empty">No scan jobs match these local filters. This is not evidence of complete scanning or a safe endpoint.</p>
+      : <div className="table-scroll"><table>
+        <caption>Locally filtered server-reported jobs (reverse API order); scanner authenticity and freshness not verified.</caption>
+        <thead><tr><th scope="col">Requested</th><th scope="col">Endpoint</th><th scope="col">Mode</th><th scope="col">State</th><th scope="col">Analyst interpretation</th><th scope="col">Claimed scanner</th></tr></thead>
+        <tbody>{[...matching].reverse().map((job, index) => {
+          const result = describeScan(job);
+          return <tr key={job.id + ':' + index}>
+            <td>{job.created_at || 'Not reported'}</td>
+            <td>{job.agent_id}</td><td>{job.scan_type || 'Unknown'}</td>
+            <td><span className={'status status--' + result.tone}>{result.heading}</span><span className="minor">Raw state: {job.status}; verdict: {job.verdict || 'not reported'}</span></td>
+            <td>{result.explanation}{job.detail && <span className="minor">Worker detail: {job.detail}</span>}</td>
+            <td>{scanEngineEvidence(job)}</td>
+          </tr>;
+        })}</tbody>
+      </table></div>}
+  </>;
 }
 
 function Overview({ overview }: { overview: LabSOCOverview }) {
