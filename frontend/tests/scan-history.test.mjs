@@ -8,9 +8,9 @@ const records = [
   {id:'failed',agent_id:'linux-b',status:'failed',verdict:'unscanned'},
   {id:'error',agent_id:'win-c',status:'failed',verdict:'error'},
   {id:'expired',agent_id:'win-d',status:'expired'},
-  {id:'malicious',agent_id:'win-e',status:'completed',verdict:'malicious',threat_name:'Test.EICAR'},
-  {id:'negative',agent_id:'win-f',status:'completed',verdict:'clean_by_signature',engine:'ClamAV'},
-  {id:'suspicious',agent_id:'win-g',status:'completed',verdict:'suspicious'},
+  {id:'malicious',scan_type:'path',agent_id:'win-e',status:'completed',verdict:'malicious',threat_name:'Test.EICAR'},
+  {id:'negative',scan_type:'path',agent_id:'win-f',status:'completed',verdict:'clean_by_signature',engine:'ClamAV'},
+  {id:'suspicious',scan_type:'path',agent_id:'win-g',status:'completed',verdict:'suspicious'},
   {id:'bad-completion',agent_id:'win-h',status:'completed',verdict:'error'},
   {id:'unknown',agent_id:'win-i',status:'surprise'},
 ];
