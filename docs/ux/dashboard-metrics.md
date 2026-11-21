@@ -37,3 +37,7 @@ Before production, replace development shared token with RBAC + tenant filtering
 ## Additional Agent 1 security-health metrics
 
 **Next priority, not yet implemented:** signature database freshness and failed update age; scanner worker up/down, last success and error; Sysmon ETW Event 7 coverage/loss and collector blind spots; policy desired/applied hash drift; tamper/uninstall-denial events; persistence and ingestion-lag/drop/backpressure; time to acknowledge/triage alerts, unreviewed criticals, alert suppression and false-positive feedback; protection-mode coverage by platform; quarantine failures and restores with audit trail. These must be measured from authenticated source telemetry, not guessed by the UI. Alert volume should be normalized for fleet size and collector coverage to avoid rewarding noisy rules.
+
+## Kaspersky EDR public workflow reference (design input)
+
+For the next TuranSec SOC iteration, use [our Kaspersky EDR benchmark and independent-design rules](kaspersky-edr-benchmark.md) for incident queue hierarchy, investigation pivots, configurable protection/updates/alert widgets, and operator task flows. Preserve original TuranSec code, layout, assets and accessible design. A workflow reference does **not** license proprietary Kaspersky implementation or claim those features already work. Priority remains authenticated endpoint scanning/telemetry and honest status reporting before visual polish.
