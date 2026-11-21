@@ -1,6 +1,7 @@
 package edr
 
 import (
+    "context"
     "crypto/sha256"
     "crypto/tls"
     "crypto/x509"
@@ -9,6 +10,7 @@ import (
     "net/http"
     "net/http/httptest"
     "strings"
+    "sync"
     "testing"
     "time"
 )
@@ -22,7 +24,7 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
         []string{"spiffe://turansec.local/tenants/tenantA/agents/win01"},
         []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth})
     principal := AgentIdentity{TenantID: "tenantA", AgentID: "win01"}
-    registry := testIdentityRegistry{record: EnrolledAgentCertificate{
+    registry := &revocableHeartbeatTestRegistry{record: EnrolledAgentCertificate{
         Identity: principal, FingerprintSHA256: sha256.Sum256(leaf.Raw),
     }}
     writes := 0
@@ -92,4 +94,35 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
         t.Fatal("server accepted an HTTPS request with no client certificate")
     }
     if writes != 1 {t.Fatal("missing client certificate reached database")}
+
+    // The same previously accepted mTLS connection must not continue
+    // authorizing device operations after enrollment is revoked. The
+    // application guard rechecks the registry on every HTTP request.
+    registry.revoke()
+    if code := send(server.URL + path); code != http.StatusUnauthorized {
+        t.Fatalf("revoked device heartbeat status %d, want 401", code)
+    }
+    if writes != 1 {t.Fatal("revoked client certificate reached SQL")}
+}
+
+type revocableHeartbeatTestRegistry struct {
+    mu sync.Mutex
+    record EnrolledAgentCertificate
+}
+
+func (r *revocableHeartbeatTestRegistry) LookupAgentCertificate(
+    _ context.Context, tenant, agent string,
+) (EnrolledAgentCertificate, error) {
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    if tenant != r.record.Identity.TenantID || agent != r.record.Identity.AgentID {
+        return EnrolledAgentCertificate{}, ErrAgentNotEnrolled
+    }
+    return r.record, nil
+}
+
+func (r *revocableHeartbeatTestRegistry) revoke() {
+    r.mu.Lock()
+    defer r.mu.Unlock()
+    r.record.Revoked = true
 }
