@@ -159,6 +159,8 @@ func TestDLLCreateEvidenceRequiresMatchingNonemptyHashes(t *testing.T) {
 		{"matching", strings.Repeat("a", 64), strings.Repeat("a", 64), true},
 		{"case-insensitive-match", strings.Repeat("A", 64), strings.Repeat("a", 64), true},
 		{"different", "different", strings.Repeat("a", 64), false},
+		{"invalid-short-but-equal", "abc123", "abc123", false},
+		{"invalid-nonhex-but-equal", strings.Repeat("g", 64), strings.Repeat("g", 64), false},
 		{"missing-create-hash", "", strings.Repeat("a", 64), false},
 		{"missing-load-hash", strings.Repeat("a", 64), "", false},
 		{"both-missing", "", "", false},
