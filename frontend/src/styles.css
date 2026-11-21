@@ -145,3 +145,28 @@
 @media(max-width:700px){.alert-evidence-gap-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.analyst-filter-grid,.analyst-sorting,.alert-evidence-gap-summary dl{grid-template-columns:1fr}}
 @media(forced-colors:active){.analyst-filters,.alert-evidence-gap-summary,.related-source-context{border-color:CanvasText}}
+
+/* Agent 5 scan-evidence workbench: no deceptive protection badges. */
+.scan-evidence-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.scan-evidence-summary>div{background:var(--bg);border:1px solid var(--border);padding:15px;border-radius:10px;min-width:0}
+.scan-evidence-summary dt{font-size:.83rem;color:var(--muted);line-height:1.45}
+.scan-evidence-summary dd{font-size:1.6rem;font-weight:750;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.scan-evidence-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}
+.scan-evidence-filters .field{display:grid;gap:8px;min-width:0}
+.scan-evidence-filters select{width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--ink)}
+.scan-evidence-filters input{min-width:0;max-width:none}
+.scan-evidence-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-evidence .table-scroll table{min-width:1050px}
+.scan-evidence details{min-width:220px}
+.scan-evidence details>summary{cursor:pointer;min-height:44px;padding:8px 0;font-weight:700}
+.scan-evidence details>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.scan-job-detail{margin:10px 0;display:grid;grid-template-columns:1fr;gap:10px}
+.scan-job-detail>div{overflow-wrap:anywhere;border-top:1px solid var(--border);padding-top:8px}
+.scan-job-detail dt{font-size:.8rem;font-weight:700;color:var(--muted)}
+.scan-job-detail dd{font-size:.85rem;margin:3px 0 0;overflow-wrap:anywhere}
+.scan-evidence-warnings{border-left:4px solid var(--focus);padding:10px 12px;background:var(--bg);overflow-wrap:anywhere}
+.scan-evidence-warnings ul{margin:10px 0;padding-left:20px}
+.scan-evidence-warnings li{margin:7px 0}
+@media(max-width:1000px){.scan-evidence-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.scan-evidence-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.scan-evidence-filters,.scan-evidence-summary{grid-template-columns:1fr}}
+@media(forced-colors:active){.scan-evidence-summary>div,.scan-evidence-warnings{border-color:CanvasText}}

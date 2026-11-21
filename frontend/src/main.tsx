@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
-import { describeScan, scanEngineEvidence } from './scan-state.js';
+import { ScanEvidenceWorkbench } from './ScanEvidenceWorkbench.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
 import { fetchLabDetections, type LabDetection } from './detections.js';
@@ -16,24 +16,6 @@ import { SysmonCoverage } from './SysmonCoverage.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
-
-function ScanHistory({ jobs }: { jobs: LabScanJob[] }) {
-  if (jobs.length === 0) return <p className="empty">No scan jobs returned by this lab API. This does not establish endpoint coverage or safety.</p>;
-  return <div className="table-scroll"><table>
-    <caption>Latest server-reported scan jobs; authenticity and freshness are not verified.</caption>
-    <thead><tr><th scope="col">Requested</th><th scope="col">Endpoint</th><th scope="col">Mode</th><th scope="col">State</th><th scope="col">Analyst interpretation</th><th scope="col">Claimed scanner</th></tr></thead>
-    <tbody>{[...jobs].reverse().map((job, index) => {
-      const result = describeScan(job);
-      return <tr key={job.id + ':' + index}>
-        <td>{job.created_at || 'Not reported'}</td>
-        <td>{job.agent_id}</td><td>{job.scan_type || 'Unknown'}</td>
-        <td><span className={'status status--' + result.tone}>{result.heading}</span><span className="minor">Raw state: {job.status}; verdict: {job.verdict || 'not reported'}</span></td>
-        <td>{result.explanation}{job.detail && <span className="minor">Worker detail: {job.detail}</span>}</td>
-        <td>{scanEngineEvidence(job)}</td>
-      </tr>;
-    })}</tbody>
-  </table></div>;
-}
 
 function Overview({ overview }: { overview: LabSOCOverview }) {
   const counts = [
@@ -312,9 +294,9 @@ function App() {
         ? (status === 'ready' ? <InvestigationView token={token} initialSeed={investigationSeed} /> :
           <section className="panel"><p className="empty">Connect to the development API before requesting retained investigation evidence.</p></section>)
         : <section className="panel" aria-labelledby="history-title">
-        <div className="heading"><h2 id="history-title">Retained scan jobs</h2><span className="subtle">No automatic polling</span></div>
-        <p>Queued and leased jobs are not completed scans. “Clean by signature” is not a claim that a file or endpoint is safe.</p>
-        {status === 'ready' ? <ScanHistory jobs={jobs} /> : <p className="empty">No scan results displayed until a successful authenticated lab request.</p>}
+        {status === 'ready' ? <ScanEvidenceWorkbench jobs={jobs} />
+          : <><h2 id="history-title">Retained scan jobs</h2>
+            <p className="empty">No scan results displayed until a successful authenticated lab request.</p></>}
       </section>}
     </main>
     <footer>Endpoint actions, quarantine, signed scanner evidence and managed policy are not available from this read-only UI. Requires Agent 2 API/identity integration and Agent 3 browser QA.</footer>
