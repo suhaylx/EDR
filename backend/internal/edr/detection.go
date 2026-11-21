@@ -105,7 +105,9 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 			if delta < 0 || delta > 24*time.Hour || !prev.Time.After(nearest) {
 				continue
 			}
-			if event.Hash != "" && prev.Hash != "" && !strings.EqualFold(event.Hash, prev.Hash) {
+			// A missing hash cannot establish that a prior path occupant is
+			// the module actually loaded. Keep the load alert unlinked.
+			if event.Hash == "" || prev.Hash == "" || !strings.EqualFold(event.Hash, prev.Hash) {
 				continue
 			}
 			nearest = prev.Time
