@@ -46,3 +46,10 @@ jobs:
         run: npm test
       - name: Build standalone React lab UI
         run: npm run build
+      - name: Publish standalone React SOC lab UI
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuranSec-EDR-SOC-React-Lab-UI
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 14
