@@ -64,7 +64,7 @@ test('empty returned event sample is explicitly unknown coverage',()=>{
   const html=display();
   assert.match(html,/No event records returned/);
   assert.match(html,/monitoring coverage remains unknown/);
-  assert.match(html,/not.*installed policy/i);
+  assert.match(html,/Installed policy, actual event collection and endpoint safety remain unknown/);
 });
 test('a clipboard event can only add a numeric ID count, never display content',()=>{
   const html=display({events:[ev('clipboard',{
