@@ -48,6 +48,18 @@ BEGIN
        OR p_lease_token IS NULL OR p_lease_seconds NOT BETWEEN 5 AND 300 THEN
         RAISE EXCEPTION 'invalid lease parameters' USING ERRCODE='invalid_parameter_value';
     END IF;
+    -- Serialize claim authorization with concurrent device revocation and
+    -- tenant disablement. A snapshot-only JOIN on these tables is unsafe:
+    -- an in-flight revoke could otherwise commit before the claim returns.
+    -- SHARE locks permit concurrent claims while blocking administrative
+    -- UPDATE/DELETE until this short claim transaction finishes.
+    PERFORM 1 FROM public.edr_tenants AS t
+    JOIN public.edr_agents AS a ON a.tenant_id=t.tenant_id
+    WHERE t.tenant_id=p_tenant_id AND a.agent_id=p_agent_id
+      AND t.disabled_at IS NULL AND a.revoked_at IS NULL
+    FOR SHARE OF t,a;
+    IF NOT FOUND THEN RETURN; END IF;
+
     RETURN QUERY
     WITH picked AS (
         SELECT j.job_id FROM public.edr_scan_jobs AS j
