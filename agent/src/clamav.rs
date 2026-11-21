@@ -13,18 +13,24 @@ pub enum Verdict {
 }
 
 fn parse_reply(bytes: &[u8]) -> io::Result<Verdict> {
+    if bytes.len() > 2048 || bytes.contains(&0) {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid clamd frame"));
+    }
     let msg = std::str::from_utf8(bytes)
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid clamd reply encoding"))?;
     let result = msg.strip_prefix("stream: ")
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "unexpected clamd response"))?;
     if result == "OK" {
-        Ok(Verdict::CleanBySignature) // not proof of safety
+        Ok(Verdict::CleanBySignature) // signature absence is NOT proof of safety
     } else if let Some(sig) = result.strip_suffix(" FOUND") {
-        if sig.is_empty() {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "empty signature name"));
+        if sig.is_empty() || sig.len() > 256 || sig.chars().any(char::is_control) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid clamd signature name"));
         }
         Ok(Verdict::Malicious(sig.to_owned()))
     } else if let Some(error) = result.strip_suffix(" ERROR") {
+        if error.is_empty() || error.len() > 1024 || error.chars().any(char::is_control) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid clamd error text"));
+        }
         Ok(Verdict::ScannerError(error.to_owned()))
     } else {
         Err(io::Error::new(io::ErrorKind::InvalidData, "unknown clamd verdict"))
@@ -109,6 +115,32 @@ mod tests {
         let mut conn = stub(b"stream: size limit exceeded ERROR\0");
         assert_eq!(scan_stream(&mut conn, &mut Cursor::new(b"x"), 4).unwrap(),
             Verdict::ScannerError("size limit exceeded".into()));
+    }
+    #[test]
+    fn be096_recognizes_signature_without_reporting_clean() {
+        let verdict = parse_reply(b"stream: Eicar-Test-Signature FOUND").unwrap();
+        assert_eq!(verdict, Verdict::Malicious("Eicar-Test-Signature".into()));
+    }
+    #[test]
+    fn be097_rejects_control_characters_in_signature_and_error() {
+        assert!(parse_reply(b"stream: injected\rname FOUND").is_err());
+        assert!(parse_reply(b"stream: internal\nproblem ERROR").is_err());
+    }
+    #[test]
+    fn be098_rejects_oversized_signature() {
+        let reply = format!("stream: {} FOUND", "A".repeat(257));
+        assert!(parse_reply(reply.as_bytes()).is_err());
+    }
+    #[test]
+    fn be099_rejects_embedded_nul_or_empty_error() {
+        assert!(parse_reply(b"stream: M\0AL FOUND").is_err());
+        assert!(parse_reply(b"stream:  ERROR").is_err());
+    }
+    #[test]
+    fn be100_rejects_oversized_and_truncated_reply() {
+        assert!(parse_reply(&vec![b'A';2049]).is_err());
+        let mut conn = stub(b"stream: not_terminated");
+        assert!(scan_stream(&mut conn,&mut Cursor::new(b"x"),3).is_err());
     }
     #[test]
     fn enforces_input_cap_and_rejects_unexpected_replies() {
