@@ -92,3 +92,25 @@ func TestDLLCorrelationRejectsOutOfScopeCreatesAndDeduplicates(t *testing.T) {
 		t.Fatalf("overstated alert severity/confidence: %+v", got[0])
 	}
 }
+
+func TestDLLAlertExposesUnverifiedSourceRecordAndReceipt(t *testing.T) {
+	load := provenanceLoad()
+	load.SourceRecordID = "EventRecordID:1007"
+	load.TimeOrigin = "sender_reported_unverified"
+	load.ReceivedAt = load.Time.Add(3 * time.Second)
+	got := DetectSuspiciousDLLLoads([]Event{load})
+	if len(got) != 1 {
+		t.Fatalf("expected one provisional DLL alert, got %+v", got)
+	}
+	alert := got[0]
+	if alert.LoadEventID != load.ID ||
+		alert.LoadSourceRecordID != load.SourceRecordID ||
+		alert.LoadTimeOrigin != load.TimeOrigin ||
+		!alert.LoadReceivedAt.Equal(load.ReceivedAt) ||
+		!alert.ObservedAt.Equal(load.Time) {
+		t.Fatalf("source and receipt provenance not preserved: %+v", alert)
+	}
+	if alert.Confidence != "low" {
+		t.Fatalf("unauthenticated source must not increase confidence: %+v", alert)
+	}
+}
