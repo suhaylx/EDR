@@ -40,6 +40,10 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
   if !ok {http.Error(w,"unauthorized",401);return}
   tenant,valid:=socTenantRoute(r.URL)
   if !valid||tenant!=p.TenantID {http.Error(w,"forbidden",403);return}
+  // Derive the operation before routing: this handler also owns the
+  // operator-only alert and read-only investigation subrouters.
+  prefix:="/soc/v1/tenants/"+p.TenantID+"/"
+  operation:=strings.TrimPrefix(r.URL.Path,prefix)
   if operation=="alerts"||strings.HasPrefix(operation,"alerts/")||operation=="alert-stats" {
    SOCAlertHandler(q).ServeHTTP(w,r)
    return
@@ -49,8 +53,6 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
    return
   }
   if r.URL.RawQuery!="" {http.Error(w,"invalid query",400);return}
-  prefix:="/soc/v1/tenants/"+p.TenantID+"/"
-  operation:=strings.TrimPrefix(r.URL.Path,prefix)
   if operation=="scan-jobs"&&r.Method==http.MethodPost{
    if p.Role!="scanner"{http.Error(w,"forbidden",403);return}
    var payload struct{
