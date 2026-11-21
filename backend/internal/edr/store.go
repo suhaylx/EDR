@@ -322,6 +322,11 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
 	}
+	if len(e.BootID) > 128 || strings.IndexFunc(e.BootID, func(r rune) bool {
+		return r < 0x20 || r == 0x7f || r == 0xfffd
+	}) >= 0 {
+		return Event{}, errors.New("invalid sender-reported boot id")
+	}
 	if len(e.SourceRecordID) > 256 || strings.IndexFunc(e.SourceRecordID, func(r rune) bool {
 		return r < 0x20 || r == 0x7f || r == 0xfffd
 	}) >= 0 {
