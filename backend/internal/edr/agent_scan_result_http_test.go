@@ -43,11 +43,11 @@ func TestAgentScanResultRejectsSpoofingAndMalformedVerdicts(t *testing.T){
 
 func TestScanResultRejectsControlCharacters(t *testing.T) {
   for _,tc:=range []struct{verdict,threat,detail string}{
-    {"malicious","Lab\\nSignature",""},
-    {"malicious","Lab-Signature","line\\rbreak"},
-    {"error","","bad\\tmessage"},
+    {"malicious","Lab\nSignature",""},
+    {"malicious","Lab-Signature","line\rbreak"},
+    {"error","","bad\tmessage"},
     {"clean_by_signature","unexpected-threat",""},
-    {"unscanned","", "injected\\x00null"},
+    {"unscanned","", "injected\x00null"},
   } {
     if validScanResult(tc.verdict,tc.threat,tc.detail) {
       t.Fatalf("unsafe result unexpectedly valid: %q",tc.verdict)
