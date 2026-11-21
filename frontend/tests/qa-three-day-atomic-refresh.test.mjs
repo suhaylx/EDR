@@ -58,3 +58,45 @@ test('QA day1: rejecting with no source details does not fabricate an empty succ
   loaders[3]=async()=>{throw new Error('telemetry transport disconnected');};
   await assert.rejects(loadSixReadOnlyEvidence(loaders),/transport disconnected/);
 });
+
+
+test('QA: aborted refresh settles promptly even if one loader never resolves',{timeout:5000},async()=>{
+  const controller=new AbortController();
+  const loaders=six();
+  loaders[2]=()=>new Promise(()=>{});
+  const pending=loadSixReadOnlyEvidence(loaders,controller.signal);
+  controller.abort();
+  await assert.rejects(pending,/aborted before commit/);
+});
+
+test('QA: synchronous cancellation during source dispatch cannot publish data',async()=>{
+  const controller=new AbortController();
+  const loaders=six();
+  loaders[4]=()=>{controller.abort();return Promise.resolve('cancelled');};
+  await assert.rejects(loadSixReadOnlyEvidence(loaders,controller.signal),/aborted before commit/);
+});
+
+test('QA: a late fetch failure after abort cannot publish stale evidence',async()=>{
+  const controller=new AbortController();
+  let rejectLate;
+  const loaders=six();
+  loaders[5]=()=>new Promise((_,reject)=>{rejectLate=reject;});
+  const stale=loadSixReadOnlyEvidence(loaders,controller.signal);
+  controller.abort();
+  await assert.rejects(stale,/aborted before commit/);
+  rejectLate(new Error('late network error'));
+  await Promise.resolve();
+  assert.deepEqual(await loadSixReadOnlyEvidence(six(),new AbortController().signal),[1,2,3,4,5,6]);
+});
+
+test('QA: successful refresh removes the abort listener',async()=>{
+  const controller=new AbortController();
+  const realAdd=controller.signal.addEventListener.bind(controller.signal);
+  const realRemove=controller.signal.removeEventListener.bind(controller.signal);
+  let adds=0,removes=0;
+  controller.signal.addEventListener=(...args)=>{if(args[0]==='abort')adds++;return realAdd(...args);};
+  controller.signal.removeEventListener=(...args)=>{if(args[0]==='abort')removes++;return realRemove(...args);};
+  assert.deepEqual(await loadSixReadOnlyEvidence(six(),controller.signal),[1,2,3,4,5,6]);
+  assert.equal(adds,1);
+  assert.equal(removes,1);
+});
