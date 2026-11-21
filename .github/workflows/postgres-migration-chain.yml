@@ -5,6 +5,7 @@ on:
       - "backend/migrations/**"
       - "scripts/test-scan-job-lease-renewal.sh"
       - "scripts/test-postgres-migration-chain.sh"
+      - "scripts/test-scan-job-results.sql"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:
@@ -36,4 +37,6 @@ jobs:
       - name: Verify ordered migrations and enrollment-to-scan lifecycle
         env:
           EDR_TEST_DATABASE_URL: postgresql://edr_chain_ci:disposable-ci-only@127.0.0.1:5432/edr_chain_test?sslmode=disable
-        run: bash scripts/test-postgres-migration-chain.sh
+        run: |
+          bash scripts/test-postgres-migration-chain.sh
+          psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-scan-job-results.sql
