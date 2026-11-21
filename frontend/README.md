@@ -41,3 +41,14 @@ The React Security alerts view reads `GET /api/detections` after connection and 
 ## Read-only enrolled endpoint inventory
 
 The React Endpoints tab now reads `endpoints` from the existing server-generated `GET /api/overview?days=1|7|30` response, checks the total and online/offline/unknown counts for consistency, and displays server-received heartbeat status, inactivity, event/alert counts, and **unverified agent-reported** health and applied-policy acknowledgments. Analysts can filter by heartbeat and endpoint/group/policy, and sort locally by ID, observed events, or elapsed inactivity. Missing heartbeat status is **unknown**, never a fabricated offline duration. No response, policy mutation, or deployment controls are exposed. Server-side tenant scoping, signed health/policy evidence, real browser accessibility testing and durable inventory remain release blockers.
+
+
+## Policy acknowledgement evidence (Agent 5 increment)
+
+The **Policy evidence** React view consumes only the existing, validated `GET /api/overview?days=1|7|30` fields: `policy_coverage`, `policy_errors`, and the `endpoints[].applied_policy_id`, `applied_revision`, `last_policy_error`, `status` records. The day selector limits *activity* aggregates; policy acknowledgements are a point-in-time snapshot (`generated_at`). The view does not write to Go APIs or Rust agent policy.
+
+`src/policy-evidence.ts` compares API aggregate counts with agent-reported IDs from the same overview response, exposes missing policy acknowledgements, endpoint-reported errors and stale/unknown heartbeat, and warns when summaries disagree. Exact duplicate-policy ID and empty-ID cases are shown as consistency warnings instead of fabricated enforcement. Both matching counts and reported policy revision remain **unverified** for actual Sysmon installation, configuration, collector health, last-enforced hash, command authorization, and protection.
+
+`src/PolicyEvidenceView.tsx` uses landmark headings, semantic read-only tables, text status labels and existing responsive light/dark styles; it has no inert rollout or policy-edit controls. `tests/policy-evidence.test.mjs` covers empty, stale, mismatched/duplicate and error states. Manual keyboard, screen reader, zoom and WCAG contrast verification still require Agent 3 on real browsers.
+
+**Agent 2 contract gap:** production needs authenticated tenant-scoped desired/applied signed policy hashes, source/issued/acknowledged timestamps, Sysmon Event 1/7/11 and Linux collector coverage, policy validation errors, staging/rollback audit, strict pagination and data freshness. Version and authorize these server-side. **Agent 3 QA gap:** verify backend count semantics, untrusted policy names/errors XSS, keyboard focus and AT announcements, offline/unknown states and empty fleets against a real Go+Rust lab. There is no Windows tray/Linux companion IPC or protection attestation implemented here.
