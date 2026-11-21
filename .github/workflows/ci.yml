@@ -23,6 +23,21 @@ jobs:
       - run: go test ./...
       - run: go vet ./...
 
+  scan-status-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser scan status unit tests
+        run: node --test backend/web/scan-display.test.js
+      - name: TypeScript scan status unit tests
+        working-directory: frontend
+        run: |
+          npm exec --yes --package=typescript@5.8.3 -- tsc src/scan-state.ts --module commonjs --target es2020 --outDir dist --strict --noEmitOnError
+          node --test tests/scan-state.test.mjs
+
   rust-agent-scaffold:
     runs-on: ubuntu-latest
     defaults:
