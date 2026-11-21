@@ -32,3 +32,7 @@ The React/Vite development server listens on `127.0.0.1:5173`; it proxies `/api`
 ## Release blockers
 
 This app has not replaced `backend/web`; the Go `http.FileServer` still serves the original JS lab UI. Production requires Agent 2 secure session/mTLS/device and tenant-scoped Go APIs, durable scan history, validated provenance and packaging. Agent 3 must perform real browser accessibility/security QA and live Windows/Linux lab integration tests. No ClamAV/Sysmon protection is inferred from a rendered row. A standalone React app is not a separate endpoint **agent**.
+
+## Detection-to-investigation lab navigation
+
+The React Security alerts view reads `GET /api/detections` after connection and filters timestamps against the Go overview's generated timestamp and selected 1/7/30-day rolling window. Each retained detection has a read-only **Investigate evidence** control that preselects its real `device_id` and detection `id`; the analyst explicitly submits the graph query. The lab heuristic is not confirmed malware, and a file-create ID must never be confused with a module-load event. The shared development token is not a tenant-safe production identity. Agent 3 must manually test this flow with real browser keyboard/screen reader and Agent 2 must review durable authenticated API provenance.
