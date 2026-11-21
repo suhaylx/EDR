@@ -33,6 +33,14 @@ func TestAgentScanQueueHandlerRejectsUntrustedRequests(t *testing.T){
         {"trailing json","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","success":true}{}`,valid,400},
         {"invalid lease","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"invalid","success":true}`,valid,400},
         {"no db claim","POST",base+"scan-jobs/claim","",valid,503},
+        {"renew no principal","POST",base+"scan-jobs/renew","{}",nil,401},
+        {"renew cross tenant","POST","/agent/v1/tenants/tenantB/agents/win01/scan-jobs/renew","{}",valid,403},
+        {"renew wrong method","GET",base+"scan-jobs/renew","",valid,405},
+        {"renew invalid duration","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":301}`,valid,400},
+        {"renew invalid token","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"bad","lease_seconds":30}`,valid,400},
+        {"renew unknown field","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30,"tenant_id":"tenantB"}`,valid,400},
+        {"renew trailing json","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}{}`,valid,400},
+        {"renew no db","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}`,valid,503},
         {"no db complete","POST",base+"scan-jobs/complete",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","success":true}`,valid,503},
     }
     for _,tc:=range cases{
@@ -68,4 +76,22 @@ func TestAgentScanQueueClaimResponse(t *testing.T){
     if err:=json.NewDecoder(bytes.NewReader(w.Body.Bytes())).Decode(&response);err!=nil||response.JobID!=testUUID||!validUUID(response.LeaseToken){
         t.Fatalf("invalid response: %#v %v",response,err)
     }
+}
+
+func TestAgentScanQueueRenewalUsesAuthenticatedDevice(t *testing.T){
+    db:=scanDB(t,func(q string,args []driver.NamedValue)(driver.Rows,error){
+        if !strings.Contains(q,"edr_renew_scan_job_lease")||len(args)!=6||
+            args[0].Value!="tenantA"||args[1].Value!="win01"||
+            args[2].Value!=testUUID||args[3].Value!="win01"||
+            args[4].Value!=leaseUUID||args[5].Value!=int64(30) {
+            t.Fatalf("renewal scope/args: %q %#v",q,args)
+        }
+        return &scanRows{columns:[]string{"renewed"},values:[][]driver.Value{{true}}},nil
+    })
+    handler:=AgentScanQueueHandler(PostgresScanJobQueue{DB:db})
+    principal:=&AgentIdentity{TenantID:"tenantA",AgentID:"win01"}
+    body:=`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}`
+    w:=httptest.NewRecorder()
+    handler.ServeHTTP(w,scanRequest("POST","/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew",body,principal))
+    if w.Code!=204 {t.Fatalf("renew status %d: %s",w.Code,w.Body.String())}
 }

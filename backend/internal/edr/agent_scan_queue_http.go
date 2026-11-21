@@ -38,6 +38,35 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
             }{job.JobID,job.ScanRoot,job.AttemptCount,token})
             return
         }
+        if operation=="scan-jobs/renew" {
+            if r.Method!=http.MethodPost {w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return}
+            r.Body=http.MaxBytesReader(w,r.Body,4096)
+            var payload struct{
+                JobID string `json:"job_id"`
+                LeaseToken string `json:"lease_token"`
+                LeaseSeconds int `json:"lease_seconds"`
+            }
+            decoder:=json.NewDecoder(r.Body)
+            decoder.DisallowUnknownFields()
+            if err:=decoder.Decode(&payload);err!=nil {
+                http.Error(w,"invalid payload",http.StatusBadRequest);return
+            }
+            var extra json.RawMessage
+            if err:=decoder.Decode(&extra);err!=io.EOF {
+                http.Error(w,"multiple payloads",http.StatusBadRequest);return
+            }
+            if !validUUID(payload.JobID)||!validUUID(payload.LeaseToken)||
+                payload.LeaseSeconds<5||payload.LeaseSeconds>300 {
+                http.Error(w,"invalid payload",http.StatusBadRequest);return
+            }
+            // Lease owner is server-derived from the mTLS-authenticated agent.
+            renewed,err:=queue.Renew(r.Context(),principal.TenantID,principal.AgentID,
+                payload.JobID,principal.AgentID,payload.LeaseToken,payload.LeaseSeconds)
+            if err!=nil {http.Error(w,"service unavailable",http.StatusServiceUnavailable);return}
+            if !renewed {http.Error(w,"job not found or lease expired",http.StatusConflict);return}
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
         if operation=="scan-jobs/complete" {
             if r.Method!=http.MethodPost {w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return}
             r.Body=http.MaxBytesReader(w,r.Body,4096)
