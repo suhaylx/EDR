@@ -68,3 +68,9 @@
 .graph-actions{display:flex;gap:10px;flex-wrap:wrap}.graph-actions button{max-width:100%;overflow-wrap:anywhere}
 .graph-search{max-width:860px;grid-template-columns:repeat(2,minmax(0,1fr))}.graph-search button{grid-column:1/-1}
 @media(max-width:650px){.graph-search{grid-template-columns:1fr}.process-tree,.process-tree ul{padding-left:11px}}
+
+/* Lab-only opt-in session retention. Disabled on public plaintext HTTP. */
+.auth .auth-remember{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;color:#b3cbe4;font-size:12px}
+.auth-remember input{min-width:0;width:15px;height:15px;accent-color:#58b8f9}
+.auth-remember:has(input:disabled){opacity:.55}
+button:disabled,input:disabled{cursor:not-allowed;opacity:.6}
