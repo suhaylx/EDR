@@ -10,6 +10,7 @@ on:
       - "scripts/test-soc-scheduling.sql"
       - "scripts/test-soc-alerts.sql"
       - "scripts/test-soc-case-audit.sql"
+      - "scripts/test-soc-endpoint-inventory-sql.sh"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:
@@ -44,3 +45,8 @@ jobs:
         run: |
           bash scripts/test-postgres-migration-chain.sh
           psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-scan-job-results.sql
+      - name: Execute SOC endpoint inventory list/detail/summary on real CI PostgreSQL
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_chain_ci:disposable-ci-only@127.0.0.1:5432/edr_chain_test?sslmode=disable
+          EDR_QA_DISPOSABLE_DB: 'yes'
+        run: bash scripts/test-soc-endpoint-inventory-sql.sh
