@@ -18,8 +18,8 @@ import (
 // Never multiplex this handler with the lab dashboard or bearer-token API.
 func NewAgentMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,agentCAs *x509.CertPool)(*http.Server,error){
     if db==nil||agentCAs==nil||len(agentCAs.Subjects())==0||
-        len(serverCert.Certificate)==0||serverCert.PrivateKey==nil{
-        return nil,errors.New("agent mTLS requires database, nonempty controlled CA and complete server keypair")
+        !validAgentServerKeypair(serverCert){
+        return nil,errors.New("agent mTLS requires database, nonempty controlled CA and valid server certificate/private key")
     }
     host,portText,err:=net.SplitHostPort(addr)
     if err!=nil||host==""||portText==""{
