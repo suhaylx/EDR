@@ -18,6 +18,7 @@ export type PolicyEvidenceSummary = {
   missingPolicyIds: number;
   endpointsWithErrors: number;
   staleOrUnknownAcknowledgements: number;
+  policyIdsWithoutPositiveRevision: number;
   serverReportedErrors: number;
   aggregates: PolicyAggregateRow[];
   discrepancies: string[];
@@ -28,11 +29,13 @@ export function summarizePolicyEvidence(overview: LabSOCOverview): PolicyEvidenc
   let reportedPolicyIds = 0;
   let endpointsWithErrors = 0;
   let staleOrUnknownAcknowledgements = 0;
+  let policyIdsWithoutPositiveRevision = 0;
   for (const endpoint of overview.endpoints) {
     const id = endpoint.applied_policy_id.trim();
     if (id) {
       inventoryCountByPolicy.set(id, (inventoryCountByPolicy.get(id) || 0) + 1);
       reportedPolicyIds++;
+      if (endpoint.applied_revision === 0) policyIdsWithoutPositiveRevision++;
       if (endpoint.status !== 'online') staleOrUnknownAcknowledgements++;
     }
     if (endpoint.last_policy_error.trim()) endpointsWithErrors++;
@@ -68,6 +71,7 @@ export function summarizePolicyEvidence(overview: LabSOCOverview): PolicyEvidenc
     missingPolicyIds: overview.endpoints.length - reportedPolicyIds,
     endpointsWithErrors,
     staleOrUnknownAcknowledgements,
+    policyIdsWithoutPositiveRevision,
     serverReportedErrors: overview.policy_errors,
     aggregates,
     discrepancies,
@@ -80,6 +84,7 @@ export function policyEvidenceState(endpoint: EndpointActivity): string {
   if (endpoint.last_policy_error.trim()) return 'Policy error reported — enforcement NOT VERIFIED';
   if (!policy) return 'No applied-policy ID reported — coverage UNKNOWN';
   if (endpoint.status !== 'online') return 'Reported policy ID; stale/unknown heartbeat — enforcement NOT VERIFIED';
+  if (endpoint.applied_revision === 0) return 'Reported policy ID but revision absent or zero — enforcement NOT VERIFIED';
   return 'Reported policy ID — enforcement NOT VERIFIED';
 }
 
@@ -93,11 +98,12 @@ export function filterPolicyEndpoints(
 ): EndpointActivity[] {
   const query = search.trim().toLocaleLowerCase();
   const requiresAttention = (endpoint: EndpointActivity) =>
-    !!endpoint.last_policy_error.trim() || !endpoint.applied_policy_id.trim() || endpoint.status !== 'online';
+    !!endpoint.last_policy_error.trim() || !endpoint.applied_policy_id.trim() || endpoint.status !== 'online' || endpoint.applied_revision === 0;
   const priority = (endpoint: EndpointActivity) =>
     endpoint.last_policy_error.trim() ? 0 :
     !endpoint.applied_policy_id.trim() ? 1 :
-    endpoint.status !== 'online' ? 2 : 3;
+    endpoint.status !== 'online' ? 2 :
+    endpoint.applied_revision === 0 ? 3 : 4;
   return endpoints.filter(endpoint => {
     const matchesFilter =
       filter === 'all' ||
