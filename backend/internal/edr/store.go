@@ -314,7 +314,10 @@ func (s *Store) Ingest(e Event) (Event, error) {
 	if !validID(e.DeviceID) {
 		return Event{}, errors.New("invalid device id")
 	}
-	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 {
+	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 ||
+		len(e.Source) > 128 || len(e.ProcessGUID) > 128 ||
+		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
+		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
 	}
 	if len(e.SourceRecordID) > 256 || strings.ContainsAny(e.SourceRecordID, "\x00\r\n") {
