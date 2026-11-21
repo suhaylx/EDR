@@ -1,7 +1,6 @@
 package edr
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"io"
@@ -36,8 +35,8 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "development token missing", 503)
 			return
 		}
-		auth := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(auth), []byte(s.Token)) != 1 {
+		// Do not accept a bare token: all routes require the Bearer scheme.
+		if !validDevelopmentBearer(r.Header.Get("Authorization"), s.Token) {
 			http.Error(w, "unauthorized", 401)
 			return
 		}

@@ -18,6 +18,7 @@ import { EvidenceSnapshotReview } from './EvidenceSnapshotReview.js';
 import {fetchPolicyMetadata,fetchPolicyAssignments,type PolicyMeta,type PolicyAssignment} from './policy-readonly.js';
 import {PolicyEvidenceReview} from './PolicyEvidenceReview.js';
 import {ScanLifecycleReview} from './ScanLifecycleReview.js';
+import {loadSixReadOnlyEvidence} from './lab-refresh.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -170,14 +171,15 @@ function App() {
     try {
       // All six requests must succeed; do not display stale or partially labeled
       // metrics after a failed refresh or a changed UTC window.
-      const [nextOverview, data, detected, telemetry, policyCatalog, policyAssignments] = await Promise.all([
-        fetchLabOverview(tokenRef.current, days, controller.signal),
-        fetchLabScanJobs(tokenRef.current, controller.signal),
-        fetchLabDetections(tokenRef.current, controller.signal),
-        fetchLabTelemetry(tokenRef.current, controller.signal),
-        fetchPolicyMetadata(tokenRef.current, controller.signal),
-        fetchPolicyAssignments(tokenRef.current, controller.signal),
-      ]);
+      const [nextOverview, data, detected, telemetry, policyCatalog, policyAssignments] =
+        await loadSixReadOnlyEvidence([
+          () => fetchLabOverview(tokenRef.current, days, controller.signal),
+          () => fetchLabScanJobs(tokenRef.current, controller.signal),
+          () => fetchLabDetections(tokenRef.current, controller.signal),
+          () => fetchLabTelemetry(tokenRef.current, controller.signal),
+          () => fetchPolicyMetadata(tokenRef.current, controller.signal),
+          () => fetchPolicyAssignments(tokenRef.current, controller.signal),
+        ], controller.signal);
       if (controller.signal.aborted) return;
       setOverview(nextOverview);
       setJobs(data);
