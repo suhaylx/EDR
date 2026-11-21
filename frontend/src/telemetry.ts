@@ -25,6 +25,10 @@ export const SYSMON_EVENT_NAMES: Readonly<Record<number, string>> = Object.freez
   255:'Sysmon error',
 });
 
+// Reject Unicode directional controls in untrusted display strings: these
+// can disguise file paths or source values without changing their bytes.
+const bidiControl = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/;
+
 const fieldNames = new Set([
   'rule_name','destination_ip','destination_port','source_ip','source_port',
   'protocol','query_name','target_object','pipe_name','source_image',
@@ -41,7 +45,7 @@ function record(value: unknown, label: string): Rec {
 }
 function bounded(value: unknown, name: string, max = 1024, fallback = ''): string {
   if (value === null || value === undefined) return fallback;
-  if (typeof value !== 'string' || value.length > max || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value))
+  if (typeof value !== 'string' || value.length > max || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\ufffd]/.test(value) || bidiControl.test(value))
     throw new Error('Invalid lab telemetry field ' + name);
   return value;
 }
@@ -88,7 +92,7 @@ export function decodeLabTelemetry(raw: unknown): LabTelemetryEvent[] {
       if (!fieldNames.has(key) || sourceEventID===0 || sourceEventID===24)
         throw new Error('Private or unverified Sysmon field rejected');
       const safeValue=bounded(val,'source_fields.'+key,512);
-      if (/[\x00-\x1f\x7f]/.test(safeValue)) {
+      if (/[\x00-\x1f\x7f\ufffd]/.test(safeValue) || bidiControl.test(safeValue)) {
         throw new Error('Invalid Sysmon source metadata control character');
       }
       sourceFields[key]=safeValue;
