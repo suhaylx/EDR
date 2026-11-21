@@ -1,14 +1,39 @@
-# TuranSec EDR — Initial priority backlog
+# TuranSec EDR — prioritized implementation backlog
 
-**Status: assigned, not implemented.** Verify changes using code, tests, CI and PR evidence. Canonical architecture: https://chatgpt.com/space/page_dec24f52e8a88191baead60bf5ef9a56
+**Verified:** 2026-11-21 16:55 Asia/Tashkent. **Repository:** [suhaylx/EDR](https://github.com/suhaylx/EDR). **Architecture:** [authoritative Page](https://chatgpt.com/space/page_dec24f52e8a88191baead60bf5ef9a56). **PM activity tracker:** [docs/AGENT_ACTIVITY.md](AGENT_ACTIVITY.md). Tickets are **assigned, not completed** unless release/acceptance evidence exists.
 
-| ID | Priority | Owner | Deliverable | Acceptance |
-| --- | --- | --- | --- | --- |
-| SEC-001 | P0 | InfoSec (Agent 1) | `docs/security/agent-enrollment-threat-model.md` and security-function spec for unified Rust/ClamAV/Sysmon agent | Threats include device identity, mTLS, tenant scope, replay, offline, cross-component failures; specific security gates |
-| BE-001 | P0 | Backend/Deployment (Agent 2) | Go mTLS enrollment/device identity API with PostgreSQL schema, migration, tests | Cross-tenant and revoked/expired/replay cases reject; restart persists device identity; CI passes |
-| QA-001 | P0 | QA (Agent 3) | `docs/qa/p0-test-matrix.md` plus executable API negative tests where code exists | Every scenario has expected/observed result, pass/fail/not-run, and release blocker classification |
-| UX-001 | P1 | Frontend/UX (Agent 5) | `docs/ux/design-system.md` and React dashboard/local agent status/scan screens | Accessible keyboard/contrast, clear configured vs active states, no privileged GUI policy bypass |
-| SEC-002 | P1 | InfoSec (Agent 1) | Original `rules/windows/dll-sideloading.yaml` and safe fixtures | Distinguishes file create Event 11 from real module load Event 7; documents false positives and coverage |
-| BE-002 | P1 | Backend/Deployment (Agent 2) | One Windows/Linux TuranSec Rust agent supervising ClamAV and Sysmon | Single identity, policy, packaging; worker fault does not stop core; tested on both OSes |
+## Top three current workstreams
 
-The initial intended repository is **private** `suhaylx/EDR`. Do not push to unrelated repositories. Security and QA release gates must be satisfied before deployment.
+| Rank | Priority | Owner(s) | Concrete next output | Acceptance and dependency | Current result |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **P0 control-plane trust** | Agent 1 threat model + Agent 2 implementation + Agent 3 negative QA | `docs/security/agent-enrollment-threat-model.md`, Go tenant-bound device enrollment/mTLS proposal and tests, `docs/qa/p0-test-matrix.md` | Wrong-tenant/expired/revoked/replayed requests rejected; signed commands scoped to tenant/device; device identity survives restart; lab PKI and InfoSec signoff required | **Not implemented/verified**, lab API still uses dev token |
+| 2 | **P1 credible security function** | Agent 1 detection logic + Agent 2 Rust/Go integration + Agent 3 QA | Original `rules/windows/dll-sideloading.yaml`, ClamAV scan state/errors and bounded worker interface, fault injection/EICAR-only tests | Event 11 never treated as DLL execution; Event 7 needed to assert actual load; limits/timeouts; one installed agent; Rust core survives workers; real scanner/OS lab pending | **Design + lab protocol code**, no real endpoint scan verified |
+| 3 | **P2 safe enterprise UX/rollout plans** | Agent 5 original UX + Agent 2 packaging/rollback + Agent 3 release checks | `docs/ux/design-system.md`, React/TS dashboard + unprivileged local UI API contracts, staged GPO/MSI/Linux rollout plan only | Accessible keyboard/focus/contrast, clear queued vs running vs complete vs failed, distinct Sysmon/ClamAV health; no local privilege bypass; deployment requires signed installer, approved lab and QA gate | **Plain-JS lab dashboard only**, deployment not attempted |
+
+## Explicit hourly technical work orders (local checkpoint 21 November 2026)
+
+| ID / issue | Priority | Owner | Implementable task and exact artifact | Validation / gate | Checkpoint and status |
+| --- | --- | --- | --- | --- | --- |
+| SEC-FUNC-01 [#1](https://github.com/suhaylx/EDR/issues/1) | P0 | **Agent 1 — InfoSec** | Extend `docs/security/security-functionality-spec.md` and `docs/security/agent-enrollment-threat-model.md` with scan verdict states, signed command nonce/expiry, fail-closed tenant/device access; review/update original `rules/windows/dll-sideloading.yaml` test fixtures | Review expected behavior for Sysmon 11 create vs 7 image-load; benign load/false-positive matrix; EICAR only and no auto quarantine; assign Agent 2 API handoff and Agent 3 tests | **17:10; IN PROGRESS**, role-specific output not verified |
+| BE-001 [#2](https://github.com/suhaylx/EDR/issues/2) | P0 | **Agent 2 — Backend/Deployment** | Add a small scoped Go handler/test for agent enrollment identity and authorization (under `backend/internal/edr/`), plus schema/API contract for PostgreSQL; keep dev-only token mode isolated | `cd backend && go test -count=1 ./...` and `go vet ./...`; negative wrong tenant, expired/revoked/replay tests required before release; no production auth claim without lab mTLS | **17:20; IN PROGRESS**, production API not verified |
+| QA-001 [#3](https://github.com/suhaylx/EDR/issues/3) | P0 | **Agent 3 — QA** | Extend `docs/qa/p0-test-matrix.md` with observed/expected negative cases, Go scan state concurrency tests and Rust worker/clamd contract checks | `cd backend && go test -race -count=1 ./...` when available, `cd agent && cargo test`; clearly PASS/FAIL/NOT RUN; real EICAR/Sysmon/Windows/Linux never marked PASS without lab | **17:30; IN PROGRESS**, shared PR #5 CI green, endpoint tests NOT RUN |
+| UX-001 [#4](https://github.com/suhaylx/EDR/issues/4) | P1 | **Agent 5 — Frontend/UX** | Draft `docs/ux/design-system.md` and React/TS components/API-state contract for endpoint protection/scan job status (Windows tray, optional Linux GUI) | keyboard tab order, semantic labels, focus visible, contrast and zoom, offline state, no privileged IPC bypass; UI may not claim queued scan ran; coordinate with Agent 2, Agent 3 accessibility QA | **17:40; IN PROGRESS**, only plain-JS lab UI verified |
+| PM-001 [#6](https://github.com/suhaylx/EDR/issues/6) | P0 | **Agent 4 — PM** | Maintain `docs/AGENT_ACTIVITY.md`, this backlog and `docs/DAILY_REPORT_TEMPLATE.md`, publish verified five-role board and corrective actions | Evidence URL, SHA and CI, actual test status, per-role due and blocker; PR for PM documentation, no unreviewed merge | **18:00; IN PROGRESS**, PM documentation PR pending review |
+
+## Secondary backlog (do not misrepresent as completed)
+
+| ID | Priority | Owner | Scope | Dependency and gate | Status |
+| --- | --- | --- | --- | --- | --- |
+| BE-002 | P0 | Agent 2 | PostgreSQL-backed identity/event/audit data and replay-safe offline queue | Backup/restart/dedup tests and schema migration rollback; approved auth contract | PLANNED |
+| AG-001 | P1 | Agent 2 | One Rust Windows/Linux agent enrollment, health, offline buffered telemetry and supervised ClamAV/Sysmon workers | BE-001/002, supported OS matrix and Agent 3 fault testing | PLANNED |
+| AV-001 | P1 | Agents 1 + 2 | ClamAV verified signatures, bounded scan jobs, update integrity, explicit error and cancellation states | Agent 3 EICAR-only safe tests, real clamd in isolated lab | LAB PROTOCOL ONLY |
+| SYS-001 | P1 | Agents 1 + 2 | Sysmon Event 1/7/11 parsing, lineage and durable bookmarks; Linux capability metadata | Real Windows/Linux lab and event normalization QA | POLICY TEMPLATES ONLY |
+| AD-001 | P2 | Agent 2 | LDAPS discovery and signed MSI/GPO pilot plan | Explicit authorization, PKI, canary/rollback; no live installs | PLANNED |
+| TAMPER-001 | P2 | Agent 1 + Agent 2 | Audited scoped maintenance authorization, platform anti-tamper policy | Threat model, privilege constraints and QA tests | PLANNED |
+
+## Verified baseline and release blockers
+
+- [PR #5](https://github.com/suhaylx/EDR/pull/5) head `31629c64e5f1f9515bb7e0d8e41b74a3585af223` at the 16:55 check. [CI run 44901249720](https://github.com/suhaylx/EDR/actions/runs/44901249720) **succeeded**. These are *shared project artifacts*, not proof all four role personas independently coded.
+- **No production endpoint installation/deployment verified.** Real ClamAV scan, Sysmon collectors, mTLS device enrollment, tenant isolation, PostgreSQL persistence, signed updates, tamper resistance and response safety gates remain unverified.
+- Security/InfoSec and QA approval, test lab, signing PKI, source provenance, reliable rollback and platform matrix are mandatory before any rollout. PM may not waive them.
+- **Seven-day repository scope:** meaningful tested commits to private feature branches and PRs without per-change confirmation **through 28 November 2026**; no cosmetic hourly commits, direct `main` pushes, unreviewed merges or customer endpoint deployment.
