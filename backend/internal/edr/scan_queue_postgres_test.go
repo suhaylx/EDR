@@ -123,3 +123,20 @@ func TestPostgresScanQueueRenewalDatabaseErrorIsSanitized(t *testing.T){
         t.Fatalf("renewal leaked SQL error: %v",err)
     }
 }
+
+func TestPostgresScanQueueRenewalDurationBoundaries(t *testing.T){
+    for _,seconds:=range []int{5,300}{
+        db:=scanDB(t,func(q string,args []driver.NamedValue)(driver.Rows,error){
+            if !strings.Contains(q,"edr_renew_scan_job_lease")||args[5].Value!=int64(seconds){
+                t.Fatalf("unexpected TTL args: %#v",args)
+            }
+            return &scanRows{columns:[]string{"ok"},values:[][]driver.Value{{true}}},nil
+        })
+        ok,err:=(PostgresScanJobQueue{DB:db}).Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,seconds)
+        if err!=nil||!ok {t.Fatalf("seconds=%d: %v %v",seconds,ok,err)}
+    }
+    for _,seconds:=range []int{0,4,301,-1}{
+        _,err:=(PostgresScanJobQueue{}).Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,seconds)
+        if !errors.Is(err,ErrInvalidScanQueueRequest){t.Fatalf("seconds=%d: %v",seconds,err)}
+    }
+}
