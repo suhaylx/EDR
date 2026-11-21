@@ -159,7 +159,7 @@ Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared P
 
 ## M63–M87 25-milestone five-role checkpoint — 21 November 2026, ~23:00 Asia/Tashkent
 
-**Authoritative 25-item board:** [SPRINT_M63_M87_20261121.md](SPRINT_M63_M87_20261121.md). **New project code:** [draft PR #129](https://github.com/suhaylx/EDR/pull/129), latest head `14551ba47963591f8d98ebcd75b1a638b5e29882`, Backend mTLS listener security integrated onto PR #127's scan stack, positive/negative Go regression tests, InfoSec #126 untrusted identity header-strip integration and dedicated Linux-race/Windows CI. **New exact-head CI IN PROGRESS**; code is PM-coordinated shared patch, **not** independently attributable Agent 2 contribution. Real host tests NOT RUN.
+**Authoritative 25-item board:** [SPRINT_M63_M87_20261121.md](SPRINT_M63_M87_20261121.md). **New project code:** [draft PR #129](https://github.com/suhaylx/EDR/pull/129), latest head `14551ba47963591f8d98ebcd75b1a638b5e29882`, Backend mTLS listener security integrated onto PR #127's scan stack, positive/negative Go regression tests, InfoSec #126 untrusted identity header-strip integration and dedicated Linux-race/Windows CI. **Exact-head starter CI SUCCESS (44933029190), dedicated Linux race/Windows matrix IN PROGRESS (44933029184)**; [P0 QA matrix](qa/M63_M87_P0_ACCEPTANCE_MATRIX.md) saved with real-host cases NOT RUN; code is PM-coordinated shared patch, **not** independently attributable Agent 2 contribution. Real host tests NOT RUN.
 
 | Role / priority | Task, exact file and next checkpoint Asia/Tashkent | Verifiable source/test | Status, blocker and corrective action |
 | --- | --- | --- | --- |
