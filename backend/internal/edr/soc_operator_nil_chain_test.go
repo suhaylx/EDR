@@ -22,9 +22,9 @@ func TestQASOCOperatorAuthRejectsMalformedVerifiedChainWithoutPanic(t *testing.T
  }
  cases:=[]*tls.ConnectionState{
   nil,
-  {},
-  {PeerCertificates:[]*x509.Certificate{leaf}},
-  {PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{}}},
+  {Version:tls.VersionTLS13},
+  {Version:tls.VersionTLS13,PeerCertificates:[]*x509.Certificate{leaf}},
+  {Version:tls.VersionTLS13,PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{}}},
   {PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{nil}}},
  }
  for i,state:=range cases{
