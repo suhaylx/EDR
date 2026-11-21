@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests the actual 0001..0006 migration order in an EMPTY disposable DB.
+# Tests the actual 0001..0007 migration order in an EMPTY disposable DB.
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Use an empty disposable PostgreSQL database}"
 command -v psql >/dev/null
@@ -16,7 +16,8 @@ for migration in \
   0003_certificate_rotation \
   0004_enrollment_challenges \
   0005_scan_job_queue \
-  0006_atomic_agent_enrollment; do
+  0006_atomic_agent_enrollment \
+  0007_scan_job_lease_renewal; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
@@ -62,6 +63,9 @@ BEGIN
   IF claimed.job_id IS DISTINCT FROM '22222222-2222-4222-8222-222222222222'::uuid
     OR claimed.attempt_count <> 1 THEN
     RAISE EXCEPTION 'enrolled agent did not lease job'; END IF;
+  IF NOT edr_renew_scan_job_lease('chainA','win01',claimed.job_id,'worker',
+      '44444444-4444-4444-8444-444444444444',30) THEN
+    RAISE EXCEPTION 'lease renewal failed in full migration chain'; END IF;
   ok := edr_complete_scan_job(
     'chainA','win01',claimed.job_id,
     '33333333-3333-4333-8333-333333333333',true);
@@ -104,4 +108,4 @@ BEGIN
 END $flow$;
 ROLLBACK;
 SQL
-echo "Full PostgreSQL migration chain (0001..0006) integration passed"
+echo "Full PostgreSQL migration chain (0001..0007) integration passed"
