@@ -88,7 +88,7 @@ func TestPostgresAgentIdentityRegistry(t *testing.T) {
 
 func TestPostgresAgentIdentityRegistrySQLSafetyContract(t *testing.T) {
 	query:=strings.ToLower(lookupAgentCertificateSQL)
-	for _,part:=range []string{"where c.tenant_id = $1 and c.agent_id = $2","c.revoked_at is null","a.revoked_at is null","t.disabled_at is null","join edr_agents","join edr_tenants"} {
+	for _,part:=range []string{"where c.tenant_id = $1 and c.agent_id = $2","c.revoked_at is null","c.not_before <= current_timestamp","c.not_after > current_timestamp","a.revoked_at is null","t.disabled_at is null","join edr_agents","join edr_tenants"} {
 		if !strings.Contains(query,part){t.Errorf("missing predicate %q",part)}
 	}
 }
