@@ -113,3 +113,13 @@ func TestPostgresScanQueueRenewal(t *testing.T){
     _,err=(PostgresScanJobQueue{}).Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,30)
     if !errors.Is(err,ErrScanQueueUnavailable){t.Fatalf("missing DB: %v",err)}
 }
+
+func TestPostgresScanQueueRenewalDatabaseErrorIsSanitized(t *testing.T){
+    db:=scanDB(t,func(string,[]driver.NamedValue)(driver.Rows,error){
+        return nil,errors.New("secret internal SQL error")
+    })
+    _,err:=(PostgresScanJobQueue{DB:db}).Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,30)
+    if !errors.Is(err,ErrScanQueueUnavailable)||strings.Contains(err.Error(),"secret"){
+        t.Fatalf("renewal leaked SQL error: %v",err)
+    }
+}
