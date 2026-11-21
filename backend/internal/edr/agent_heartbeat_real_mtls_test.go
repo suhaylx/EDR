@@ -11,6 +11,7 @@ import (
     "net/http/httptest"
     "strings"
     "sync"
+    "sync/atomic"
     "testing"
     "time"
 )
@@ -27,12 +28,12 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
     registry := &revocableHeartbeatTestRegistry{record: EnrolledAgentCertificate{
         Identity: principal, FingerprintSHA256: sha256.Sum256(leaf.Raw),
     }}
-    writes := 0
+    var writes atomic.Int32
     db := scanDB(t, func(q string, args []driver.NamedValue) (driver.Rows, error) {
         if !strings.Contains(q, "edr_record_agent_heartbeat") {
             t.Fatalf("unexpected SQL statement %q", q)
         }
-        writes++
+        writes.Add(1)
         if len(args) != 7 || args[0].Value != "tenantA" ||
             args[1].Value != "win01" || args[2].Value != "windows" ||
             args[3].Value != "0.1.0" {
@@ -77,12 +78,12 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
     if code := send(server.URL + path); code != http.StatusNoContent {
         t.Fatalf("genuine client cert heartbeat status %d, want 204", code)
     }
-    if writes != 1 {t.Fatalf("expected 1 SQL heartbeat write, got %d", writes)}
+    if writes.Load() != 1 {t.Fatalf("expected 1 SQL heartbeat write, got %d", writes)}
     if code := send(server.URL + "/agent/v1/tenants/other/agents/win01/heartbeat");
         code != http.StatusForbidden {
         t.Fatalf("wrong tenant path status %d, want 403", code)
     }
-    if writes != 1 {t.Fatal("cross-tenant request reached database")}
+    if writes.Load() != 1 {t.Fatal("cross-tenant request reached database")}
 
     // The TLS layer itself must refuse a client without a certificate.
     request, err := http.NewRequest(http.MethodPost, server.URL + path,
@@ -93,7 +94,7 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
         response.Body.Close()
         t.Fatal("server accepted an HTTPS request with no client certificate")
     }
-    if writes != 1 {t.Fatal("missing client certificate reached database")}
+    if writes.Load() != 1 {t.Fatal("missing client certificate reached database")}
 
     // The same previously accepted mTLS connection must not continue
     // authorizing device operations after enrollment is revoked. The
@@ -102,7 +103,7 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
     if code := send(server.URL + path); code != http.StatusUnauthorized {
         t.Fatalf("revoked device heartbeat status %d, want 401", code)
     }
-    if writes != 1 {t.Fatal("revoked client certificate reached SQL")}
+    if writes.Load() != 1 {t.Fatal("revoked client certificate reached SQL")}
 }
 
 type revocableHeartbeatTestRegistry struct {
