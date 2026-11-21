@@ -285,12 +285,14 @@ func BuildProcessInvestigation(events []Event, detections []Detection, deviceID,
 		if det.DeviceID != deviceID || !included[det.ProcessGUID] {
 			continue
 		}
+		primaryEvidence := det.EvidenceEventID
+		if primaryEvidence == "" { primaryEvidence = det.LoadEventID }
 		dID := graphID("detection", deviceID, det.ID)
-		if !addNode(InvestigationNode{ID: dID, Kind: "detection", Label: det.RuleID + " · " + det.Category, Status: "observed", DeviceID: deviceID, ProcessGUID: det.ProcessGUID, EventID: det.LoadEventID, Severity: det.Severity, Confidence: det.Confidence, Detail: det.Explanation, Time: det.ObservedAt}) {
+		if !addNode(InvestigationNode{ID: dID, Kind: "detection", Label: det.RuleID + " · " + det.Category, Status: "observed", DeviceID: deviceID, ProcessGUID: det.ProcessGUID, EventID: primaryEvidence, Severity: det.Severity, Confidence: det.Confidence, Detail: det.Explanation, Time: det.ObservedAt}) {
 			continue
 		}
-		addEdge(InvestigationEdge{From: graphID("process", deviceID, det.ProcessGUID), To: dID, Relation: "flagged_by_rule", Provenance: "observed", EvidenceID: det.LoadEventID})
-		for _, evID := range []string{det.LoadEventID, det.FileCreateEventID} {
+		addEdge(InvestigationEdge{From: graphID("process", deviceID, det.ProcessGUID), To: dID, Relation: "flagged_by_rule", Provenance: "observed", EvidenceID: primaryEvidence})
+		for _, evID := range []string{primaryEvidence, det.FileCreateEventID} {
 			if evID == "" {
 				continue
 			}
