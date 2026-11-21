@@ -54,7 +54,7 @@ BEGIN
   IF EXISTS(SELECT 1 FROM edr_claim_scan_job('tenantB','win01','agent-win01',
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',30)) THEN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
-END $;
+END $$;
 
 -- A live lease is not valid evidence of current authorization. Revoke or
 -- disable the principal *after* claiming, and ensure completion is refused.
