@@ -41,11 +41,21 @@ BEGIN
     '88888888-8888-4888-8888-888888888888',30) THEN
     RAISE EXCEPTION 'revoked device renewal'; END IF;
   UPDATE edr_agents SET revoked_at=NULL WHERE tenant_id='renewA' AND agent_id='device';
+  UPDATE edr_tenants SET disabled_at=now() WHERE tenant_id='renewA';
+  IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
+    '88888888-8888-4888-8888-888888888888',30) THEN
+    RAISE EXCEPTION 'disabled tenant renewed lease'; END IF;
+  UPDATE edr_tenants SET disabled_at=NULL WHERE tenant_id='renewA';
   UPDATE edr_scan_jobs SET lease_expires_at=now()-interval '1 second'
     WHERE job_id=claimed.job_id;
   IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
     '88888888-8888-4888-8888-888888888888',30) THEN
     RAISE EXCEPTION 'expired lease renewed'; END IF;
+  IF edr_recover_expired_scan_jobs(10) <> 1 THEN
+    RAISE EXCEPTION 'expired lease not recovered'; END IF;
+  IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
+    '88888888-8888-4888-8888-888888888888',30) THEN
+    RAISE EXCEPTION 'requeued lease renewed'; END IF;
 END $test$;
 ROLLBACK;
 SQL
