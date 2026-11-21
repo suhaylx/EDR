@@ -27,3 +27,22 @@ jobs:
       - name: Run Node-native display and graph regression tests
         run: |
           node --test backend/web/graph-controls.test.js backend/web/scan-display.test.js
+
+  react-typed-scan-history:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact reviewed frontend dependencies (lab only)
+        run: npm install --no-audit --no-fund
+      - name: Strict TypeScript validation
+        run: npm run typecheck
+      - name: Typed API boundary and scan-state tests
+        run: npm test
+      - name: Build standalone React lab UI
+        run: npm run build
