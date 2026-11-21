@@ -4,6 +4,7 @@ import (
     "bytes"
     "context"
     "encoding/json"
+    "io"
     "database/sql/driver"
     "net/http"
     "net/http/httptest"
@@ -36,6 +37,10 @@ func TestAgentScanQueueHandlerRejectsUntrustedRequests(t *testing.T){
         {"renew no principal","POST",base+"scan-jobs/renew","{}",nil,401},
         {"renew cross tenant","POST","/agent/v1/tenants/tenantB/agents/win01/scan-jobs/renew","{}",valid,403},
         {"renew wrong method","GET",base+"scan-jobs/renew","",valid,405},
+        {"renew query rejected","POST",base+"scan-jobs/renew?tenant=other","",valid,400},
+        {"renew other device","POST","/agent/v1/tenants/tenantA/agents/other/scan-jobs/renew","",valid,403},
+        {"renew empty body","POST",base+"scan-jobs/renew","",valid,400},
+        {"renew missing duration","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`"}`,valid,400},
         {"renew invalid duration","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":301}`,valid,400},
         {"renew invalid token","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"bad","lease_seconds":30}`,valid,400},
         {"renew unknown field","POST",base+"scan-jobs/renew",`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30,"tenant_id":"tenantB"}`,valid,400},
@@ -94,4 +99,21 @@ func TestAgentScanQueueRenewalUsesAuthenticatedDevice(t *testing.T){
     w:=httptest.NewRecorder()
     handler.ServeHTTP(w,scanRequest("POST","/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew",body,principal))
     if w.Code!=204 {t.Fatalf("renew status %d: %s",w.Code,w.Body.String())}
+}
+
+func TestAgentScanQueueRenewalConflictAndDatabaseFailure(t *testing.T){
+    principal:=&AgentIdentity{TenantID:"tenantA",AgentID:"win01"}
+    body:=`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}`
+    for _,tc:=range []struct{name string; rows driver.Rows; err error; status int}{
+        {"expired lease",&scanRows{columns:[]string{"ok"},values:[][]driver.Value{{false}}},nil,409},
+        {"db outage",nil,io.ErrUnexpectedEOF,503},
+    }{
+        t.Run(tc.name,func(t *testing.T){
+            db:=scanDB(t,func(string,[]driver.NamedValue)(driver.Rows,error){return tc.rows,tc.err})
+            w:=httptest.NewRecorder()
+            AgentScanQueueHandler(PostgresScanJobQueue{DB:db}).ServeHTTP(w,
+                scanRequest("POST","/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew",body,principal))
+            if w.Code!=tc.status {t.Fatalf("status %d, expected %d",w.Code,tc.status)}
+        })
+    }
 }
