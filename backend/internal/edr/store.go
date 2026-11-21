@@ -395,7 +395,7 @@ func validateSysmonSourceFields(e Event) error {
     total := 0
     for k, v := range e.SourceFields {
         if !allowedSysmonFields[k] { return errors.New("unsupported or private Sysmon source field") }
-        if len(v) > 512 || strings.IndexFunc(v, func(r rune) bool { return r < 0x20 || r == 0x7f || r == 0xfffd }) >= 0 {
+        if len(v) > 512 || strings.IndexFunc(v, func(r rune) bool { return r < 0x20 || r == 0x7f || r == 0xfffd || unsafeTelemetryBidi(r) }) >= 0 {
             return errors.New("invalid Sysmon source field value")
         }
         total += len(k)+len(v)
@@ -407,13 +407,21 @@ func validateSysmonSourceFields(e Event) error {
     return nil
 }
 
+// Unicode bidi controls can visually reorder untrusted process paths,
+// names or source values in an analyst timeline; preserve no such markup.
+func unsafeTelemetryBidi(r rune) bool {
+    return r == 0x061c || r == 0x200e || r == 0x200f ||
+        (r >= 0x202a && r <= 0x202e) ||
+        (r >= 0x2066 && r <= 0x2069)
+}
+
 // Keep API-accepted text within the stricter React and Go-served SOC display
 // contracts. One oversized value must not make the full telemetry view fail.
 // Benign tabs/newlines are allowed in descriptive text, never ASCII C0 or DEL controls.
 func validDisplayText(value string) bool {
 	return strings.IndexFunc(value, func(r rune) bool {
 		return (r < 0x20 && r != '\t' && r != '\n' && r != '\r') ||
-			r == 0x7f || r == 0xfffd
+			r == 0x7f || r == 0xfffd || unsafeTelemetryBidi(r)
 	}) < 0
 }
 
@@ -427,7 +435,8 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.FilePath) > 1024 || len(e.Hash) > 256 ||
 		!validDisplayText(e.Type) || !validDisplayText(e.Source) ||
 		!validDisplayText(e.Image) || !validDisplayText(e.FilePath) ||
-		!validDisplayText(e.Detail) {
+		!validDisplayText(e.Detail) || !validDisplayText(e.ProcessGUID) ||
+		!validDisplayText(e.ParentProcessGUID) || !validDisplayText(e.Hash) {
 		return Event{}, errors.New("invalid event fields")
 	}
 	if err := validateEventProvider(e); err != nil {
@@ -437,12 +446,12 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		return Event{}, err
 	}
 	if len(e.BootID) > 128 || strings.IndexFunc(e.BootID, func(r rune) bool {
-		return r < 0x20 || r == 0x7f || r == 0xfffd
+		return r < 0x20 || r == 0x7f || r == 0xfffd || unsafeTelemetryBidi(r)
 	}) >= 0 {
 		return Event{}, errors.New("invalid sender-reported boot id")
 	}
 	if len(e.SourceRecordID) > 256 || strings.IndexFunc(e.SourceRecordID, func(r rune) bool {
-		return r < 0x20 || r == 0x7f || r == 0xfffd
+		return r < 0x20 || r == 0x7f || r == 0xfffd || unsafeTelemetryBidi(r)
 	}) >= 0 {
 		return Event{}, errors.New("invalid sender-reported source record id")
 	}
