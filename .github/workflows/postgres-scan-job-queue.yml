@@ -5,6 +5,7 @@ on:
       - "backend/migrations/**"
       - "scripts/test-scan-job-queue.sh"
       - "scripts/test-scan-job-postcommit-revocation.sh"
+      - "scripts/test-scan-job-concurrent-claims.sh"
       - ".github/workflows/postgres-scan-job-queue.yml"
   workflow_dispatch:
 permissions:
@@ -39,3 +40,4 @@ jobs:
         run: |
           bash scripts/test-scan-job-queue.sh
           bash scripts/test-scan-job-postcommit-revocation.sh
+          EDR_QA_DISPOSABLE_DB=yes bash scripts/test-scan-job-concurrent-claims.sh
