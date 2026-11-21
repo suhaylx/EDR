@@ -2,6 +2,8 @@
 //! Does NOT install Sysmon, collect real OS events, or quarantine any files.
 #[allow(dead_code)]
 mod clamav;
+#[allow(dead_code)]
+mod scan_jobs;
 
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
