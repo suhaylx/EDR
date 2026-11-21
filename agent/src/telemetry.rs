@@ -336,30 +336,52 @@ mod tests {
 
     const OBSERVATIONS: &str = r#"[
       {"record_id":12,"event_id":1,"time":"2026-11-21T14:00:00.0000000Z","image":"C:\\Windows\\System32\\notepad.exe","process_guid":"{A}","parent_process_guid":"{B}"},
-      {"record_id":11,"event_id":1,"time":"2026-11-21T13:59:00.0000000Z","image":"C:\\Windows\\explorer.exe","process_guid":"{C}","parent_process_guid":"{D}"},
-      {"record_id":13,"event_id":3,"time":"2026-11-21T14:00:30.0000000Z","image":"x","process_guid":"{E}"}
+      {"record_id":11,"event_id":7,"time":"2026-11-21T13:59:00.0000000Z","image":"C:\\Windows\\explorer.exe","file_path":"C:\\Users\\lab\\Temp\\test.dll","process_guid":"{C}","fields":{"image_loaded":"C:\\Users\\lab\\Temp\\test.dll"}},
+      {"record_id":13,"event_id":3,"time":"2026-11-21T14:00:30.0000000Z","image":"C:\\Windows\\System32\\curl.exe","process_guid":"{E}","fields":{"destination_ip":"10.0.0.5","destination_port":"443"}},
+      {"record_id":14,"event_id":24,"time":"2026-11-21T14:00:32.0000000Z"},
+      {"record_id":15,"event_id":255,"time":"2026-11-21T14:00:34.0000000Z"}
     ]"#;
-
     #[test]
-    fn uses_real_record_ids_and_deduplicates_after_checkpoint() {
-        let v = records_after(OBSERVATIONS.as_bytes(), 11).unwrap();
-        assert_eq!(v.len(), 1);
-        assert_eq!(v[0].record_id, 12);
-        assert_eq!(v[0].image, r"C:\Windows\System32\notepad.exe");
-        let payload = event_payload("win-lab-01", &v[0]);
-        assert_eq!(payload["source"], "sysmon");
-        assert_eq!(payload["source_record_id"], "12");
-        assert_eq!(payload["type"], "process_create");
-        assert_eq!(payload["parent_process_guid"], "{B}");
-        assert!(payload["detail"].as_str().unwrap().contains("EventRecordID=12"));
+    fn preserves_real_ids_order_and_creation_only_parent_guid() {
+        let events=records_after(OBSERVATIONS.as_bytes(),11).unwrap();
+        assert_eq!(events.len(),4);
+        assert_eq!((events[0].record_id,events[0].event_id),(12,1));
+        assert_eq!((events[1].record_id,events[1].event_id),(13,3));
+        assert_eq!((events[2].record_id,events[2].event_id),(14,24));
+        let create=event_payload("win-lab-01",&events[0]);
+        assert_eq!(create["source_event_id"],1);
+        assert_eq!(create["source_record_id"],"12");
+        assert_eq!(create["parent_process_guid"],"{B}");
+        assert_eq!(create["image"],r"C:\Windows\System32\notepad.exe");
+        let network=event_payload("win-lab-01",&events[1]);
+        assert_eq!(network["type"],"network_connect");
+        assert_eq!(network["source_fields"]["destination_ip"],"10.0.0.5");
+        assert!(network.get("parent_process_guid").is_none());
+        let clipboard=event_payload("win-lab-01",&events[2]);
+        assert_eq!(clipboard["type"],"clipboard_change_metadata");
+        assert!(clipboard.get("source_fields").is_none());
     }
-
     #[test]
-    fn malformed_and_empty_stream_behavior() {
-        assert!(records_after(b"{malformed", 0).is_err());
-        assert!(records_after(b"{}", 0).is_err());
-        assert!(records_after(b"[]", 0).unwrap().is_empty());
-        assert!(records_after(OBSERVATIONS.as_bytes(), 13).unwrap().is_empty());
+    fn actual_dll_load_path_is_preserved() {
+        let events=records_after(OBSERVATIONS.as_bytes(),0).unwrap();
+        let load=event_payload("win-lab-01",&events[0]);
+        assert_eq!(load["type"],"module_load");
+        assert_eq!(load["source_event_id"],7);
+        assert_eq!(load["file_path"],r"C:\Users\lab\Temp\test.dll");
+        assert!(load.get("parent_process_guid").is_none());
+    }
+    #[test]
+    fn supports_all_defined_ids_but_denies_private_fields() {
+        for id in 1..=29 {assert!(known_sysmon_id(id));assert_ne!(sysmon_kind(id),"unknown");}
+        assert!(known_sysmon_id(255));
+        for id in [0,30,254] {assert!(!known_sysmon_id(id));}
+        assert!(records_after(b"{invalid",0).is_err());
+        assert!(records_after(b"{}",0).is_err());
+        assert!(records_after(b"[]",0).unwrap().is_empty());
+        assert!(records_after(OBSERVATIONS.as_bytes(),15).unwrap().is_empty());
+        assert!(records_after(br#"[{"record_id":2,"event_id":24,"time":"2026-11-21T14:00:00Z","fields":{"query_name":"SECRET"}}]"#,0).is_err());
+        assert!(records_after(br#"[{"record_id":2,"event_id":22,"time":"2026-11-21T14:00:00Z","fields":{"command_line":"SECRET"}}]"#,0).is_err());
+        assert!(records_after(br#"[{"record_id":2,"event_id":30,"time":"2026-11-21T14:00:00Z"}]"#,0).is_err());
     }
 
     #[test]
