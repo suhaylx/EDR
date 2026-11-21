@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { LabDetection } from './detections.js';
 import type { LabTelemetryEvent } from './telemetry.js';
+import { DetectionSourceAudit } from './DetectionSourceAudit.js';
 import { detectionsInWindow, seedForDetection } from './detections.js';
 import type { DayWindow } from './overview.js';
 import type { InvestigationSeed } from './investigation.js';
@@ -219,6 +220,12 @@ export function MultisignalAlertTriage({detections,events=[],generatedAt,days,on
           <button className="secondary" type="button" disabled={page.page>=page.pages-1}
             onClick={()=>setPageIndex(page.page+1)}>Next page</button>
         </div></>}
+    <details className="detection-audit-disclosure">
+      <summary>Review detection-to-source integrity for all returned records</summary>
+      <DetectionSourceAudit detections={retained} events={events}
+        generatedAt={generatedAt} onInspectSource={onInspectSource}
+        onInvestigate={onInvestigate}/>
+    </details>
     <p className="minor">Source ID references the Go retained event ID, not the
       Windows EventRecordID. FileCreate evidence is not DLL execution.
       All records are lab reports without authenticated endpoint provenance.
