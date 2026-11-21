@@ -1,0 +1,45 @@
+name: p0-agent-mtls-scan-listener
+
+on:
+  pull_request:
+    paths:
+      - "backend/internal/edr/agent_mtls_server.go"
+      - "backend/internal/edr/agent_mtls_scan_listener_security_test.go"
+      - "backend/internal/edr/agent_http.go"
+      - "backend/internal/edr/agent_http_untrusted_headers_test.go"
+      - "backend/internal/edr/agent_scan_queue_http.go"
+      - "backend/internal/edr/agent_scan_queue_claim_body_test.go"
+      - ".github/workflows/p0-agent-mtls-scan-listener.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go-agent-mtls-listener:
+    name: Go listener security / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+      - name: Go race tests (Linux)
+        if: runner.os == 'Linux'
+        run: go test -race -count=1 ./...
+      - name: Go tests (Windows)
+        if: runner.os == 'Windows'
+        run: go test -count=1 ./...
+      - name: Go vet
+        run: go vet ./...

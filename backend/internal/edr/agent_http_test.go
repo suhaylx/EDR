@@ -21,7 +21,7 @@ func TestAgentHTTPGuardAuthenticatesTenantAndDevice(t *testing.T) {
 	registry := testIdentityRegistry{record: EnrolledAgentCertificate{
 		Identity: id, FingerprintSHA256: sha256.Sum256(cert.Raw),
 	}}
-	tlsState := &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert},
+	tlsState := &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert},
 		VerifiedChains: [][]*x509.Certificate{{cert}}}
 	calls := 0
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,7 @@ func TestAgentHTTPGuardAuthenticatesTenantAndDevice(t *testing.T) {
 	}{
 		{"allowed", route, tlsState, registry, http.StatusNoContent},
 		{"header-claims-no-tls", route, nil, registry, http.StatusUnauthorized},
-		{"unverified", route, &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert}}, registry, http.StatusUnauthorized},
+		{"unverified", route, &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert}}, registry, http.StatusUnauthorized},
 		{"wrong-tenant", "/agent/v1/tenants/other/agents/win01/events", tlsState, registry, http.StatusForbidden},
 		{"wrong-agent", "/agent/v1/tenants/tenantA/agents/other/events", tlsState, registry, http.StatusForbidden},
 		{"non-agent-route", "/api/agents/win01", tlsState, registry, http.StatusNotFound},

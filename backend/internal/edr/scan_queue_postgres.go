@@ -11,7 +11,13 @@ import (
 // PostgresScanJobQueue is a durable storage adapter. It does NOT authenticate
 // callers. Only a handler that has verified mTLS agent identity and matched
 // the tenant/agent route may invoke Claim or Complete.
-type PostgresScanJobQueue struct { DB *sql.DB }
+// Both *sql.DB (reads) and *sql.Tx (certificate-bound mutations) implement
+// this interface. A mutation must not escape its authorization transaction.
+type ScanQueryer interface {
+ QueryContext(context.Context,string,...any)(*sql.Rows,error)
+ QueryRowContext(context.Context,string,...any)*sql.Row
+}
+type PostgresScanJobQueue struct { DB ScanQueryer }
 
 type ClaimedScanJob struct {
     JobID string
@@ -85,7 +91,7 @@ func validScanResult(verdict,threat,detail string)bool{
     case "clean_by_signature","error","unscanned":
         if threat!="" {return false}
     case "malicious":
-        if threat=="" {return false}
+        if strings.TrimSpace(threat)=="" {return false}
     default:
         return false
     }

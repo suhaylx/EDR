@@ -8,6 +8,8 @@ CREATE FUNCTION edr_renew_scan_job_lease(
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog,public
 AS $$
 DECLARE changed integer;
+        lease_deadline timestamptz;
+        renewed_at timestamptz;
 BEGIN
     IF p_tenant_id IS NULL OR p_agent_id IS NULL OR p_job_id IS NULL
        OR p_lease_owner IS NULL OR length(p_lease_owner) NOT BETWEEN 1 AND 256
@@ -22,13 +24,24 @@ BEGIN
     FOR SHARE OF t,a;
     IF NOT FOUND THEN RETURN false; END IF;
 
-    UPDATE public.edr_scan_jobs AS j
-    SET lease_expires_at=GREATEST(j.lease_expires_at,transaction_timestamp()+make_interval(secs=>p_lease_seconds)),
-        updated_at=transaction_timestamp()
+    SELECT j.lease_expires_at INTO lease_deadline
+    FROM public.edr_scan_jobs AS j
     WHERE j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id AND j.job_id=p_job_id
       AND j.state='leased' AND j.lease_owner=p_lease_owner
       AND j.lease_token=p_lease_token
-      AND j.lease_expires_at > transaction_timestamp();
+    FOR UPDATE OF j;
+    IF NOT FOUND THEN RETURN false; END IF;
+    -- A lease that expired during either certificate or job-row locking
+    -- cannot be revived using the transaction's earlier start time.
+    renewed_at:=clock_timestamp();
+    IF lease_deadline IS NULL OR lease_deadline<=renewed_at THEN RETURN false; END IF;
+    UPDATE public.edr_scan_jobs AS j
+    SET lease_expires_at=GREATEST(j.lease_expires_at,renewed_at+make_interval(secs=>p_lease_seconds)),
+        updated_at=renewed_at
+    WHERE j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id AND j.job_id=p_job_id
+      AND j.state='leased' AND j.lease_owner=p_lease_owner
+      AND j.lease_token=p_lease_token
+      AND j.lease_expires_at > renewed_at;
     GET DIAGNOSTICS changed=ROW_COUNT;
     RETURN changed=1;
 END;

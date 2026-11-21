@@ -52,6 +52,36 @@ type ScanCompletion struct {
 
 var windowsDrivePath = regexp.MustCompile(`^[A-Za-z]:\\`)
 
+// Windows rejects Win32 device aliases and NTFS alternate-data-stream syntax.
+// The scan API accepts only ordinary, unambiguous local path components.
+func windowsScanComponentAllowed(segment string) bool {
+	if segment == "" || segment == "." || segment == ".." ||
+		strings.HasSuffix(segment, ".") || strings.HasSuffix(segment, " ") ||
+		strings.ContainsAny(segment, "<>:\"|?*") {
+		return false
+	}
+	for _, r := range segment {
+		if r < 0x20 || r == 0x7f {
+			return false
+		}
+	}
+	// Device aliases remain reserved when followed by a file extension.
+	base := strings.ToUpper(strings.TrimSpace(strings.SplitN(segment, ".", 2)[0]))
+	switch base {
+	case "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$":
+		return false
+	}
+	for _, prefix := range []string{"COM", "LPT"} {
+		if strings.HasPrefix(base, prefix) {
+			switch strings.TrimPrefix(base, prefix) {
+			case "1", "2", "3", "4", "5", "6", "7", "8", "9", "¹", "²", "³":
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func scanPathAllowed(platform, p string) bool {
 	if len(p) > 512 || strings.ContainsAny(p, "\x00\r\n") {
 		return false
@@ -61,7 +91,7 @@ func scanPathAllowed(platform, p string) bool {
 			return false // disallow UNC/network paths and mixed separators for MVP
 		}
 		for _, segment := range strings.Split(p[3:], `\`) {
-			if segment == ".." || segment == "." || segment == "" {
+			if !windowsScanComponentAllowed(segment) {
 				return false
 			}
 		}
@@ -101,6 +131,7 @@ func (s *Store) CreateScan(req ScanRequest, now time.Time) (ScanJob, error) {
 			if prev.ScanType != req.ScanType || prev.Path != req.Path {
 				return ScanJob{}, errors.New("request_id reused with different parameters")
 			}
+			prev.LeaseID = "" // do not disclose an active lease on retry
 			return prev, nil // retry-safe: no duplicate scan job
 		}
 	}
@@ -204,9 +235,17 @@ func (s *Store) CompleteScan(jobID string, req ScanCompletion, now time.Time) (S
 		if j.LeaseID != req.LeaseID {
 			return ScanJob{}, errors.New("scan lease identity mismatch")
 		}
+		// LAB CAPABILITY GATE: quick/full scan execution is not implemented.
+		// A claimed successful verdict cannot establish that a scan occurred.
+		// Remove only after real worker capability negotiation and QA evidence.
+		if j.ScanType != "path" && req.Verdict != "unscanned" && req.Verdict != "error" {
+			return ScanJob{}, errors.New("quick/full scan not implemented: cannot claim scanned verdict")
+		}
 		if j.Status == "completed" || j.Status == "failed" {
 			if j.Verdict == req.Verdict && j.Engine == req.Engine && j.ThreatName == req.ThreatName && j.EngineVersion == req.EngineVersion && j.DatabaseVersion == req.DatabaseVersion && j.Detail == req.Detail {
-				return *j, nil
+				redacted := *j
+				redacted.LeaseID = ""
+				return redacted, nil
 			}
 			return ScanJob{}, errors.New("conflicting scan result")
 		}

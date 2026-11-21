@@ -5,6 +5,7 @@ import (
  "database/sql"
  "errors"
  "fmt"
+ "strings"
  "time"
 )
 
@@ -35,7 +36,7 @@ func validHeartbeat(h AgentHeartbeat) bool {
  if h.Platform!="linux" && h.Platform!="windows" {return false}
  for i,value:=range []string{h.AgentVersion,h.ClamAVVersion,h.SignatureVersion} {
   limit:=64; if i==2{limit=96}
-  if len(value)>limit || (i==0&&len(value)==0) || containsUnsafeSOCText(value) {return false}
+  if len(value)>limit || (i==0&&strings.TrimSpace(value)=="") || containsUnsafeSOCText(value) {return false}
  }
  return true
 }

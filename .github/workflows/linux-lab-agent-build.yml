@@ -1,0 +1,60 @@
+name: linux-lab-agent-build
+
+on:
+  pull_request:
+    paths:
+      - 'agent/**'
+      - 'docs/LINUX_TELEMETRY_QUICKSTART.md'
+      - '.github/workflows/linux-lab-agent-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-2404-agent:
+    name: Ubuntu 24.04 x64 Rust agent (lab only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Verify platform and toolchain
+        run: |
+          uname -a
+          rustc --version
+          cargo --version
+      - name: Rust unit tests
+        run: cargo test --locked --manifest-path agent/Cargo.toml
+      - name: Build native release artifact
+        run: cargo build --locked --manifest-path agent/Cargo.toml --release
+      - name: CLI negative smoke tests and stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          binary="agent/target/release/turansec-edr-agent"
+          test -x "$binary"
+          mkdir -p dist/linux-x64-lab
+          install -m 0755 "$binary" dist/linux-x64-lab/turansec-edr-agent
+          if "$binary" --linux-telemetry-once 2>&1; then
+            echo "Invalid invocation unexpectedly succeeded" >&2
+            exit 1
+          fi
+          "$binary" --version
+          if "$binary" >/dev/null 2>&1; then
+            echo "Missing mode unexpectedly succeeded" >&2
+            exit 1
+          fi
+          (cd dist/linux-x64-lab && sha256sum turansec-edr-agent > SHA256SUMS.txt)
+          cp docs/LINUX_TELEMETRY_QUICKSTART.md dist/linux-x64-lab/README.md
+      - name: Publish unsigned lab-only Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuranSec-EDR-Lab-Ubuntu-2404-x64
+          path: dist/linux-x64-lab/
+          if-no-files-found: error
+          retention-days: 14

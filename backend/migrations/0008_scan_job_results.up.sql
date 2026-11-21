@@ -45,6 +45,8 @@ CREATE FUNCTION edr_complete_scan_job_with_result(
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog,public
 AS $$
 DECLARE changed integer;
+        lease_deadline timestamptz;
+        completed_at timestamptz;
 BEGIN
     IF p_tenant_id IS NULL OR p_agent_id IS NULL OR p_job_id IS NULL
        OR p_lease_token IS NULL OR p_verdict IS NULL
@@ -63,6 +65,16 @@ BEGIN
       AND t.disabled_at IS NULL AND a.revoked_at IS NULL
     FOR SHARE OF t,a;
     IF NOT FOUND THEN RETURN false; END IF;
+    SELECT j.lease_expires_at INTO lease_deadline
+    FROM public.edr_scan_jobs AS j
+    WHERE j.job_id=p_job_id AND j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id
+      AND j.state='leased' AND j.lease_token=p_lease_token
+    FOR UPDATE OF j;
+    IF NOT FOUND THEN RETURN false; END IF;
+    -- Both certificate authorization and job locking may have waited.
+    -- Expiry is checked only after the matching job is exclusively locked.
+    completed_at:=clock_timestamp();
+    IF lease_deadline IS NULL OR lease_deadline<=completed_at THEN RETURN false; END IF;
     -- The result insert and lease consumption are one transaction; a conflict
     -- rolls back the UPDATE, and a replay cannot overwrite the existing result.
     WITH updated AS (
@@ -70,10 +82,10 @@ BEGIN
         SET state=CASE WHEN p_verdict IN ('malicious','clean_by_signature')
                       THEN 'succeeded' ELSE 'failed' END,
             lease_owner=NULL,lease_token=NULL,lease_expires_at=NULL,
-            updated_at=transaction_timestamp()
+            updated_at=completed_at
         WHERE j.job_id=p_job_id AND j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id
           AND j.state='leased' AND j.lease_token=p_lease_token
-          AND j.lease_expires_at>transaction_timestamp()
+          AND j.lease_expires_at>completed_at
         RETURNING j.job_id,j.tenant_id,j.agent_id
     )
     INSERT INTO public.edr_scan_job_results(

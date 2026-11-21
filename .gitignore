@@ -12,3 +12,12 @@ secrets/
 # GPL-licensed upstream sources fetched on a developer machine; never vendor silently.
 /vendor-src/
 /vendor-study/
+/.quality-evidence/
+/build/
+/backend/edrd
+/release-staging/
+*.pem
+*.key
+*.p12
+*.pfx
+__pycache__/

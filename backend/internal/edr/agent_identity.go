@@ -57,7 +57,7 @@ var (
 // review. It does not itself implement SPIFFE federation or enrollment.
 func VerifyAgentCertificate(ctx context.Context, state *tls.ConnectionState, registry AgentIdentityRegistry, now time.Time) (AgentIdentity, error) {
 	deny := AgentIdentity{}
-	if registry == nil || state == nil || len(state.PeerCertificates) == 0 || len(state.VerifiedChains) == 0 {
+	if registry == nil || state == nil || state.Version != tls.VersionTLS13 || len(state.PeerCertificates) == 0 || len(state.VerifiedChains) == 0 {
 		return deny, ErrAgentUnauthenticated
 	}
 	cert := state.PeerCertificates[0]

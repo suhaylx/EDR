@@ -1,0 +1,70 @@
+name: frontend-ui-checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/web/**'
+      - 'frontend/**'
+      - '.github/workflows/frontend-ui-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab-ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify lab UI script syntax
+        run: |
+          node --check backend/web/app.js
+          node --check backend/web/graph-controls.js
+          node --check backend/web/scan-display.js
+      - name: Run Node-native display and graph regression tests
+        run: |
+          node --test backend/web/graph-controls.test.js backend/web/scan-display.test.js
+
+  react-typed-scan-history:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact reviewed frontend dependencies (lab only)
+        run: npm ci --no-audit --no-fund
+      - name: Strict TypeScript validation
+        run: npm run typecheck
+      - name: Typed API boundary and scan-state tests
+        run: npm test
+      - name: Build standalone React lab UI
+        run: npm run build
+      - name: Stage integrity manifest and lab-only release warning
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          cp ../docs/LAB_RELEASE_CANDIDATE_DAY3.md dist/README.md
+          printf '%s\n' 'DEVELOPMENT LAB ONLY — no production authentication, protection or durable event history.' > dist/LAB_ONLY.txt
+          (cd dist && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+      - name: Publish standalone React SOC lab UI
+        uses: actions/upload-artifact@v4
+        with:
+          name: TuranSec-EDR-SOC-React-Lab-UI
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 14

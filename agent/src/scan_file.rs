@@ -77,8 +77,11 @@ pub fn open_bounded(root: &Path, target: &str) -> io::Result<File> {
     if !before.is_file() || before.len() > MAX_SCAN_FILE {
         return Err(deny("scan target is not a bounded regular file"));
     }
-    // BE-103: O_NOFOLLOW closes a final-component symlink-swap window on Unix.
-    // Ancestor directory races still require a future openat2-style sandbox.
+    // Reuse the Linux handle-relative openat2 path for authenticated scans.
+    // It rejects every symlink/mount crossing beneath the opened policy root.
+    #[cfg(target_os="linux")]
+    let file = crate::worker::open_scoped_lab_file(target,root)?;
+    #[cfg(not(target_os="linux"))]
     let file = open_verified(&path)?;
     let opened = file.metadata()?;
     if !opened.is_file() || opened.len() > MAX_SCAN_FILE {

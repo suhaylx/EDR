@@ -40,7 +40,7 @@ fn safe_verdict(outcome: &Outcome) -> (&'static str,String,&'static str) {
     match outcome {
         Outcome::CleanBySignature => ("clean_by_signature",String::new(),"ClamAV signature scan completed; not proof of safety"),
         Outcome::Malicious(name) if name.len()<=256
-            && !name.is_empty() && !unsafe_scan_text(name) =>
+            && !name.trim().is_empty() && !unsafe_scan_text(name) =>
             ("malicious",name.clone(),"Signature matched; investigate and contain by approved policy"),
         Outcome::Malicious(_) | Outcome::Error =>
             ("error",String::new(),"Scan could not produce a valid trusted ClamAV verdict"),

@@ -8,7 +8,6 @@ import (
  "crypto/x509"
  "database/sql"
  "errors"
- "net"
  "net/http"
  "net/url"
  "strings"
@@ -106,23 +105,10 @@ func SOCOperatorHTTPGuard(db *sql.DB,next http.Handler)http.Handler{
 // this constructor does not start a listener or enroll operators.
 func NewSOCMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,
  operatorCAs *x509.CertPool)(*http.Server,error){
- if db==nil||operatorCAs==nil||len(serverCert.Certificate)==0{
-  return nil,errors.New("SOC mTLS requires DB, server cert and operator CA")
- }
- host,_,err:=net.SplitHostPort(addr)
- if err!=nil||host==""||host=="0.0.0.0"||host=="::"{
-  return nil,errors.New("SOC listener requires explicit non-wildcard host:port")
- }
- handler:=SOCOperatorHTTPGuard(db,SOCScanHandler(PostgresScanJobQueue{DB:db}))
- return &http.Server{
-  Addr:addr,Handler:handler,
-  TLSConfig:&tls.Config{MinVersion:tls.VersionTLS13,
-   ClientAuth:tls.RequireAndVerifyClientCert,ClientCAs:operatorCAs,
-   Certificates:[]tls.Certificate{serverCert}},
-  ReadHeaderTimeout:5*time.Second,
-  ReadTimeout:15*time.Second,
-  WriteTimeout:15*time.Second,
-  IdleTimeout:45*time.Second,
-  MaxHeaderBytes:16<<10,
- },nil
+ // Share the same reviewed TLS/address/keypair limits. The returned listener
+ // has its own operator CA and handler; no agent route is mounted here.
+ server,err:=NewAgentMTLSServer(addr,db,serverCert,operatorCAs)
+ if err!=nil{return nil,errors.New("SOC mTLS requires explicit loopback address, database, valid server keypair and nonempty operator CA")}
+ server.Handler=SOCOperatorHTTPGuard(db,SOCScanHandler(PostgresScanJobQueue{DB:db}))
+ return server,nil
 }

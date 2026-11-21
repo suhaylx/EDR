@@ -1,7 +1,6 @@
 package edr
 
 import (
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -35,8 +35,8 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "development token missing", 503)
 			return
 		}
-		auth := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(auth), []byte(s.Token)) != 1 {
+		// Do not accept a bare token: all routes require the Bearer scheme.
+		if !validDevelopmentBearer(r.Header.Get("Authorization"), s.Token) {
 			http.Error(w, "unauthorized", 401)
 			return
 		}
@@ -63,7 +63,7 @@ func (s *Server) Handler() http.Handler {
 			}
 			reply(w, 200, events)
 		case r.URL.Path == "/api/detections" && r.Method == "GET":
-			reply(w, 200, DetectSuspiciousDLLLoads(s.Store.Snapshot().Events))
+			reply(w, 200, allAgentOneDetections(s.Store.Snapshot().Events))
 		case r.URL.Path == "/api/events" && r.Method == "POST":
 			var e Event
 			if !decode(w, r, &e) {
@@ -74,6 +74,10 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 201, saved)
+		case r.URL.Path == "/api/policy-metadata" && r.Method == "GET":
+			// Lab analyst frontend never needs the raw Sysmon XML document.
+			// Keep the old /api/policies contract for existing lab clients.
+			reply(w, 200, policyCatalogMetadata(s.Store.Snapshot().Policies))
 		case r.URL.Path == "/api/policies" && r.Method == "GET":
 			reply(w, 200, s.Store.Snapshot().Policies)
 		case r.URL.Path == "/api/policies" && r.Method == "POST":
@@ -101,6 +105,10 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 200, a)
+		case r.URL.Path == "/api/scan-job-metadata" && r.Method == "GET":
+			// The shared-token analyst UI receives only display metadata.
+			// Preserve the legacy /api/scan-jobs route for lab clients.
+			reply(w, 200, scanJobReviewMetadata(s.Store.ScanJobs()))
 		case r.URL.Path == "/api/scan-jobs" && r.Method == "GET":
 			reply(w, 200, s.Store.ScanJobs())
 		case r.URL.Path == "/api/scan-jobs" && r.Method == "POST":
@@ -135,15 +143,47 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 200, job)
-		case r.URL.Path == "/api/overview" && r.Method == "GET":
-			data := s.Store.Snapshot()
-			online := 0
-			for _, a := range data.Agents {
-				if time.Since(a.LastSeen) < 5*time.Minute {
-					online++
+		case r.URL.Path == "/api/investigations" && r.Method == "GET":
+			depth, maxNodes := 4, 250
+			if v := r.URL.Query().Get("depth"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid depth", 400)
+					return
 				}
+				depth = n
 			}
-			reply(w, 200, map[string]int{"agents": len(data.Agents), "online": online, "events": len(data.Events), "policies": len(data.Policies), "assignments": len(data.Assignments)})
+			if v := r.URL.Query().Get("max_nodes"); v != "" {
+				n, err := strconv.Atoi(v)
+				if err != nil {
+					http.Error(w, "invalid max_nodes", 400)
+					return
+				}
+				maxNodes = n
+			}
+			snapshot := s.Store.Snapshot()
+			graph, err := BuildProcessInvestigation(snapshot.Events, allAgentOneDetections(snapshot.Events), r.URL.Query().Get("device_id"), r.URL.Query().Get("process_guid"), r.URL.Query().Get("detection_id"), depth, maxNodes)
+			if errors.Is(err, ErrInvestigationNotFound) {
+				http.Error(w, "investigation seed not found", 404)
+				return
+			}
+			if fail(w, err) {
+				return
+			}
+			reply(w, 200, graph)
+		case r.URL.Path == "/api/overview" && r.Method == "GET":
+			days := 7
+			switch r.URL.Query().Get("days") {
+			case "", "7":
+			case "1":
+				days = 1
+			case "30":
+				days = 30
+			default:
+				http.Error(w, "days must be 1, 7 or 30", http.StatusBadRequest)
+				return
+			}
+			reply(w, 200, BuildSOCOverview(s.Store.Snapshot(), s.Store.ScanJobs(), time.Now().UTC(), days))
 		case strings.HasPrefix(r.URL.Path, "/api/agents/") && r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/desired-policy"):
 			agentID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/agents/"), "/desired-policy")
 			if !validID(agentID) {

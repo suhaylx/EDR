@@ -49,6 +49,7 @@ pub fn valid_identity(value: &str) -> bool {
 pub fn unsafe_scan_text(value: &str) -> bool {
     value.chars().any(|ch| {
         ch.is_control()
+            || ch == '\u{061c}' || ch == '\u{feff}' || ch == '\u{fffd}'
             || ('\u{202a}'..='\u{202e}').contains(&ch)
             || ('\u{2066}'..='\u{2069}').contains(&ch)
             || ch == '\u{200e}' || ch == '\u{200f}'
@@ -99,7 +100,7 @@ mod tests {
     #[test]
     fn qa_unsafe_text_rejects_controls_and_bidi() {
         for unsafe_value in ["\u{1b}[31m", "name\u{202e}spoof",
-            "mark\u{200f}", "isolate\u{2066}", "tab\tname"] {
+            "mark\u{200f}", "isolate\u{2066}", "tab\tname", "arabic\u{061c}", "invalid\u{fffd}"] {
             assert!(unsafe_scan_text(unsafe_value));
         }
         assert!(!unsafe_scan_text("Legitimate-Signature-UTF8 café"));

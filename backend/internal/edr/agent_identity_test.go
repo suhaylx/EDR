@@ -74,7 +74,7 @@ func TestAgentIdentityFromVerifiedCertificate(t *testing.T) {
 	cert, _, _ := createTestAgentCertificate(t, now, []string{san}, []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth})
 	identity := AgentIdentity{TenantID: "customer-1", AgentID: "device-1"}
 	record := EnrolledAgentCertificate{Identity: identity, FingerprintSHA256: sha256.Sum256(cert.Raw)}
-	verified := &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{cert}}}
+	verified := &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{cert}}}
 	got, err := VerifyAgentCertificate(context.Background(), verified, testIdentityRegistry{record: record}, now)
 	if err != nil || got != identity { t.Fatalf("valid registered client got %+v err=%v", got, err) }
 
@@ -87,8 +87,8 @@ func TestAgentIdentityFromVerifiedCertificate(t *testing.T) {
 		wantErr error
 	}{
 		{name: "no-tls", state: nil, record: record, when: now, wantErr: ErrAgentUnauthenticated},
-		{name: "unverified-chain", state: &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert}}, record: record, when: now, wantErr: ErrAgentUnauthenticated},
-		{name: "empty-verified-chain", state: &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{}}}, record: record, when: now, wantErr: ErrAgentUnauthenticated},
+		{name: "unverified-chain", state: &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert}}, record: record, when: now, wantErr: ErrAgentUnauthenticated},
+		{name: "empty-verified-chain", state: &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{}}}, record: record, when: now, wantErr: ErrAgentUnauthenticated},
 		{name: "wrong-tenant", state: verified, record: EnrolledAgentCertificate{Identity: AgentIdentity{TenantID: "other", AgentID: "device-1"}, FingerprintSHA256: record.FingerprintSHA256}, when: now, wantErr: ErrAgentUnauthenticated},
 		{name: "wrong-fingerprint", state: verified, record: EnrolledAgentCertificate{Identity: identity}, when: now, wantErr: ErrAgentUnauthenticated},
 		{name: "revoked", state: verified, record: EnrolledAgentCertificate{Identity: identity, FingerprintSHA256: record.FingerprintSHA256, Revoked: true}, when: now, wantErr: ErrAgentUnauthenticated},
@@ -119,7 +119,7 @@ func TestAgentIdentityRejectsAmbiguousOrWrongPurposeCertificates(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name,func(t *testing.T){
 			cert,_,_ := createTestAgentCertificate(t,now,tc.sans,tc.eku)
-			state := &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{cert}}}
+			state := &tls.ConnectionState{Version: tls.VersionTLS13,PeerCertificates: []*x509.Certificate{cert}, VerifiedChains: [][]*x509.Certificate{{cert}}}
 			record := EnrolledAgentCertificate{Identity: AgentIdentity{TenantID:"alpha",AgentID:"win01"}, FingerprintSHA256:sha256.Sum256(cert.Raw)}
 			if _,err:=VerifyAgentCertificate(context.Background(),state,testIdentityRegistry{record:record},now);!errors.Is(err,ErrAgentUnauthenticated){t.Fatalf("should reject %s: %v",tc.name,err)}
 		})

@@ -1,18 +1,25 @@
-# TuranSec EDR — milestone 0.1 laboratory starter
+# TuranSec EDR — integrated engineering candidate
 
-**Status: runnable local API/dashboard prototype, not a functioning EDR or production-ready endpoint agent.**
+**The PostgreSQL-backed mTLS service, one Rust scan client and original React SOC are integrated for engineering validation. Deployment remains NO-GO until the exact candidate passes CI, native host acceptance, independent InfoSec/QA review and signing/rollback gates.**
 
-Current parts:
-- `backend/`: Go standard-library HTTP API and in-memory store for agent check-in, events, policy records, desired policy assignment, acknowledgements and overview.
-- `backend/web/`: lightweight no-build dashboard served by Go. This initial smoke-test UI is **plain JavaScript**, not yet the planned React/TypeScript enterprise frontend.
-- `agent/`: Rust std-only scaffold demonstrating separation of a collector worker from the core, with **no real Sysmon, ClamAV, installation or remediation logic**.
-- `config/sysmon/`: **nonproduction templates** to review/validate on Windows and Linux lab VMs; never roll out as-is to enterprise endpoints.
-- `scripts/replay.sh`: enroll a fake Windows lab endpoint and send one synthetic Sysmon event for UI smoke testing.
-- `docs/architecture.md`: architecture and next milestones.
+Read the current [installation and rollback manual](docs/INSTALLATION.md) first. It supersedes the legacy lab quickstarts for the authenticated candidate.
 
-## Requirements
+## Components
 
-Go 1.23+, optional Rust/Cargo if you want to compile the agent stub. No external Go modules.
+- `backend/cmd/edrd`: compiled Go service with TLS 1.3 client certificates, separate endpoint/operator CAs, per-request registry checks, certificate-bound mutation transactions and PostgreSQL persistence.
+- `frontend`: original React/TypeScript operator SOC served on the same authenticated origin. Fleet/alert/case reads use the operator certificate. The explicit `/lab/` companion remains a separate development UI.
+- `agent`: one Rust binary with authenticated heartbeat and bounded scan-job modes. ClamAV and Sysmon are separately provisioned dependencies; one-shot scan support does not establish an installed background protection service.
+- `backend/cmd/server` and `backend/web`: legacy loopback, shared-token, in-memory demonstrations. These do not establish the authenticated service's detection or identity guarantees.
+- `backend/bootstrap/runtime_privileges.sql`: explicit least-privilege deployment bootstrap after migrations, requiring separate registry and runtime logins.
+- `.github/workflows/candidate-ci.yml`: mandatory tests on the exact PR head; no inherited-parent or scheduled-run completion.
+
+## Build requirements
+
+Go 1.25 or later, Rust/Cargo with the committed `Cargo.lock`, Node 22.12 or later with the committed npm lockfile, PostgreSQL 16, Python 3 and OpenSSL. The tested local toolchain versions and remaining platform limits are recorded in the candidate evidence. Never substitute a new lockfile during release staging.
+
+## Legacy development demonstration
+
+The commands below run the old in-memory lab server only. For the authenticated candidate use [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Run locally
 
