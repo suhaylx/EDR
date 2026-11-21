@@ -62,6 +62,7 @@ func TestIngestRejectsMalformedSourceRecordID(t *testing.T) {
 	}
 	for _, sourceID := range []string{
 		strings.Repeat("x", 257), "record\nforged", "record\rforged", "record\x00forged",
+		"record\tforged", "record\x1bforged", "record\x7fforged", "record\ufffdforged",
 	} {
 		if _, err := store.Ingest(Event{
 			DeviceID: "win-01", Platform: "windows", Type: "module_load",
