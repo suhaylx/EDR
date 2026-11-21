@@ -23,6 +23,13 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
         operation:=strings.TrimPrefix(r.URL.Path,prefix)
         if operation=="scan-jobs/claim" {
             if r.Method!=http.MethodPost { w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return }
+            // Claim takes no payload. Refuse hidden overrides or oversized bodies.
+            r.Body=http.MaxBytesReader(w,r.Body,1)
+            var probe [1]byte
+            n,readErr:=r.Body.Read(probe[:])
+            if n!=0 || (readErr!=nil && readErr!=io.EOF) {
+                http.Error(w,"invalid payload",http.StatusBadRequest);return
+            }
             // Only the authenticated device can claim its own work.
             // A random lease token is created server-side; never trust client tokens for claiming.
             token,err:=NewScanLeaseToken()
