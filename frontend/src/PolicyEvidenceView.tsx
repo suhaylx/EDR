@@ -13,6 +13,7 @@ export function PolicyEvidenceView({ overview }: { overview: LabSOCOverview }) {
     ['Enrolled records', summary.total],
     ['Reported policy IDs', summary.reportedPolicyIds],
     ['No policy ID reported', summary.missingPolicyIds],
+    ['Policy IDs with absent/zero revision', summary.policyIdsWithoutPositiveRevision],
     ['Endpoints reporting errors', summary.endpointsWithErrors],
     ['Offline/unknown with a policy ID', summary.staleOrUnknownAcknowledgements],
     ['Backend-reported policy errors', summary.serverReportedErrors],
@@ -58,7 +59,7 @@ export function PolicyEvidenceView({ overview }: { overview: LabSOCOverview }) {
         <div className="field">
           <label htmlFor="policy-filter">Reported evidence filter</label>
           <select id="policy-filter" value={filter} onChange={event => setFilter(event.target.value as PolicyEvidenceFilter)}>
-            <option value="attention">Needs analyst attention</option>
+            <option value="attention">Needs analyst attention (including revision gaps)</option>
             <option value="all">All returned endpoints</option>
             <option value="offline_unknown">Offline or unknown heartbeat</option>
             <option value="reported_error">Reported policy error</option>
@@ -83,7 +84,7 @@ export function PolicyEvidenceView({ overview }: { overview: LabSOCOverview }) {
               <th scope="row">{e.id}</th>
               <td>{e.platform}<span className="minor">{e.group || 'No group reported'}</span></td>
               <td>{e.status}<span className="minor">{heartbeatLabel(e)}</span></td>
-              <td>{e.applied_policy_id || 'No policy ID reported'}<span className="minor">Revision: {e.applied_policy_id ? e.applied_revision : 'not reported'}</span></td>
+              <td>{e.applied_policy_id || 'No policy ID reported'}<span className="minor">Revision: {e.applied_policy_id ? (e.applied_revision === 0 ? 'not reported or zero' : e.applied_revision) : 'not reported'}</span></td>
               <td>{e.last_policy_error || 'No error reported (not proof of success)'}</td>
               <td>{policyEvidenceState(e)}</td>
             </tr>)}</tbody>
