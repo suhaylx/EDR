@@ -95,6 +95,22 @@ BEGIN
     AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
   IF allowed_count <> 0 THEN RAISE EXCEPTION 'expired enrollment was authorized'; END IF;
 
+  -- CURRENT_TIMESTAMP is stable within this transaction: start is inclusive,
+  -- expiry is exclusive at the exact same database timestamp.
+  UPDATE edr_agent_certificates SET not_before=CURRENT_TIMESTAMP, not_after=CURRENT_TIMESTAMP+interval '1 hour'
+  WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+  WHERE tenant_id='tenantA' AND agent_id='win01' AND revoked_at IS NULL
+    AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 1 THEN RAISE EXCEPTION 'inclusive not_before boundary was denied'; END IF;
+
+  UPDATE edr_agent_certificates SET not_before=CURRENT_TIMESTAMP-interval '1 hour', not_after=CURRENT_TIMESTAMP
+  WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+  WHERE tenant_id='tenantA' AND agent_id='win01' AND revoked_at IS NULL
+    AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 0 THEN RAISE EXCEPTION 'exclusive not_after boundary was authorized'; END IF;
+
   UPDATE edr_agent_certificates SET not_before=now()-interval '1 hour', not_after=now()+interval '1 day'
   WHERE tenant_id='tenantA' AND agent_id='win01';
 END $validity$;
