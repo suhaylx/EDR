@@ -26,7 +26,7 @@ export function PolicyEvidenceReview({overview,policies,assignments}:{
  }));
  return <section className="panel" aria-labelledby="policy-review-title">
   <h2 id="policy-review-title">Policy intention and acknowledgment evidence</h2>
-  <p>Read-only Go <code>/api/policies</code> and <code>/api/assignments</code> are
+  <p>Read-only Go <code>/api/policy-metadata</code> and <code>/api/assignments</code> are
     compared with server overview enrollment records. Agent assignments override
     group assignments; group overrides default, separately per platform. These
     are shared-token lab reports, <strong>not verified Sysmon enforcement</strong>.
