@@ -28,7 +28,9 @@ export function DetectionSourceAudit({detections,events,generatedAt,onInspectSou
     setQuery(old=>({...old,[key]:value}));setRequestedPage(0);
   };
   const clear=()=>{setQuery({...DEFAULT_AUDIT_QUERY,state:'all'});setSize(25);setRequestedPage(0);};
-  const active=Object.entries(query).some(([k,v])=>v!==DEFAULT_AUDIT_QUERY[k as keyof AuditQuery])||size!==25;
+  const allRecordsBaseline:AuditQuery={...DEFAULT_AUDIT_QUERY,state:'all'};
+  const active=Object.entries(query).some(([k,v])=>
+    v!==allRecordsBaseline[k as keyof AuditQuery])||size!==25;
   return <section className="detection-audit" aria-labelledby="detection-audit-title">
     <h3 id="detection-audit-title">Detection-source integrity audit</h3>
     <p>Compares claimed Go event IDs, numeric Sysmon types, process GUIDs and
