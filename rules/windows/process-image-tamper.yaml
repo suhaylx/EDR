@@ -1,0 +1,30 @@
+# Original TuranSec read-only lab rule; no Sysmon files copied.
+id: TURAN-WIN-PROCESS-TAMPER-001
+version: 1
+platform: windows
+status: lab_prototype
+name: Sysmon image replacement corroborated by same-process creation
+required_observations:
+  - {event_id: 1, type: process_create}
+  - {event_id: 25, type: process_tampering, tamper_type: image_replaced}
+source: sysmon
+join:
+  same_reported_device_boot_process_guid: true
+  same_normalized_process_image: true
+  require_distinct_source_record_ids: true
+  process_created_before_tamper_hours_max: 24
+output:
+  category: reported_process_image_replacement
+  severity: high
+  confidence: low
+  action: alert_only
+  evidence: [process_create_event_id, tamper_event_id]
+mitre_hypothesis: T1055
+false_positives:
+  - security software, instrumentation and benign image replacements
+  - collector coverage and Sysmon version can affect type interpretation
+  - neither an event nor image replacement proves malicious code injection
+safety:
+  alert_only: true
+  no_auto_quarantine: true
+  source_identity_unverified: true

@@ -52,6 +52,8 @@ type Detection struct {
 	WMIBindingEventID string   `json:"wmi_binding_event_id,omitempty"`
 	WMIFilterName string      `json:"wmi_filter_name,omitempty"`
 	WMIConsumerName string    `json:"wmi_consumer_name,omitempty"`
+	TamperEventID string      `json:"tamper_event_id,omitempty"`
+	TamperType string         `json:"tamper_type,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
