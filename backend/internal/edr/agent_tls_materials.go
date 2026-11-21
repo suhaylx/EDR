@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -16,6 +17,9 @@ func LoadAgentTLSMaterials(certPath, keyPath, clientCAPath string, now time.Time
 	var empty tls.Certificate
 	if certPath == "" || keyPath == "" || clientCAPath == "" {
 		return empty, nil, errors.New("agent TLS certificate, private key and client CA paths are required")
+	}
+	if err := validateAgentServerPrivateKeyFile(keyPath); err != nil {
+		return empty, nil, err
 	}
 	pair, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
@@ -73,4 +77,21 @@ func LoadAgentTLSMaterials(certPath, keyPath, clientCAPath string, now time.Time
 		return empty, nil, errors.New("agent client CA bundle is empty")
 	}
 	return pair, roots, nil
+}
+
+// validateAgentServerPrivateKeyFile rejects key-file mistakes on Unix.
+// Windows file mode bits do not describe NTFS ACL; that requires a separate
+// deployment-time ACL security check before production use.
+func validateAgentServerPrivateKeyFile(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return errors.New("cannot stat agent server private key")
+	}
+	if !info.Mode().IsRegular() {
+		return errors.New("agent server private key must be a regular file, not a symlink or device")
+	}
+	if runtime.GOOS != "windows" && info.Mode().Perm()&0077 != 0 {
+		return errors.New("agent server private key must not be readable by group or others")
+	}
+	return nil
 }
