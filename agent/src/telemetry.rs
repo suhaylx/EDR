@@ -160,46 +160,79 @@ fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
     fs::write(path, format!("{id}\n"))
 }
 
-// Script text is constant, never built using a command line, agent name or a token.
-// Queries actual Microsoft-Windows-Sysmon/Operational Windows events; does NOT
-// fabricate observations, download binaries or export command lines/usernames.
+// Queries actual Sysmon Operational records in ascending EventRecordID order.
+// No command-line input from the API; child PowerShell never inherits the token.
+// Only source metadata allowlisted in SAFE_FIELDS is sent. Event 24 is stripped.
 #[cfg(windows)]
 const SYSMON_POWERSHELL: &str = r#"
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $channel = Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' -ErrorAction Stop
-if (-not $channel.IsEnabled) { throw 'Sysmon Operational channel disabled' }
-$records = @(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational';Id=1} -MaxEvents 32 -ErrorAction SilentlyContinue)
-$observations = @(
-    foreach ($entry in $records) {
-        [xml]$doc = $entry.ToXml()
-        $fields = @{}
-        foreach ($field in @($doc.Event.EventData.Data)) {
-            $key = [string]$field.GetAttribute('Name')
-            if ($key) { $fields[$key] = [string]$field.'#text' }
-        }
-        [pscustomobject]@{
-            record_id = [long]$entry.RecordId
-            event_id = [int]$entry.Id
-            time = $entry.TimeCreated.ToUniversalTime().ToString('o')
-            process_guid = [string]$fields['ProcessGuid']
-            parent_process_guid = [string]$fields['ParentProcessGuid']
-            image = [string]$fields['Image']
-        }
+if (-not $channel.IsEnabled) { throw 'Sysmon channel disabled' }
+[long]$cursor = 0
+if (-not [long]::TryParse($env:TURANSEC_SYSMON_CURSOR,[ref]$cursor) -or $cursor -lt 0) { throw 'Invalid checkpoint' }
+$xpath = "*[System[(EventRecordID > $cursor) and ((EventID >= 1 and EventID <= 29) or EventID = 255)]]"
+try {
+  $records=@(Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath $xpath -Oldest -MaxEvents 64 -ErrorAction Stop)
+} catch {
+  if ($_.FullyQualifiedErrorId -match 'NoMatchingEventsFound|NoEventsFound') { $records=@() }
+  else { throw }
+}
+$names=@{
+ RuleName='rule_name';DestinationIp='destination_ip';DestinationPort='destination_port'
+ SourceIp='source_ip';SourcePort='source_port';Protocol='protocol'
+ QueryName='query_name';TargetObject='target_object';PipeName='pipe_name'
+ SourceImage='source_image';TargetImage='target_image'
+ SourceProcessGUID='source_process_guid';TargetProcessGUID='target_process_guid'
+ ImageLoaded='image_loaded';Operation='operation';EventType='event_type'
+ QueryStatus='query_status';TargetFilename='target_filename';Initiated='initiated'
+}
+$observations=@(
+  foreach ($entry in $records) {
+    [xml]$xml=$entry.ToXml()
+    $raw=@{}
+    foreach ($data in @($xml.Event.EventData.Data)) {
+      $key=[string]$data.GetAttribute('Name')
+      if ($key) { $raw[$key]=[string]$data.'#text' }
     }
+    $eventId=[int]$entry.Id;$metadata=@{}
+    $image='';$filePath='';$guid='';$parent=''
+    if ($eventId -ne 24) {
+      foreach ($key in $names.Keys) {
+        $val=[string]$raw[$key]
+        if ($val -and $val.Length -le 512 -and $val -notmatch '[\x00-\x1F\x7F]') {
+          $metadata[$names[$key]]=$val
+        }
+      }
+      $image=[string]$raw['Image']
+      $guid=[string]$raw['ProcessGuid']
+      if ($eventId -eq 1) { $parent=[string]$raw['ParentProcessGuid'] }
+      if ($eventId -eq 7) { $filePath=[string]$raw['ImageLoaded'] }
+      elseif ($raw.ContainsKey('TargetFilename')) { $filePath=[string]$raw['TargetFilename'] }
+    }
+    [pscustomobject]@{
+      record_id=[long]$entry.RecordId
+      event_id=$eventId
+      time=$entry.TimeCreated.ToUniversalTime().ToString('o')
+      image=$image;file_path=$filePath;process_guid=$guid
+      parent_process_guid=$parent;fields=$metadata
+    }
+  }
 )
-ConvertTo-Json -InputObject $observations -Compress -Depth 4
+ConvertTo-Json -InputObject $observations -Compress -Depth 5
 "#;
 
 #[cfg(windows)]
 fn collect_sysmon(last_seen: u64) -> io::Result<Vec<SysmonEvent>> {
     let output = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", SYSMON_POWERSHELL])
+        .env_remove("EDR_DEV_TOKEN")
+        .env("TURANSEC_SYSMON_CURSOR", last_seen.to_string())
         .output()?;
     if !output.status.success() {
         return Err(error(
             io::ErrorKind::NotFound,
-            "Sysmon Event ID 1 channel unavailable or unreadable; install Sysmon and check permissions",
+            "Sysmon channel unavailable or unreadable; verify installed Sysmon and permissions",
         ));
     }
     records_after(&output.stdout, last_seen)
@@ -260,20 +293,30 @@ pub fn run(agent_id: &str, loop_mode: bool) -> io::Result<()> {
             json!({"id": agent_id, "platform": "windows", "group": "lab", "health": "lab_unprotected"}),
         )?;
         println!("lab_heartbeat=sent device={agent_id}");
-        match collect_sysmon(last_seen) {
-            Ok(records) => {
-                let count = records.len();
-                for record in records {
-                    post_json(&client, port, &token, "/api/events", event_payload(agent_id, &record))?;
-                    last_seen = record.record_id;
-                    write_checkpoint(&checkpoint, last_seen)?;
+        // Drain bounded ascending pages, checkpoint only after accepted POST.
+        // Backlog is reported; this is not a lossless production collector.
+        let mut accepted=0usize;
+        for _ in 0..4 {
+            match collect_sysmon(last_seen) {
+                Ok(records) => {
+                    let received=records.len();
+                    for record in records {
+                        post_json(&client,port,&token,"/api/events",event_payload(agent_id,&record))?;
+                        last_seen=record.record_id;
+                        write_checkpoint(&checkpoint,last_seen)?;
+                        accepted+=1;
+                    }
+                    if received<MAX_OBSERVATIONS {break;}
                 }
-                println!("sysmon_process_events_sent={count} checkpoint_record_id={last_seen}");
+                Err(e)=>{
+                    eprintln!("sysmon_collector_status=unavailable reason={e}");
+                    break;
+                }
             }
-            Err(e) => {
-                eprintln!("sysmon_collector_status=unavailable reason={e}");
-                // Heartbeat remains valid; no fake event is sent.
-            }
+        }
+        println!("sysmon_events_sent={accepted} checkpoint_record_id={last_seen}");
+        if accepted==4*MAX_OBSERVATIONS {
+            eprintln!("sysmon_backlog_possible=true drain_limit=256");
         }
         if !loop_mode {
             return Ok(());
