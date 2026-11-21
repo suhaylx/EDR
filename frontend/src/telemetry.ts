@@ -4,6 +4,7 @@
  */
 export type LabTelemetryEvent = {
   id: string; device_id: string; platform: string; source: string;
+  source_provider: string; source_channel: string;
   type: string; time: string; received_at: string; time_origin: string;
   source_event_id: number; source_record_id: string; process_guid: string;
   parent_process_guid: string; image: string; file_path: string; detail: string;
@@ -62,6 +63,15 @@ export function decodeLabTelemetry(raw: unknown): LabTelemetryEvent[] {
     const deviceID=bounded(v.device_id,'device_id',96);
     const source=bounded(v.source,'source',128);
     const platform=bounded(v.platform,'platform',32);
+    const sourceProvider=bounded(v.source_provider,'source_provider',96);
+    const sourceChannel=bounded(v.source_channel,'source_channel',128);
+    if (sourceProvider || sourceChannel) {
+      if (platform !== 'windows' || source !== 'sysmon' ||
+          sourceProvider !== 'Microsoft-Windows-Sysmon' ||
+          sourceChannel !== 'Microsoft-Windows-Sysmon/Operational') {
+        throw new Error('Source provider/channel mismatch');
+      }
+    }
     if (!id || !deviceID || !['windows','linux'].includes(platform) || ids.has(id))
       throw new Error('Invalid or duplicated telemetry event identity');
     ids.add(id);
@@ -91,6 +101,7 @@ export function decodeLabTelemetry(raw: unknown): LabTelemetryEvent[] {
       throw new Error('Only Sysmon Event ID 1 can report creation parentage');
     return {
       id, device_id:deviceID, platform, source,
+      source_provider:sourceProvider, source_channel:sourceChannel,
       type:bounded(v.type,'type',80),
       time:timestamp(v.time,'time'), received_at:timestamp(v.received_at,'received_at'),
       time_origin:bounded(v.time_origin,'time_origin',64),
