@@ -88,3 +88,32 @@ state, reject stale repetitions, and never allow cross-tenant mutation.
 This is analyst workflow state only, not an automated investigation or
 remediation engine. Production identity provisioning, SOC frontend integration,
 alert delivery, case management and retention policy still require approval.
+
+## Endpoint inventory and investigation (accelerated sprint Day 2)
+
+An authenticated SOC operator with `viewer` or `scanner` role may read:
+
+- `GET /soc/v1/tenants/{tenant}/endpoints?platform=windows&health=online&limit=25&offset=0` — bounded, filtered device inventory
+- `GET /soc/v1/tenants/{tenant}/endpoints/{agent_id}` — one device's last reported platform, version, ClamAV readiness and heartbeat count
+- `GET /soc/v1/tenants/{tenant}/endpoint-stats` — fleet totals by platform and health state
+- `GET /soc/v1/tenants/{tenant}/endpoints/{agent_id}/timeline?limit=25` — recent scan jobs and malware alerts for that device, ordered newest first
+
+All queries are tenant-scoped in PostgreSQL and are reached only through
+the **operator mTLS** listener. No lease tokens, certificates or secret
+material are returned. Listings permit at most 100 items, and timeline
+queries permit at most 100 events.
+
+Health is computed using **database time**, not a device-supplied clock:
+
+| Health | Meaning |
+| --- | --- |
+| `online` | Recent heartbeat (within 5 min) and local ClamAV PING ready |
+| `degraded` | Recent heartbeat, scanner PING not ready |
+| `stale` | Heartbeat older than 5 min |
+| `unseen` | No heartbeat ever recorded |
+| `revoked` | Administratively revoked endpoint |
+
+Liveness and readiness are reported telemetry, **not tamper-resistant
+attestation**, and do not prove the device is malware-free. Disabled tenants
+are excluded entirely. The timeline is a lightweight investigation feed,
+not full process-tree correlation, live threat hunting or event telemetry.

@@ -44,6 +44,11 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
   // operator-only alert and read-only investigation subrouters.
   prefix:="/soc/v1/tenants/"+p.TenantID+"/"
   operation:=strings.TrimPrefix(r.URL.Path,prefix)
+  if operation=="endpoints"||operation=="endpoint-stats"||
+    strings.HasPrefix(operation,"endpoints/") {
+   SOCEndpointHandler(q).ServeHTTP(w,r)
+   return
+  }
   if operation=="alerts"||strings.HasPrefix(operation,"alerts/")||operation=="alert-stats" {
    SOCAlertHandler(q).ServeHTTP(w,r)
    return
