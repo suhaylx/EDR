@@ -80,10 +80,10 @@ func DetectBehavioralSignals(events []Event) []Detection {
                 if !userWritableExecutable(p.Image) { continue }
                 delta := e.Time.Sub(p.Time)
                 if delta < 0 || delta > 10*time.Minute { continue }
-                // Missing boot identity leaves a lab provenance gap.
-                if e.BootID != "" && p.BootID != "" && e.BootID != p.BootID { continue }
+                // Missing or mismatched boot identity forbids an inferred cross-event link.
+                if e.BootID == "" || p.BootID == "" || e.BootID != p.BootID { continue }
                 emit(e, "TURAN-WIN-PROC-NET-001", "user_path_process_network", "low",
-                    "Same-device Sysmon records report a user-path executable and a network connection under the same process GUID within ten minutes. Neither relation nor endpoint identity is independently authenticated.",
+                    "Same-device Sysmon records report a user-path executable and a network connection under matching boot and process GUID within ten minutes. Neither relation nor endpoint identity is independently authenticated.",
                     e.SourceFields["destination_ip"], p.ID)
                 break
             }
