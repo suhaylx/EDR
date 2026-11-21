@@ -15,6 +15,9 @@ import { isSafeLabBrowserOrigin } from './security-origin.js';
 import { fetchLabTelemetry, type LabTelemetryEvent } from './telemetry.js';
 import { SysmonCoverage } from './SysmonCoverage.js';
 import { EvidenceSnapshotReview } from './EvidenceSnapshotReview.js';
+import {fetchPolicyMetadata,fetchPolicyAssignments,type PolicyMeta,type PolicyAssignment} from './policy-readonly.js';
+import {PolicyEvidenceReview} from './PolicyEvidenceReview.js';
+import {ScanLifecycleReview} from './ScanLifecycleReview.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -131,9 +134,11 @@ function App() {
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [sourceSelection, setSourceSelection] = useState<RetainedSourceSelection | null>(null);
   const [scanSelection, setScanSelection] = useState<string | null>(null);
+  const [policies,setPolicies] = useState<PolicyMeta[]>([]);
+  const [assignments,setAssignments] = useState<PolicyAssignment[]>([]);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'evidence' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'evidence' | 'policies' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -159,21 +164,27 @@ function App() {
     setInvestigationSeed(null);
     setSourceSelection(null);
     setScanSelection(null);
+    setPolicies([]);
+    setAssignments([]);
     setLoadedAt(null);
     try {
-      // Both requests must succeed; do not display stale or partially labeled
+      // All six requests must succeed; do not display stale or partially labeled
       // metrics after a failed refresh or a changed UTC window.
-      const [nextOverview, data, detected, telemetry] = await Promise.all([
+      const [nextOverview, data, detected, telemetry, policyCatalog, policyAssignments] = await Promise.all([
         fetchLabOverview(tokenRef.current, days, controller.signal),
         fetchLabScanJobs(tokenRef.current, controller.signal),
         fetchLabDetections(tokenRef.current, controller.signal),
         fetchLabTelemetry(tokenRef.current, controller.signal),
+        fetchPolicyMetadata(tokenRef.current, controller.signal),
+        fetchPolicyAssignments(tokenRef.current, controller.signal),
       ]);
       if (controller.signal.aborted) return;
       setOverview(nextOverview);
       setJobs(data);
       setDetections(detected);
       setEvents(telemetry);
+      setPolicies(policyCatalog);
+      setAssignments(policyAssignments);
       setLoadedAt(new Date());
       setStatus('ready');
     } catch (cause: unknown) {
@@ -184,6 +195,8 @@ function App() {
       setInvestigationSeed(null);
       setSourceSelection(null);
     setScanSelection(null);
+    setPolicies([]);
+    setAssignments([]);
       setOverview(null);
       setLoadedAt(null);
       setStatus('error');
@@ -202,6 +215,8 @@ function App() {
     setInvestigationSeed(null);
     setSourceSelection(null);
     setScanSelection(null);
+    setPolicies([]);
+    setAssignments([]);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -218,6 +233,8 @@ function App() {
     setInvestigationSeed(null);
     setSourceSelection(null);
     setScanSelection(null);
+    setPolicies([]);
+    setAssignments([]);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -233,6 +250,8 @@ function App() {
     setInvestigationSeed(null);
     setSourceSelection(null);
     setScanSelection(null);
+    setPolicies([]);
+    setAssignments([]);
     setOverview(null);
     setJobs([]);
     setLoadedAt(null);
@@ -258,15 +277,15 @@ function App() {
             <button type="button" className="secondary" onClick={disconnect} disabled={!token && status === 'disconnected'}>Disconnect / clear</button>
           </div>
         </form>
-        <p role="status" aria-live="polite" className="feedback">{status === 'disconnected' ? 'Disconnected — no fleet status inferred.' : status === 'loading' ? 'Requesting retained scan jobs…' : status === 'error' ? 'Connection failed: ' + error : 'Showing retained lab evidence for ' + days + ' UTC day(s) and ' + jobs.length + ' reported scan job(s); fetched at ' + (loadedAt?.toLocaleTimeString() || 'unknown') + ' (local clock).'}</p>
+        <p role="status" aria-live="polite" className="feedback">{status === 'disconnected' ? 'Disconnected — no fleet status inferred.' : status === 'loading' ? 'Requesting six read-only lab evidence sources…' : status === 'error' ? 'Connection failed: ' + error : 'Showing retained lab evidence for ' + days + ' UTC day(s) and ' + jobs.length + ' reported scan job(s); fetched at ' + (loadedAt?.toLocaleTimeString() || 'unknown') + ' (local clock).'}</p>
       </section>
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
         <button type="button" aria-current={view === 'evidence' ? 'page' : undefined} onClick={() => setView('evidence')}>Evidence snapshot</button>
+        <button type="button" aria-current={view === 'policies' ? 'page' : undefined} onClick={() => setView('policies')}>Policy evidence</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
-        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);
-    setScanSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
+        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);setScanSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
@@ -286,6 +305,10 @@ function App() {
           <section className="panel"><h2>Evidence snapshot unavailable</h2>
             <p className="empty">Connect and refresh all four lab sources before reviewing
               response sample consistency. No previous or partial data is displayed.</p></section>)
+        : view === 'policies' ?
+        (status === 'ready' && overview ?
+          <PolicyEvidenceReview overview={overview} policies={policies} assignments={assignments}/> :
+          <section className="panel"><p className="empty">Connect and refresh all six lab responses before inspecting policy intent and acknowledgments.</p></section>)
         : view === 'endpoints' ?
         (status === 'ready' && overview ? <EndpointInventory overview={overview}/> :
           <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
@@ -319,8 +342,9 @@ function App() {
                 onSelectScan={id => setScanSelection(id)}
                 onInspectSource={selection => {setSourceSelection(selection);setView('telemetry');}}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
-            : <ScanEvidenceWorkbench jobs={jobs}
-                onInspectContext={id => setScanSelection(id)}/>)
+            : <><ScanEvidenceWorkbench jobs={jobs}
+                onInspectContext={id => setScanSelection(id)}/>
+              <ScanLifecycleReview jobs={jobs} generatedAt={overview.generated_at}/></>)
           : <><h2 id="history-title">Retained scan jobs</h2>
             <p className="empty">No scan results displayed until a successful authenticated lab request.</p></>}
       </section>}

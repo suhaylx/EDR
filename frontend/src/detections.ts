@@ -1,3 +1,4 @@
+import {backendUTCWindow,withinBackendUTCWindow} from './backend-utc-window.js';
 /** Heuristic lab detections are investigation signals, not confirmed infections.
  * This module never performs responses, containment, or tenant authorization. */
 import type { DayWindow } from './overview.js';
@@ -85,14 +86,9 @@ export function decodeLabDetections(raw: unknown): LabDetection[] {
 export function detectionsInWindow(
   detections: readonly LabDetection[], generatedAt: string, days: DayWindow,
 ): LabDetection[] {
-  const now = Date.parse(generatedAt);
-  if (!Number.isFinite(now) || ![1, 7, 30].includes(days))
-    throw new Error('Cannot determine the retained UTC detection window.');
-  const start = now - days * 24 * 60 * 60 * 1000;
-  return detections.filter(d => {
-    const t = Date.parse(d.observed_at);
-    return Number.isFinite(t) && t >= start && t <= now;
-  }).sort((a, b) => b.observed_at.localeCompare(a.observed_at) || a.id.localeCompare(b.id));
+  const window=backendUTCWindow(generatedAt,days);
+  return detections.filter(d=>withinBackendUTCWindow(Date.parse(d.observed_at),window))
+    .sort((a,b)=>Date.parse(b.observed_at)-Date.parse(a.observed_at)||a.id.localeCompare(b.id));
 }
 
 export function seedForDetection(detection: LabDetection): InvestigationSeed {

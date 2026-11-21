@@ -63,7 +63,7 @@ export function EvidenceSnapshotReview({overview,detections,events,jobs}:{
         <div><dt>Windows Sysmon reports in window</dt><dd>{snapshot.returned.windowsSysmonEventsInWindow}</dd></div>
         <div><dt>Linux event reports in window</dt><dd>{snapshot.returned.linuxEventsInWindow}</dd></div>
         <div><dt>Other event reports in window</dt><dd>{snapshot.returned.otherEventsInWindow}</dd></div>
-        <div><dt>Go receipt time used (all returned events)</dt><dd>{snapshot.returned.eventsUsingServerClock}</dd></div>
+        <div><dt>Go receipt timestamp available (not window cutoff)</dt><dd>{snapshot.returned.eventsUsingServerClock}</dd></div>
         <div><dt>Sender time fallback used</dt><dd>{snapshot.returned.eventsUsingSenderClock}</dd></div>
         <div><dt>Event timestamps after overview generation</dt><dd>{snapshot.returned.eventsAfterOverview}</dd></div>
         <div><dt>Alert timestamps after overview generation</dt><dd>{snapshot.returned.detectionsAfterOverview}</dd></div>

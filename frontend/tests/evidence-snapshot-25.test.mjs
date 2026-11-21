@@ -55,12 +55,13 @@ test('M126 the server-generated UTC anchor is retained, never replaced with brow
   const s=review();assert.equal(s.generatedAt,now);assert.equal(s.days,7);
   assert.equal(s.serverReported.events,17);assert.equal(s.serverReported.alerts,8);
 });
-test('M127 inclusive one-day and seven-day windows use absolute milliseconds',()=>{
+test('M127 Go overview uses inclusive UTC calendar days (not rolling durations)',()=>{
   const end=Date.parse(now);
   assert.equal(isInOverviewWindow(end,end,1),true);
-  assert.equal(isInOverviewWindow(end-86400000,end,1),true);
-  assert.equal(isInOverviewWindow(end-86400001,end,1),false);
-  assert.equal(isInOverviewWindow(end-7*86400000,end,7),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-21T00:00:00Z'),end,1),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-20T23:59:59Z'),end,1),false);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-15T00:00:00Z'),end,7),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-14T23:59:59Z'),end,7),false);
 });
 test('M128 invalid/unknown UTC anchors and windows fail closed',()=>{
   assert.equal(isInOverviewWindow(Date.parse(now),Number.NaN,7),false);
@@ -99,7 +100,7 @@ test('M133 sender fallback is explicit when Go receipt time is missing',()=>{
   assert.equal(t.kind,'sender_report');assert.equal(t.timestamp,'2026-11-21T11:00:00Z');
   const s=review([],[event('e',{received_at:''})]);
   assert.equal(s.returned.eventsUsingSenderClock,1);
-  assert.match(s.warnings.join(' '),/sender-reported time/);
+  assert.match(s.warnings.join(' '),/sender-only provenance/);
 });
 test('M134 no usable timestamps means unknown; not silently zero-time event activity',()=>{
   const s=review([],[event('e',{received_at:'',time:''})]);
@@ -160,11 +161,11 @@ test('M142 the three event classes partition in-window reports without invented 
   assert.deepEqual([s.returned.windowsSysmonEventsInWindow,s.returned.linuxEventsInWindow,
     s.returned.otherEventsInWindow],[1,1,1]);
 });
-test('M143 event receipt newer than overview is flagged and excluded, not called lost',()=>{
+test('M143 future receipt is flagged separately from Go sender-time window membership',()=>{
   const s=review([],[event('future',{received_at:'2026-11-21T13:00:00Z'})]);
   assert.equal(s.returned.eventsAfterOverview,1);
-  assert.equal(s.returned.eventsInWindow,0);
-  assert.equal(s.returned.eventsOutsideWindow,1);
+  assert.equal(s.returned.eventsInWindow,1);
+  assert.equal(s.returned.eventsOutsideWindow,0);
   assert.match(s.warnings.join(' '),/not synchronized/);
 });
 test('M144 event references join exactly to an enrolled opaque endpoint ID',()=>{
