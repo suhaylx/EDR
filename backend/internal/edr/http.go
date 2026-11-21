@@ -15,6 +15,7 @@ import (
 )
 
 type Server struct {
+	AgentRegistry AgentIdentityRegistry
 	Store  *Store
 	Token  string
 	WebDir string
@@ -22,6 +23,9 @@ type Server struct {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	// mTLS identity path is intentionally outside the development bearer API.
+	// A nil registry disables it; no request header or shared token can bypass TLS verification.
+	mux.Handle("/api/agent/v1/identity", AgentIdentityHandler(s.AgentRegistry))
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			http.Error(w, "method not allowed", 405)
