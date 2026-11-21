@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -57,6 +58,13 @@ type Event struct {
 	Image             string    `json:"image,omitempty"`
 	FilePath          string    `json:"file_path,omitempty"`
 	Hash              string    `json:"sha256,omitempty"`
+	// Versioned Sysmon identifiers and typed network evidence are sender-reported
+	// laboratory claims until enrolled collectors authenticate every event.
+	SysmonEventID     int       `json:"sysmon_event_id,omitempty"`
+	DNSQuery          string    `json:"dns_query,omitempty"`
+	DNSAnswers        []string  `json:"dns_answers,omitempty"`
+	DestinationIP     string    `json:"destination_ip,omitempty"`
+	DestinationPort   int       `json:"destination_port,omitempty"`
 	Detail            string    `json:"detail,omitempty"`
 }
 type Snapshot struct {
@@ -319,7 +327,10 @@ func (s *Store) Ingest(e Event) (Event, error) {
 	if len(e.Type) < 1 || len(e.Type) > 80 || len(e.Detail) > 4096 ||
 		len(e.Source) > 128 || len(e.BootID) > 128 || len(e.ProcessGUID) > 128 ||
 		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
-		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
+		len(e.FilePath) > 32768 || len(e.Hash) > 256 ||
+		len(e.DNSQuery) > 253 || len(e.DestinationIP) > 64 || len(e.DNSAnswers) > 16 ||
+		e.SysmonEventID < 0 || e.SysmonEventID > 255 ||
+		e.DestinationPort < 0 || e.DestinationPort > 65535 {
 		return Event{}, errors.New("invalid event fields")
 	}
 	if len(e.BootID) > 128 || strings.IndexFunc(e.BootID, func(r rune) bool {
@@ -331,6 +342,27 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		return r < 0x20 || r == 0x7f || r == 0xfffd
 	}) >= 0 {
 		return Event{}, errors.New("invalid sender-reported source record id")
+	}
+	// Reject malformed typed network attributes without inferring source trust.
+	if e.DestinationIP != "" {
+		addr, err := netip.ParseAddr(e.DestinationIP)
+		if err != nil || addr.Zone() != "" {
+			return Event{}, errors.New("invalid destination IP")
+		}
+	}
+	for _, answer := range e.DNSAnswers {
+		if len(answer) > 64 {
+			return Event{}, errors.New("invalid DNS answer length")
+		}
+		addr, err := netip.ParseAddr(answer)
+		if err != nil || addr.Zone() != "" {
+			return Event{}, errors.New("invalid DNS answer IP")
+		}
+	}
+	if strings.IndexFunc(e.DNSQuery, func(r rune) bool {
+		return r < 0x21 || r > 0x7e
+	}) >= 0 || strings.ContainsAny(e.DNSQuery, "/\\\"<>") {
+		return Event{}, errors.New("invalid DNS query")
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always
 	// stamp server receipt time and overwrite client-controlled provenance tags.

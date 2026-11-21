@@ -28,6 +28,14 @@ type Detection struct {
 	LoadTimeOrigin     string    `json:"load_time_origin"`
 	LoadReceivedAt     time.Time `json:"load_received_at"`
 	FileCreateEventID string    `json:"file_create_event_id,omitempty"`
+	// Evidence IDs refer to lab server receipts, never authenticated Sysmon records.
+	ProcessCreateEventID string `json:"process_create_event_id,omitempty"`
+	DNSEventID         string    `json:"dns_event_id,omitempty"`
+	NetworkEventID     string    `json:"network_event_id,omitempty"`
+	DNSQuery           string    `json:"dns_query,omitempty"`
+	DestinationIP      string    `json:"destination_ip,omitempty"`
+	DestinationPort    int       `json:"destination_port,omitempty"`
+	BootID             string    `json:"boot_id,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
