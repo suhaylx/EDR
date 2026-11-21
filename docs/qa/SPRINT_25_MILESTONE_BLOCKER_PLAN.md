@@ -273,7 +273,7 @@
 
 ### M31 — Completion vs revoked agent race
 
-**Owner:** Agent 3. **Evidence status:** NEW TEST COMMITTED in PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; CI pending.
+**Owner:** Agent 3. **Evidence status:** PostgreSQL CI PASS at PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; draft/unmerged.
 
 **Proposed implementation / resolution:** Build transaction-level test with admin update in-flight and completion waiting on FOR SHARE.
 
@@ -281,7 +281,7 @@
 
 ### M32 — Completion vs disabled tenant race
 
-**Owner:** Agent 3. **Evidence status:** NEW TEST COMMITTED in PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; CI pending.
+**Owner:** Agent 3. **Evidence status:** PostgreSQL CI PASS at PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; draft/unmerged.
 
 **Proposed implementation / resolution:** Build parallel disable vs completion regression on separate-session PostgreSQL transactions.
 
@@ -435,7 +435,7 @@
 
 - [PR #96 — scan lease concurrency, replay, restart, Go race](https://github.com/suhaylx/EDR/pull/96): exact head `807e329e98417180716a688bd0b3412b3955c268`, all 4 CI workflows reported PASS before this documentation update.
 - [PR #119 — loopback-only shared-token lab listener, 25 named Go test cases](https://github.com/suhaylx/EDR/pull/119): all 3 reported CI workflows PASS at `f0d453100126dffb8afe00d2d0f252e9805deafa`, draft.
-- [PR #123 — claim vs revocation row-lock serialization](https://github.com/suhaylx/EDR/pull/123): new migration and concurrent test; CI pending at initial observation, draft, Agent 2/InfoSec review required.
+- [PR #123 — claim and completion vs revocation race](https://github.com/suhaylx/EDR/pull/123): [PostgreSQL queue CI PASS](https://github.com/suhaylx/EDR/actions/runs/44932462150) at `9052875fea7c2ebd63acbcebbb4178b25c392967`, including all four lock-wait cases; other workflows verified separately. Draft, Agent 2/InfoSec review required.
 - [Issue #103 mTLS startup](https://github.com/suhaylx/EDR/issues/103), [#104 durable telemetry](https://github.com/suhaylx/EDR/issues/104), [#105 Sysmon isolation](https://github.com/suhaylx/EDR/issues/105), [#106 AD/LDAPS](https://github.com/suhaylx/EDR/issues/106).
 
 **Release:** NO-GO for any customer/production use. No live endpoint or domain controller contacted by QA.
