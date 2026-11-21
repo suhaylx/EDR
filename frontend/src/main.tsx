@@ -7,6 +7,7 @@ import { InvestigationView } from './InvestigationView.js';
 import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
 import type { InvestigationSeed } from './investigation.js';
 import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
+import { isSafeLabBrowserOrigin } from './security-origin.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -160,6 +161,7 @@ function EndpointInventory({overview}: {overview: LabSOCOverview}) {
 }
 
 function App() {
+  const safeLoginOrigin = isSafeLabBrowserOrigin(window.location.protocol, window.location.hostname);
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<LoadState>('disconnected');
   const [jobs, setJobs] = useState<LabScanJob[]>([]);
@@ -176,6 +178,11 @@ function App() {
   useEffect(() => () => request.current?.abort(), []);
 
   async function refresh() {
+    if (!safeLoginOrigin) {
+      setStatus('error');
+      setError('Login disabled on unencrypted public HTTP. Use HTTPS or http://127.0.0.1 through an SSH tunnel.');
+      return;
+    }
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
@@ -263,10 +270,10 @@ function App() {
         <p>Connect to a locally running Go API. The shared development token stays in this tab's memory; do not reuse production credentials.</p>
         <form className="form" onSubmit={e => { e.preventDefault(); void refresh(); }}>
           <label htmlFor="lab-token">Development API token</label>
-          <input id="lab-token" type="password" value={token} onChange={e => updateToken(e.target.value)} autoComplete="off" placeholder="EDR_DEV_TOKEN" aria-describedby="token-note" />
-          <div id="token-note" className="minor">At least 16 characters. No token persistence; the current Go API is not production authentication.</div>
+          <input id="lab-token" type="password" disabled={!safeLoginOrigin} value={token} onChange={e => updateToken(e.target.value)} autoComplete="off" placeholder="EDR_DEV_TOKEN" aria-describedby="token-note" />
+          <div id="token-note" className="minor">{safeLoginOrigin ? 'At least 16 characters. Token stays in memory; not production authentication.' : 'Token entry is blocked on public HTTP. Use HTTPS or localhost over SSH.'}</div>
           <div className="actions">
-            <button disabled={status === 'loading' || token.length < 16} type="submit">{status === 'loading' ? 'Loading…' : 'Connect / refresh'}</button>
+            <button disabled={!safeLoginOrigin || status === 'loading' || token.length < 16} type="submit">{status === 'loading' ? 'Loading…' : 'Connect / refresh'}</button>
             <button type="button" className="secondary" onClick={disconnect} disabled={!token && status === 'disconnected'}>Disconnect / clear</button>
           </div>
         </form>
