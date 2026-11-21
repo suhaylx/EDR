@@ -65,3 +65,17 @@ test('search is case insensitive and cannot change source endpoint data', () => 
   assert.deepEqual(filterPolicyEndpoints(endpoints, 'all', ' no match '),[]);
   assert.equal(endpoints.length,2);
 });
+
+test('revision zero is missing or unverifiable metadata, not confirmed policy drift', () => {
+  const endpoints = [ep('valid','online','p1'), {...ep('unversioned','online','p1'),applied_revision:0}];
+  const summary = summarizePolicyEvidence(overview(endpoints,[{policy_id:'p1',policy_name:'Lab',endpoints:2}]));
+  assert.equal(summary.policyIdsWithoutPositiveRevision,1);
+  assert.equal(summary.aggregates[0].consistent,true);
+  assert.match(policyEvidenceState(endpoints[1]), /revision absent or zero/);
+  assert.deepEqual(filterPolicyEndpoints(endpoints,'attention','').map(e=>e.id), ['unversioned']);
+});
+test('reported policy errors remain the highest priority even if revision is zero', () => {
+  const endpoints = [{...ep('rev','online','p1'),applied_revision:0},
+    ep('error','online','p1','unable to apply')];
+  assert.deepEqual(filterPolicyEndpoints(endpoints,'attention','').map(e=>e.id),['error','rev']);
+});
