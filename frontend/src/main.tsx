@@ -4,6 +4,8 @@ import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
 import { describeScan, scanEngineEvidence } from './scan-state.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
+import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
+import type { InvestigationSeed } from './investigation.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -93,13 +95,43 @@ function Overview({ overview }: { overview: LabSOCOverview }) {
   </>;
 }
 
+function Alerts({detections, generatedAt, days, onInvestigate}: {
+  detections: LabDetection[]; generatedAt: string; days: DayWindow;
+  onInvestigate: (seed: InvestigationSeed) => void;
+}) {
+  const visible = detectionsInWindow(detections, generatedAt, days);
+  return <section className="panel" aria-labelledby="alerts-title">
+    <h2 id="alerts-title">Observed detection signals</h2>
+    <p>Heuristic rule matches from the retained lab API, filtered to the selected {days}-day interval ending at server overview generation time. These are not confirmed incidents or malware infections.</p>
+    <p role="status">{visible.length} observed detection record(s) in this retained window.</p>
+    {visible.length === 0 ? <p className="empty">No matching retained alerts. This is not evidence the fleet is safe.</p>
+      : <div className="table-scroll"><table>
+        <caption>Retained detection evidence. Investigate actions navigate to a prefilled, read-only evidence query.</caption>
+        <thead><tr><th scope="col">Observed UTC</th><th scope="col">Severity / confidence</th><th scope="col">Endpoint</th><th scope="col">Rule</th><th scope="col">Observed module</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead>
+        <tbody>{visible.map(d=><tr key={d.id}>
+          <td>{d.observed_at}</td>
+          <td>{d.severity} / {d.confidence}</td>
+          <td>{d.device_id}<span className="minor">Process: {d.process_guid}</span></td>
+          <td>{d.rule_id}<span className="minor">{d.category}</span></td>
+          <td>{d.module_path}<span className="minor">Host image: {d.process_image}</span></td>
+          <td>{d.load_event_id}{d.file_create_event_id && <span className="minor">Separate file-create event: {d.file_create_event_id}</span>}</td>
+          <td><button className="source-button" type="button" onClick={()=>onInvestigate(seedForDetection(d))}
+            aria-label={'Investigate evidence for '+d.rule_id+' on '+d.device_id}>Investigate evidence</button></td>
+        </tr>)}</tbody>
+      </table></div>}
+    <p className="minor">A DLL file-create observation is separate from a module-load event. Analyst review is required; no blocking or quarantine occurs here.</p>
+  </section>;
+}
+
 function App() {
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<LoadState>('disconnected');
   const [jobs, setJobs] = useState<LabScanJob[]>([]);
+  const [detections, setDetections] = useState<LabDetection[]>([]);
+  const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'alerts' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -115,22 +147,28 @@ function App() {
     setError('');
     setOverview(null);
     setJobs([]);
+    setDetections([]);
+    setInvestigationSeed(null);
     setLoadedAt(null);
     try {
       // Both requests must succeed; do not display stale or partially labeled
       // metrics after a failed refresh or a changed UTC window.
-      const [nextOverview, data] = await Promise.all([
+      const [nextOverview, data, detected] = await Promise.all([
         fetchLabOverview(tokenRef.current, days, controller.signal),
         fetchLabScanJobs(tokenRef.current, controller.signal),
+        fetchLabDetections(tokenRef.current, controller.signal),
       ]);
       if (controller.signal.aborted) return;
       setOverview(nextOverview);
       setJobs(data);
+      setDetections(detected);
       setLoadedAt(new Date());
       setStatus('ready');
     } catch (cause: unknown) {
       if (controller.signal.aborted) return;
       setJobs([]);
+      setDetections([]);
+      setInvestigationSeed(null);
       setOverview(null);
       setLoadedAt(null);
       setStatus('error');
@@ -144,6 +182,8 @@ function App() {
     request.current?.abort();
     tokenRef.current = value;
     setToken(value);
+    setDetections([]);
+    setInvestigationSeed(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -155,6 +195,8 @@ function App() {
     request.current?.abort();
     tokenRef.current = '';
     setToken('');
+    setDetections([]);
+    setInvestigationSeed(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -165,6 +207,8 @@ function App() {
   function updateWindow(value: DayWindow) {
     request.current?.abort();
     setDays(value);
+    setDetections([]);
+    setInvestigationSeed(null);
     setOverview(null);
     setJobs([]);
     setLoadedAt(null);
@@ -194,6 +238,7 @@ function App() {
       </section>
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
+        <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
@@ -207,8 +252,13 @@ function App() {
         </section>
         {status === 'ready' && overview ? <Overview overview={overview}/> :
           <section className="panel"><p className="empty">No current overview. Connect and refresh to request retained evidence for the selected UTC period.</p></section>}
-      </> : view === 'investigations'
-        ? (status === 'ready' ? <InvestigationView token={token} /> :
+      </> : view === 'alerts' ?
+        (status === 'ready' && overview
+          ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
+            onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}} />
+          : <section className="panel"><p className="empty">Connect and refresh to retrieve retained lab detection evidence.</p></section>)
+        : view === 'investigations'
+        ? (status === 'ready' ? <InvestigationView token={token} initialSeed={investigationSeed} /> :
           <section className="panel"><p className="empty">Connect to the development API before requesting retained investigation evidence.</p></section>)
         : <section className="panel" aria-labelledby="history-title">
         <div className="heading"><h2 id="history-title">Retained scan jobs</h2><span className="subtle">No automatic polling</span></div>
