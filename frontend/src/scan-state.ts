@@ -15,6 +15,20 @@ export type ScanJob = {
 };
 export type ScanDisplay = { heading: string; explanation: string; tone: 'neutral' | 'warning' | 'danger'; attested: false };
 
+/** Only path scans can currently execute. Mode text is untrusted lab metadata. */
+export function isUnsupportedLabScanClaim(job: ScanJob): boolean {
+  const mode = (job.scan_type || '').trim().toLocaleLowerCase();
+  return (mode === 'quick' || mode === 'full') &&
+    job.status === 'completed' &&
+    ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '');
+}
+export function isUnverifiedLabScanMode(job: ScanJob): boolean {
+  const mode = (job.scan_type || '').trim().toLocaleLowerCase();
+  return job.status === 'completed' &&
+    ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '') &&
+    mode !== 'path' && mode !== 'quick' && mode !== 'full';
+}
+
 /** The dev bearer-token API provides CLAIMED scan results, not scanner attestation. */
 export function describeScan(job: ScanJob): ScanDisplay {
   const common = { attested: false as const };
@@ -29,10 +43,10 @@ export function describeScan(job: ScanJob): ScanDisplay {
     case 'completed':
       // Lab quick/full worker profiles do not execute scans. Do not render a
       // forged success claim as malware evidence or signature-negative proof.
-      if ((job.scan_type === 'quick' || job.scan_type === 'full') &&
-          ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '')) {
+      if (isUnsupportedLabScanClaim(job)) {
         return { ...common, heading: 'Unsupported scan claim', explanation: 'A successful quick/full scan was reported, but this lab worker does not implement these modes. The result is not scanning evidence.', tone: 'danger' };
       }
+      if (isUnverifiedLabScanMode(job)) return { ...common, heading: 'Unverified scan mode', explanation: 'A successful verdict was claimed for an absent or unrecognized scan mode. The lab worker only supports path scans. Do not treat this as scanning evidence.', tone: 'danger' };
       // A completed job can still report a failed or unsupported scanner run.
       // Delivery completion never certifies scan execution or protection.
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', tone: 'danger' };
