@@ -33,7 +33,10 @@ func NewIssuerEnrollmentMTLSServer(
 	if err != nil || host == "" || host == "0.0.0.0" || host == "::" {
 		return nil, errors.New("issuer listener requires a specific, approved host:port")
 	}
-	handler, err := NewIssuerEnrollmentHandler(PostgresEnrollmentStore{DB: db}, agentIssuerRoots, agentIntermediates, allowedIssuers)
+	handler, err := NewIssuerProvisioningHandler(
+		PostgresEnrollmentStore{DB: db},
+		PostgresEnrollmentChallengeIssuer{DB: db},
+		agentIssuerRoots, agentIntermediates, allowedIssuers)
 	if err != nil {
 		return nil, err
 	}
