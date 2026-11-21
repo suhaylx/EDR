@@ -4,6 +4,7 @@ on:
     paths:
       - "backend/migrations/**"
       - "scripts/test-certificate-rotation.sh"
+      - "scripts/test-certificate-rotation-tenant-race.sh"
       - ".github/workflows/postgres-certificate-rotation.yml"
   workflow_dispatch:
 permissions:
@@ -36,3 +37,8 @@ jobs:
         env:
           EDR_TEST_DATABASE_URL: postgresql://edr_rotation_ci:disposable-ci-only@127.0.0.1:5432/edr_rotation_test?sslmode=disable
         run: bash scripts/test-certificate-rotation.sh
+      - name: Test concurrent tenant disable versus certificate rotation
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_rotation_ci:disposable-ci-only@127.0.0.1:5432/edr_rotation_test?sslmode=disable
+          EDR_QA_DISPOSABLE_DB: 'yes'
+        run: bash scripts/test-certificate-rotation-tenant-race.sh
