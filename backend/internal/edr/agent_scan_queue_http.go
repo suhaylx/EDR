@@ -54,11 +54,9 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
         }
         if operation=="scan-jobs/claim" {
             if r.Method!=http.MethodPost { w.Header().Set("Allow","POST");http.Error(w,"method not allowed",http.StatusMethodNotAllowed);return }
-            // Claim takes no payload. Refuse hidden overrides or oversized bodies.
-            r.Body=http.MaxBytesReader(w,r.Body,1)
-            var probe [1]byte
-            n,readErr:=r.Body.Read(probe[:])
-            if n!=0 || (readErr!=nil && readErr!=io.EOF) {
+            // Refuse any body, including a zero-byte non-EOF read
+            // followed by delayed payload data from a network reader.
+            if !requestBodyIsEmpty(w,r) {
                 http.Error(w,"invalid payload",http.StatusBadRequest);return
             }
             // Only the authenticated device can claim its own work.
