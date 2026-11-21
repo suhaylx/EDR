@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeScan, scanEngineEvidence } from '../dist/scan-state.js';
+import { describeScan, scanEngineEvidence } from '../.test-dist/scan-state.js';
 const job = (status, verdict, other = {}) => ({ id: 'job1', agent_id: 'lab1', status, verdict, ...other });
 test('job delivery never becomes successful protection', () => {
   for (const status of ['queued','leased','expired','failed','unknown']) {
