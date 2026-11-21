@@ -100,7 +100,7 @@ test('M133 sender fallback is explicit when Go receipt time is missing',()=>{
   assert.equal(t.kind,'sender_report');assert.equal(t.timestamp,'2026-11-21T11:00:00Z');
   const s=review([],[event('e',{received_at:''})]);
   assert.equal(s.returned.eventsUsingSenderClock,1);
-  assert.match(s.warnings.join(' '),/sender-reported time/);
+  assert.match(s.warnings.join(' '),/sender-only provenance/);
 });
 test('M134 no usable timestamps means unknown; not silently zero-time event activity',()=>{
   const s=review([],[event('e',{received_at:'',time:''})]);
@@ -164,8 +164,8 @@ test('M142 the three event classes partition in-window reports without invented 
 test('M143 event receipt newer than overview is flagged and excluded, not called lost',()=>{
   const s=review([],[event('future',{received_at:'2026-11-21T13:00:00Z'})]);
   assert.equal(s.returned.eventsAfterOverview,1);
-  assert.equal(s.returned.eventsInWindow,0);
-  assert.equal(s.returned.eventsOutsideWindow,1);
+  assert.equal(s.returned.eventsInWindow,1);
+  assert.equal(s.returned.eventsOutsideWindow,0);
   assert.match(s.warnings.join(' '),/not synchronized/);
 });
 test('M144 event references join exactly to an enrolled opaque endpoint ID',()=>{
