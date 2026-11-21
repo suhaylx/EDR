@@ -116,6 +116,34 @@ BEGIN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
 END $$;
 
+-- Invalid inputs must fail closed without consuming or modifying jobs.
+DO $invalid_parameters$
+BEGIN
+  IF edr_complete_scan_job(NULL,'win01',
+    '11111111-1111-4111-8111-111111111111',
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true) THEN
+    RAISE EXCEPTION 'NULL tenant completion accepted'; END IF;
+  IF edr_complete_scan_job('tenantA','win01',
+    '11111111-1111-4111-8111-111111111111',NULL,true) THEN
+    RAISE EXCEPTION 'NULL token completion accepted'; END IF;
+  BEGIN
+    PERFORM edr_claim_scan_job('tenantA','win01','qa',
+      '77777777-7777-4777-8777-777777777777',4);
+    RAISE EXCEPTION 'too-short lease accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM edr_recover_expired_scan_jobs(0);
+    RAISE EXCEPTION 'zero recovery limit accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM edr_recover_expired_scan_jobs(1001);
+    RAISE EXCEPTION 'oversized recovery limit accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+END $invalid_parameters$;
+
 -- A live lease is not valid evidence of current authorization. Revoke or
 -- disable the principal *after* claiming, and ensure completion is refused.
 INSERT INTO edr_agents(tenant_id,agent_id,platform)
