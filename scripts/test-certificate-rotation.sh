@@ -51,7 +51,7 @@ BEGIN
     RAISE EXCEPTION 'missing actor accepted';
   EXCEPTION WHEN invalid_parameter_value THEN NULL;
   END;
-END $;
+END $$;
 
 -- Rotation must not revoke a working leaf to install one outside the
 -- authoritative database enrollment window. Both time boundaries are exact.
