@@ -1,0 +1,493 @@
+{
+  "schema_version": 2,
+  "fixture_type": "synthetic_metadata_only",
+  "note": "No binaries, malware, signatures, actual Sysmon logs or executable samples. Hashes are synthetic and not proof of content integrity.",
+  "cases": [
+    {
+      "name": "file_create_not_load",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 0
+    },
+    {
+      "name": "observed_image_load_without_create",
+      "events": [
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "same_boot_hash_prior_create",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": "record-11-90"
+    },
+    {
+      "name": "cross_boot_create_not_linked",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-previous",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "missing_hash_does_not_link",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": ""
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "different_hash_does_not_link",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "fake_short_hash_does_not_link",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "abcd"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "abcd"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "other_device_create_not_linked",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-02",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "future_create_not_linked",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:01:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "stale_create_not_linked",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-20T10:00:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "conflicting_reported_process_identity_not_linked",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "process_guid": "{writer}"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "missing_boot_no_link",
+      "events": [
+        {
+          "id": "record-11-90",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "file_create",
+          "source": "sysmon_synthetic",
+          "source_record_id": "90",
+          "boot_id": "",
+          "time": "2026-11-21T11:59:00Z",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "duplicate_load_deduplicated",
+      "events": [
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    },
+    {
+      "name": "system_directory_not_suspicious",
+      "events": [
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Windows\\System32\\kernel32.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 0
+    },
+    {
+      "name": "linux_module_load_not_windows_eid7",
+      "events": [
+        {
+          "id": "record-7-100",
+          "device_id": "win-01",
+          "platform": "linux",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 0
+    },
+    {
+      "name": "missing_event_identity_not_eligible",
+      "events": [
+        {
+          "id": "",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Windows\\System32\\rundll32.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\plugin.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 0
+    },
+    {
+      "name": "benign_installer_false_positive_candidate",
+      "events": [
+        {
+          "id": "record-benign",
+          "device_id": "win-01",
+          "platform": "windows",
+          "type": "module_load",
+          "source": "sysmon_synthetic",
+          "source_record_id": "100",
+          "boot_id": "boot-01",
+          "time": "2026-11-21T12:00:00Z",
+          "process_guid": "{loader}",
+          "image": "C:\\Program Files\\Vendor\\installer.exe",
+          "file_path": "C:\\Users\\Alice\\AppData\\Local\\Temp\\legit_vendor.dll",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "detections": 1,
+      "linked_create_id": ""
+    }
+  ]
+}
