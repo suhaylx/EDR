@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "backend/migrations/**"
+      - "backend/internal/edr/soc_*.go"
+      - "backend/internal/edr/agent_scan_queue_http.go"
+      - "backend/internal/edr/scan_queue_postgres.go"
+      - "backend/internal/edr/agent_heartbeat_postgres.go"
       - "scripts/test-scan-job-lease-renewal.sh"
       - "scripts/test-postgres-migration-chain.sh"
       - "scripts/test-scan-job-results.sql"
@@ -10,6 +14,7 @@ on:
       - "scripts/test-soc-scheduling.sql"
       - "scripts/test-soc-alerts.sql"
       - "scripts/test-soc-case-audit.sql"
+      - "scripts/test-soc-endpoint-inventory.sql"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:

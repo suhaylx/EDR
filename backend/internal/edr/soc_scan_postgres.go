@@ -5,7 +5,6 @@ import (
  "database/sql"
  "errors"
  "fmt"
- "strings"
 )
 
 var ErrSOCForbidden=errors.New("SOC operation forbidden")
@@ -30,7 +29,7 @@ func(q PostgresScanJobQueue) ScheduleSOCScan(ctx context.Context,p SOCOperatorPr
  }
  if !validID(agentID)||!validID(requestKey)||agentID=="."||agentID==".."||
    requestKey=="."||requestKey==".."||len(scanRoot)==0||len(scanRoot)>4096||
-   strings.ContainsAny(scanRoot,"\x00\r\n"){
+   containsUnsafeSOCText(scanRoot){
   return nil,ErrInvalidScanQueueRequest
  }
  if q.DB==nil {return nil,ErrScanQueueUnavailable}

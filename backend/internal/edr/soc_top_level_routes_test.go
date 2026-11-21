@@ -46,7 +46,7 @@ func TestSprintDay1SOCDispatchesAllOperatorFunctionalRoutes(t *testing.T) {
   case strings.Contains(query,"FROM edr_soc_alerts"):
    calls["alerts"]++
    return &scanRows{columns:[]string{"alert_id","job_id","agent_id","category",
-    "severity","signature","state","created","updated","acked_by","resolved_by","note"},
+    "severity","signature","state","created","updated","acked_by","resolved_by","note","assigned_to"},
     values:[][]driver.Value{{testUUID,leaseUUID,"win01","malware_signature",
     "high","Lab-Signature","open",now,now,"","","",""}}},nil
   default:

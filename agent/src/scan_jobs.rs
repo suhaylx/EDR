@@ -44,6 +44,17 @@ pub fn valid_identity(value: &str) -> bool {
         && bytes.iter().all(|c| c.is_ascii_alphanumeric() || b"_-.".contains(c))
 }
 
+/// Reject terminal control and bidi-format spoofing in endpoint-provided
+/// text before it is sent to the Go/PostgreSQL result contract.
+pub fn unsafe_scan_text(value: &str) -> bool {
+    value.chars().any(|ch| {
+        ch.is_control()
+            || ('\u{202a}'..='\u{202e}').contains(&ch)
+            || ('\u{2066}'..='\u{2069}').contains(&ch)
+            || ch == '\u{200e}' || ch == '\u{200f}'
+    })
+}
+
 pub fn valid_uuid(s: &str) -> bool {
     let b = s.as_bytes();
     if b.len() != 36 { return false; }
@@ -84,6 +95,14 @@ mod tests {
     use super::*;
     fn valid_json() -> String {
         r#"{"job_id":"11111111-1111-4111-8111-111111111111","lease_token":"22222222-2222-4222-8222-222222222222","scan_root":"/lab/sample","attempt_count":1}"#.into()
+    }
+    #[test]
+    fn qa_unsafe_text_rejects_controls_and_bidi() {
+        for unsafe_value in ["\u{1b}[31m", "name\u{202e}spoof",
+            "mark\u{200f}", "isolate\u{2066}", "tab\tname"] {
+            assert!(unsafe_scan_text(unsafe_value));
+        }
+        assert!(!unsafe_scan_text("Legitimate-Signature-UTF8 café"));
     }
     #[test]
     fn be071_accepts_exact_contract() {
