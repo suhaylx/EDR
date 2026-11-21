@@ -76,6 +76,14 @@ fn env_required(name: &str) -> io::Result<String> {
     env::var(name).map_err(|_| reject("required mTLS agent setting missing"))
 }
 
+#[derive(serde::Deserialize)]
+pub struct AgentHeartbeatStatus {
+    pub platform:String,
+    pub scan_ready:bool,
+    pub received_count:u64,
+    pub last_seen:String,
+}
+
 #[derive(Clone)]
 pub struct AgentClient {
     http: Client,
@@ -157,6 +165,24 @@ impl AgentClient {
         let suffix=format!("/agent/v1/tenants/{}/agents/{}/heartbeat",
             self.tenant,self.agent);
         self.server.join(&suffix).expect("validated URI segments")
+    }
+
+    // BE-141: read only our own mTLS-authenticated server heartbeat snapshot.
+    pub fn heartbeat_status(&self) -> io::Result<AgentHeartbeatStatus> {
+        let response=self.http.get(self.endpoint_heartbeat())
+            .send().map_err(|_| reject("heartbeat status transport failed"))?;
+        if response.status().as_u16()!=200 {
+            return Err(reject("no authenticated device status available"));
+        }
+        let mut bytes=Vec::new();
+        response.take(8193).read_to_end(&mut bytes)?;
+        if bytes.len()>8192 {return Err(reject("oversized device status response"));}
+        let status:AgentHeartbeatStatus=serde_json::from_slice(&bytes)
+            .map_err(|_| reject("invalid authenticated device status"))?;
+        if status.platform!="linux"&&status.platform!="windows"{
+            return Err(reject("invalid heartbeat platform"));
+        }
+        Ok(status)
     }
 
     pub fn claim(&self) -> io::Result<Option<ClaimedJob>> {
