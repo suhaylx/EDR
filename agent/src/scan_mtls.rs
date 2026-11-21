@@ -233,4 +233,64 @@ mod tests {
         let err = AgentClient::new("https://edr.test", "..", "win01", b"", b"", b"");
         assert!(err.is_err());
     }
+
+    // The material reader must not consume attacker-controlled huge files or
+    // follow an on-disk client-key symlink as a substitute for enrollment.
+    fn private_key_fixture(name: &str, contents: &[u8]) -> std::path::PathBuf {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static COUNTER: AtomicUsize = AtomicUsize::new(0);
+        let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "turansec-agent-mtls-{}-{}-{name}", std::process::id(), seq));
+        std::fs::write(&path, contents).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path,
+                std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        path
+    }
+
+    #[test]
+    fn pm101_reads_only_bounded_private_key() {
+        let p = private_key_fixture("key", b"test-only-private-key");
+        let bytes = read_key(&p).unwrap();
+        assert_eq!(bytes, b"test-only-private-key");
+        std::fs::remove_file(p).unwrap();
+    }
+
+    #[test]
+    fn pm102_rejects_oversized_secret_and_cert_bundle() {
+        let key = private_key_fixture("large-key", &vec![b'k'; (MAX_PRIVATE_KEY_BYTES + 1) as usize]);
+        assert!(read_key(&key).is_err());
+        std::fs::remove_file(key).unwrap();
+        let ca = private_key_fixture("large-ca", &vec![b'c'; (MAX_CERT_BUNDLE_BYTES + 1) as usize]);
+        assert!(read_pem_bounded(&ca, MAX_CERT_BUNDLE_BYTES).is_err());
+        std::fs::remove_file(ca).unwrap();
+    }
+
+    #[test]
+    fn pm103_rejects_empty_cert_material() {
+        let ca = private_key_fixture("empty-ca", b"");
+        assert!(read_pem_bounded(&ca, MAX_CERT_BUNDLE_BYTES).is_err());
+        std::fs::remove_file(ca).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn pm104_rejects_world_readable_key_and_symlink() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+        let p = private_key_fixture("key-perms", b"test-only-key");
+        std::fs::set_permissions(&p,
+            std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_key(&p).is_err());
+        std::fs::set_permissions(&p,
+            std::fs::Permissions::from_mode(0o600)).unwrap();
+        let link = p.with_extension("symlink");
+        symlink(&p, &link).unwrap();
+        assert!(read_key(&link).is_err());
+        std::fs::remove_file(&link).unwrap();
+        std::fs::remove_file(p).unwrap();
+    }
 }
