@@ -43,6 +43,7 @@ func TestDLLCreateEnrichmentIgnoresIncompleteProvenance(t *testing.T) {
 	}{
 		{"missing-id", func(e *Event) { e.ID = "" }},
 		{"missing-timestamp", func(e *Event) { e.Time = time.Time{} }},
+		{"padded-id", func(e *Event) { e.ID = " " + e.ID }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			valid := Event{ID: "valid-create", Platform: "windows",
