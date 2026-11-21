@@ -17,7 +17,7 @@ func TestScanLeaseCapabilityRedactedOnIdempotentStoreResponses(t *testing.T) {
         t.Fatal(err)
     }
     now := time.Date(2026, 11, 21, 12, 0, 0, 0, time.UTC)
-    req := ScanRequest{AgentID: "qa-win", RequestID: "qa-retry-1", ScanType: "quick"}
+    req := ScanRequest{AgentID: "qa-win", RequestID: "qa-retry-1", ScanType: "path", Path: `C:\Lab\file.txt`}
     job, err := s.CreateScan(req, now)
     if err != nil { t.Fatal(err) }
     leased, ok, err := s.LeaseScan(req.AgentID, now)
