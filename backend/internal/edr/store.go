@@ -44,6 +44,10 @@ type Event struct {
 	DeviceID          string    `json:"device_id"`
 	Platform          string    `json:"platform"`
 	Source            string    `json:"source"`
+	// Sysmon numerical event ID, reported by the lab agent (not authenticated).
+	SourceEventID     uint32    `json:"source_event_id,omitempty"`
+	// Bounded, explicitly allowlisted non-secret source metadata.
+	SourceFields      map[string]string `json:"source_fields,omitempty"`
 	Type              string    `json:"type"`
 	Time              time.Time `json:"time"`
 	ReceivedAt        time.Time `json:"received_at"`
@@ -312,6 +316,45 @@ func (s *Store) Ack(agentID, policyID string, revision int, success bool, detail
 	}
 	return errors.New("agent not found")
 }
+
+// allowedSysmonFields is deliberately sparse. The lab collector must never
+// upload CommandLine, User, ClipboardText, archived files, raw XML or
+// registry data values; these are privacy-sensitive or unbounded.
+var allowedSysmonFields = map[string]bool{
+    "rule_name":true, "destination_ip":true, "destination_port":true,
+    "source_ip":true, "source_port":true, "protocol":true,
+    "query_name":true, "target_object":true, "pipe_name":true,
+    "source_image":true, "target_image":true, "source_process_guid":true,
+    "target_process_guid":true, "image_loaded":true,
+    "operation":true, "event_type":true, "query_status":true,
+    "target_filename":true, "initiated":true,
+}
+func validateSysmonSourceFields(e Event) error {
+    if e.SourceEventID == 0 && len(e.SourceFields) == 0 { return nil }
+    if e.Source != "sysmon" || e.Platform != "windows" {
+        return errors.New("source_event_id/source_fields require Windows Sysmon source")
+    }
+    if (e.SourceEventID < 1 || e.SourceEventID > 29) && e.SourceEventID != 255 {
+        return errors.New("unsupported Sysmon source event ID")
+    }
+    if len(e.SourceFields) > 19 {
+        return errors.New("too many source fields")
+    }
+    total := 0
+    for k, v := range e.SourceFields {
+        if !allowedSysmonFields[k] { return errors.New("unsupported or private Sysmon source field") }
+        if len(v) > 512 || strings.IndexFunc(v, func(r rune) bool { return r < 0x20 || r == 0x7f || r == 0xfffd }) >= 0 {
+            return errors.New("invalid Sysmon source field value")
+        }
+        total += len(k)+len(v)
+    }
+    if total > 4096 { return errors.New("Sysmon source fields too large") }
+    if e.SourceEventID == 24 && len(e.SourceFields) != 0 {
+        return errors.New("clipboard event must be metadata only")
+    }
+    return nil
+}
+
 func (s *Store) Ingest(e Event) (Event, error) {
 	if !validID(e.DeviceID) {
 		return Event{}, errors.New("invalid device id")
@@ -321,6 +364,9 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
 		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
+	}
+	if err := validateSysmonSourceFields(e); err != nil {
+		return Event{}, err
 	}
 	if len(e.BootID) > 128 || strings.IndexFunc(e.BootID, func(r rune) bool {
 		return r < 0x20 || r == 0x7f || r == 0xfffd
