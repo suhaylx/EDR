@@ -251,9 +251,9 @@ func (s *Store) Assign(a Assignment) error {
 	s.data.Assignments = append(s.data.Assignments, a)
 	return nil
 }
-func (s *Store) Desired(agentID string) (Policy, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// desiredLocked is called with s.mu held. Ack must resolve the same policy
+// precedence as Desired, or stale/wrong policy IDs could be marked applied.
+func (s *Store) desiredLocked(agentID string) (Policy, bool) {
 	var agent Agent
 	found := false
 	for _, a := range s.data.Agents {
@@ -282,6 +282,12 @@ func (s *Store) Desired(agentID string) (Policy, bool) {
 	}
 	return Policy{}, false
 }
+func (s *Store) Desired(agentID string) (Policy, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.desiredLocked(agentID)
+}
+
 func (s *Store) Ack(agentID, policyID string, revision int, success bool, detail string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -291,6 +297,12 @@ func (s *Store) Ack(agentID, policyID string, revision int, success bool, detail
 	}
 	for i, a := range s.data.Agents {
 		if a.ID == agentID {
+			// Acknowledgements are reports about the currently desired policy,
+			// not permission to mark any historical policy as installed.
+			desired, assigned := s.desiredLocked(agentID)
+			if !assigned || desired.ID != policyID || desired.Revision != revision {
+				return errors.New("policy acknowledgement does not match current assignment")
+			}
 			if a.Platform != p.Platform {
 				return errors.New("platform mismatch")
 			}
