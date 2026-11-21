@@ -33,7 +33,10 @@ func TestAgentHTTPGuardStripsSpoofedIdentityHeadersAfterMTLS(t *testing.T) {
             "X-SSL-Client-Cert","X-Verified-Client-Cert","X-Client-Cert",
             "X-Client-Certificate","X-SSL-Client-Verify",
             "X-Authenticated-User","X-Forwarded-User","X-Remote-User",
-            "X-Forwarded-Proto",
+            "X-Forwarded-Proto", "X-SSL-Client-S-DN",
+            "X-SSL-Client-Fingerprint", "X-Forwarded-Client-Cert-Chain",
+            "X-Auth-Request-User", "X-Verified-Client-Subject",
+            "SSL-Client-Cert", "SSL-Client-Verify",
         }
         for _,name:=range forged {
             if value:=r.Header.Get(name);value!="" {
@@ -57,6 +60,9 @@ func TestAgentHTTPGuardStripsSpoofedIdentityHeadersAfterMTLS(t *testing.T) {
         "X-SSL-Client-Cert","X-Verified-Client-Cert","X-Client-Cert",
         "X-Client-Certificate","X-SSL-Client-Verify","X-Authenticated-User",
         "X-Forwarded-User","X-Remote-User","X-Forwarded-Proto",
+        "X-SSL-Client-S-DN","X-SSL-Client-Fingerprint",
+        "X-Forwarded-Client-Cert-Chain","X-Auth-Request-User",
+        "X-Verified-Client-Subject","SSL-Client-Cert","SSL-Client-Verify",
     } {
         request.Header.Set(name,"attacker-controlled-tenant-device-or-certificate")
     }
@@ -85,6 +91,9 @@ func TestAgentIdentityHeaderDenylistCaseNormalization(t *testing.T) {
         "authorization","proxy-authorization","x-tenant-id","x-agent-id",
         "x-device-id","x-forwarded-client-cert","x-ssl-client-cert",
         "x-client-cert","x-verified-client-cert",
+        "x-ssl-client-s-dn","x-ssl-client-fingerprint",
+        "x-forwarded-client-cert-chain","x-auth-request-user",
+        "x-verified-client-subject","ssl-client-cert","ssl-client-verify",
     } {
         if !untrustedAgentIdentityHeader(name) {
             t.Fatalf("spoofing header not rejected: %s",name)

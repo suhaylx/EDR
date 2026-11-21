@@ -72,13 +72,23 @@ func AgentHTTPGuard(registry AgentIdentityRegistry, next http.Handler) http.Hand
 // This denylist is defense in depth, not a replacement for mTLS and
 // independently checked tenant/device authorization on every operation.
 func untrustedAgentIdentityHeader(name string) bool {
+	// Proxy/vendor header families can expose the same certificate or user
+	// impersonation data under many suffixes (subject DN, serial, chain, etc.).
+	// Never let an enrolled agent choose any such identity metadata for handlers.
+	if strings.HasPrefix(name, "x-ssl-client-") ||
+		strings.HasPrefix(name, "x-forwarded-client-") ||
+		strings.HasPrefix(name, "x-auth-request-") ||
+		strings.HasPrefix(name, "x-verified-client-") {
+		return true
+	}
 	switch name {
 	case "authorization", "proxy-authorization",
 		"x-tenant-id", "x-agent-id", "x-device-id", "x-user-id",
 		"x-forwarded-client-cert", "x-ssl-client-cert",
 		"x-verified-client-cert", "x-client-cert", "x-client-certificate",
 		"x-ssl-client-verify", "x-authenticated-user", "x-forwarded-user",
-		"x-remote-user", "x-forwarded-proto":
+		"x-remote-user", "x-forwarded-proto",
+		"ssl-client-cert", "ssl-client-verify":
 		return true
 	default:
 		return false
