@@ -78,9 +78,15 @@ func SOCAlertHandler(q PostgresScanJobQueue)http.Handler{
    return
   }
   if action=="assign"{
-   var payload struct{OperatorID string `json:"operator_id"`}
+   // Unassignment is permitted only with an explicitly supplied empty
+   // operator_id. An omitted/null field is never an implicit unassign.
+   var payload struct{OperatorID *string `json:"operator_id"`}
    if !socDecode(w,r,&payload){return}
-   saved,err:=q.AssignSOCAlert(r.Context(),p,id,payload.OperatorID)
+   if payload.OperatorID==nil {
+    http.Error(w,"operator_id is required",http.StatusBadRequest)
+    return
+   }
+   saved,err:=q.AssignSOCAlert(r.Context(),p,id,*payload.OperatorID)
    if err!=nil{socRespondError(w,err);return}
    if !saved{http.Error(w,"assignment rejected or unchanged",409);return}
    w.WriteHeader(http.StatusNoContent)
