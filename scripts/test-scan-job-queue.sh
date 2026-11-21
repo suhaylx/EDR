@@ -54,7 +54,45 @@ BEGIN
   IF EXISTS(SELECT 1 FROM edr_claim_scan_job('tenantB','win01','agent-win01',
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',30)) THEN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
-END $$;
+END $;
+
+-- A live lease is not valid evidence of current authorization. Revoke or
+-- disable the principal *after* claiming, and ensure completion is refused.
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantA','revoked-agent','linux'),('tenantA','disabled-agent','linux');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES
+ ('33333333-3333-4333-8333-333333333333','tenantA','revoked-agent','/tmp/test'),
+ ('44444444-4444-4444-8444-444444444444','tenantA','disabled-agent','/tmp/test');
+DO $revoke_agent$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','revoked-agent','qa',
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',30);
+  IF leased.job_id IS DISTINCT FROM '33333333-3333-4333-8333-333333333333'::uuid
+    THEN RAISE EXCEPTION 'could not claim revocation test job'; END IF;
+  UPDATE edr_agents SET revoked_at=now()
+    WHERE tenant_id='tenantA' AND agent_id='revoked-agent';
+  IF edr_complete_scan_job('tenantA','revoked-agent',leased.job_id,
+      'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',true)
+    THEN RAISE EXCEPTION 'revoked agent completed a leased job'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=leased.job_id) <> 'leased'
+    THEN RAISE EXCEPTION 'rejected completion mutated job'; END IF;
+END $revoke_agent$;
+DO $disable_tenant$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','disabled-agent','qa',
+    'ffffffff-ffff-4fff-8fff-ffffffffffff',30);
+  IF leased.job_id IS DISTINCT FROM '44444444-4444-4444-8444-444444444444'::uuid
+    THEN RAISE EXCEPTION 'could not claim tenant-disable test job'; END IF;
+  UPDATE edr_tenants SET disabled_at=now() WHERE tenant_id='tenantA';
+  IF edr_complete_scan_job('tenantA','disabled-agent',leased.job_id,
+      'ffffffff-ffff-4fff-8fff-ffffffffffff',true)
+    THEN RAISE EXCEPTION 'disabled tenant completed a leased job'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=leased.job_id) <> 'leased'
+    THEN RAISE EXCEPTION 'rejected completion mutated job'; END IF;
+END $disable_tenant$;
 ROLLBACK;
 SQL
 echo "Durable scan-job queue integration passed"
