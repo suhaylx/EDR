@@ -34,3 +34,19 @@
 3. Escalate missing evidence after checkpoints rather than claiming someone is absent; assign another concrete independent task if blocked by VM/PKI access.
 4. Never treat a security design, a CI-only green check, an open PR or planned deployment as a shipped EDR capability. Do not auto-merge or write to `main`.
 5. Each hourly checkpoint should seek a meaningful, tested, reviewable contribution. If none is feasible, document **NO VERIFIED CODE PUSH** and a blocker; no fake hourly commits.
+
+## PM reconciliation — 21 Nov 2026, 18:23 Asia/Tashkent (13:23 UTC)
+
+**Evidence rule:** A successful scheduled run is not a code push; green CI is not Windows/Linux endpoint acceptance. Open PR heads were checked at 18:23; **no PR branch head newer than PR #16's last code push at 18:02:58** was visible. This is a missed engineering checkpoint, not proof that agents were idle. All PRs remain open; no merges into main without owner approval.
+
+| Agent | Last completed hourly run (Tashkent) | Latest verified evidence | Next concrete task |
+| --- | --- | --- | --- |
+| 1 — InfoSec | 18:11 | Run completed, no new role-specific security commit verified; schedule unexpectedly paused and re-enabled at 18:23 | Review [PR #16](https://github.com/suhaylx/EDR/pull/16) for symlink/TOCTOU, dev-token isolation, size caps and ClamAV verdict errors; [PR #13](https://github.com/suhaylx/EDR/pull/13) for graph provenance; publish findings and a tested patch where feasible |
+| 2 — Backend/Rust | 18:16 | Run completed, no new role-specific backend commit verified; schedule unexpectedly paused and re-enabled at 18:23 | Deliver scoped mTLS identity and durable agent scan lease/result path, [PR #16](https://github.com/suhaylx/EDR/pull/16), [issue #17](https://github.com/suhaylx/EDR/issues/17); real ClamAV EICAR test NOT RUN |
+| 3 — QA | 17:36 | Run completed, no separate QA patch verified; [PR #16 CI run 44906896313](https://github.com/suhaylx/EDR/actions/runs/44906896313) PASS (not real OS proof) | 18:30: test worker failure, wrong lease, scan root, unsafe path, process graph gaps; real ClamAV/Windows/Linux tests NOT RUN |
+| 4 — PM | 18:03 | PM run completed, prior activity board stale; this checkpoint reconciles it | 19:00: review each actual commit/PR check and security and QA review; assign next patch or report NO VERIFIED CODE PUSH and blocker |
+| 5 — Frontend/UX | 17:38 | Run completed, no newer independent UX commit verified | 18:40: original accessible incident tree on [PR #13](https://github.com/suhaylx/EDR/pull/13), honest scan states from PR #16, benchmark [PR #11](https://github.com/suhaylx/EDR/pull/11) |
+
+**Current open work:** [#5](https://github.com/suhaylx/EDR/pull/5) lab MVP; [#8](https://github.com/suhaylx/EDR/pull/8) fleet SOC; [#13](https://github.com/suhaylx/EDR/pull/13) tested Go/JS lab process graph; [#16](https://github.com/suhaylx/EDR/pull/16) Rust clamd lab worker with CI PASS; [#14](https://github.com/suhaylx/EDR/pull/14) Sysmon multi-signal **specification only**; [#11](https://github.com/suhaylx/EDR/pull/11) Kaspersky public functional/UX **specification only**; [#7](https://github.com/suhaylx/EDR/pull/7) PM board. Main intentionally remains unchanged. Do not treat this PM documentation update as new endpoint code.
+
+**Next release-critical proof:** real Windows Server test endpoint with supported Sysmon and ClamAV, Rust authenticated device identity, scoped Go ingestion and scan result, EICAR-only safe scan test, durable event/process evidence and failure recovery. Windows/Linux acceptance NOT RUN until tested.
