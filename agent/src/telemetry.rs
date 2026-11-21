@@ -413,6 +413,27 @@ mod tests {
     }
 
     #[test]
+    fn current_boot_marker_is_sender_reported_and_never_invented() {
+        let bytes=br#"[{"record_id":100,"event_id":3,
+          "time":"2026-11-21T14:00:00Z",
+          "boot_id":"winboot:2026-11-21T10:00:00.0000000Z",
+          "fields":{"destination_ip":"192.0.2.55"}}]"#;
+        let records=records_after(bytes,0).unwrap();
+        assert_eq!(records.len(),1);
+        let payload=event_payload("win-lab-01",&records[0]);
+        assert_eq!(payload["boot_id"],"winboot:2026-11-21T10:00:00.0000000Z");
+        let previous=records_after(OBSERVATIONS.as_bytes(),0).unwrap();
+        assert!(event_payload("win-lab-01",&previous[0]).get("boot_id").is_none());
+        let invalid=br#"[{"record_id":101,"event_id":3,
+          "time":"2026-11-21T14:00:00Z","boot_id":"unsafe\nvalue"}]"#;
+        assert!(records_after(invalid,0).is_err());
+        let oversized=format!(r#"[{{"record_id":101,"event_id":3,
+          "time":"2026-11-21T14:00:00Z","boot_id":"{}"}}]"#,
+          "x".repeat(129));
+        assert!(records_after(oversized.as_bytes(),0).is_err());
+    }
+
+    #[test]
     fn ids_and_tokens_do_not_allow_command_or_path_injection() {
         for id in ["", "../foo", "agent;exit", "test id", "x/y"] {
             assert!(!valid_agent_id(id));
