@@ -156,5 +156,6 @@ func DetectAllLabSignals(events []Event) []Detection {
 	all = append(all, DetectProcessAccessRemoteThread(events)...)
 	all = append(all, DetectRegistryAutorunSet(events)...)
 	all = append(all, DetectWMIPermanentSubscription(events)...)
-	return append(all, DetectProcessTampering(events)...)
+	all = append(all, DetectProcessTampering(events)...)
+	return append(all, DetectAlternateDataStreams(events)...)
 }
