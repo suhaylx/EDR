@@ -8,12 +8,25 @@ mod scan_jobs;
 mod scan_mtls;
 #[allow(dead_code)]
 mod scan_file;
+mod scan_runner;
 
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
 use std::time::{Duration, Instant};
 
 fn main() {
+    let args:Vec<String>=std::env::args().collect();
+    if args.len()>1 {
+        if args.len()==2 && args[1]=="--scan-once-mtls" {
+            if let Err(e)=scan_runner::run_once() {
+                eprintln!("agent_mtls_scan_failed={:?}",e.kind());
+                std::process::exit(2);
+            }
+            return;
+        }
+        eprintln!("unsupported agent arguments; supported lab mode: --scan-once-mtls");
+        std::process::exit(2);
+    }
     println!("TuranSec EDR agent LAB scaffold -- no endpoint protection active");
     let (tx, rx) = mpsc::sync_channel::<String>(32);
     let sysmon_worker = thread::spawn(move || {
