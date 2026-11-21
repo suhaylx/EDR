@@ -46,9 +46,12 @@ type EndpointActivity struct {
 // consistent 5-minute classifications. A live but unready scanner is degraded.
 const endpointInventoryCTE = `WITH inventory AS (
 SELECT a.agent_id, a.platform,
- COALESCE(h.agent_version,''),COALESCE(h.clamav_version,''),
- COALESCE(h.signature_version,''),COALESCE(h.scan_ready,false),
- h.last_seen,COALESCE(h.received_count,0),
+ COALESCE(h.agent_version,'') AS agent_version,
+ COALESCE(h.clamav_version,'') AS clamav_version,
+ COALESCE(h.signature_version,'') AS signature_version,
+ COALESCE(h.scan_ready,false) AS scan_ready,
+ h.last_seen,
+ COALESCE(h.received_count,0) AS received_count,
  CASE
   WHEN a.revoked_at IS NOT NULL THEN 'revoked'
   WHEN h.last_seen IS NULL THEN 'unseen'
