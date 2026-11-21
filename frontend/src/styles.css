@@ -145,3 +145,124 @@
 @media(max-width:700px){.alert-evidence-gap-summary dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.analyst-filter-grid,.analyst-sorting,.alert-evidence-gap-summary dl{grid-template-columns:1fr}}
 @media(forced-colors:active){.analyst-filters,.alert-evidence-gap-summary,.related-source-context{border-color:CanvasText}}
+
+/* Agent 5 scan-evidence workbench: no deceptive protection badges. */
+.scan-evidence-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.scan-evidence-summary>div{background:var(--bg);border:1px solid var(--border);padding:15px;border-radius:10px;min-width:0}
+.scan-evidence-summary dt{font-size:.83rem;color:var(--muted);line-height:1.45}
+.scan-evidence-summary dd{font-size:1.6rem;font-weight:750;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.scan-evidence-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}
+.scan-evidence-filters .field{display:grid;gap:8px;min-width:0}
+.scan-evidence-filters select{width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--ink)}
+.scan-evidence-filters input{min-width:0;max-width:none}
+.scan-evidence-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-evidence .table-scroll table{min-width:1050px}
+.scan-evidence details{min-width:220px}
+.scan-evidence details>summary{cursor:pointer;min-height:44px;padding:8px 0;font-weight:700}
+.scan-evidence details>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.scan-job-detail{margin:10px 0;display:grid;grid-template-columns:1fr;gap:10px}
+.scan-job-detail>div{overflow-wrap:anywhere;border-top:1px solid var(--border);padding-top:8px}
+.scan-job-detail dt{font-size:.8rem;font-weight:700;color:var(--muted)}
+.scan-job-detail dd{font-size:.85rem;margin:3px 0 0;overflow-wrap:anywhere}
+.scan-evidence-warnings{border-left:4px solid var(--focus);padding:10px 12px;background:var(--bg);overflow-wrap:anywhere}
+.scan-evidence-warnings ul{margin:10px 0;padding-left:20px}
+.scan-evidence-warnings li{margin:7px 0}
+@media(max-width:1000px){.scan-evidence-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.scan-evidence-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.scan-evidence-filters,.scan-evidence-summary{grid-template-columns:1fr}}
+@media(forced-colors:active){.scan-evidence-summary>div,.scan-evidence-warnings{border-color:CanvasText}}
+
+/* Agent 5: same-host scan-adjacent evidence, no inferred incident or causal edges. */
+.scan-context>h2{margin:22px 0 12px}
+.scan-context>h2:focus{outline:3px solid var(--focus);outline-offset:5px}
+.scan-context-selected,.scan-context section[aria-labelledby="scan-context-sample-title"]{
+  border:1px solid var(--border);border-radius:12px;padding:18px;margin:20px 0;
+  min-width:0;background:var(--bg)}
+.scan-context h3{font-size:1.05rem;margin:0 0 10px}
+.scan-context-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.scan-context-metrics>div{min-width:0;padding:12px;border:1px solid var(--border);border-radius:9px}
+.scan-context-metrics dt{font-size:.82rem;color:var(--muted);font-weight:650;margin-bottom:6px}
+.scan-context-metrics dd{margin:0;overflow-wrap:anywhere;font-weight:750;line-height:1.45}
+.scan-context-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}
+.scan-context-filters .field{display:grid;gap:8px;min-width:0}
+.scan-context-filters select{min-height:44px;width:100%;min-width:0;border:1px solid var(--border);
+  border-radius:9px;background:var(--panel);color:var(--ink);padding:10px}
+.scan-context-filters input{max-width:none;min-width:0}
+.scan-context-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-context-table{min-width:950px}
+.scan-context-flags{margin:10px 0}
+.scan-context-flags>summary{cursor:pointer;min-height:44px;padding:11px 0;font-weight:750}
+.scan-context-flags>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-context-flags li{overflow-wrap:anywhere;margin:6px 0}
+@media(max-width:1000px){.scan-context-filters,.scan-context-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.scan-context-filters,.scan-context-metrics{grid-template-columns:1fr}}
+@media(forced-colors:active){.scan-context-selected,.scan-context-metrics>div{border-color:CanvasText}}
+
+/* Agent 5: honest lab detection/source-reference integrity audit. */
+.detection-audit-disclosure{margin:24px 0;border:1px solid var(--border);border-radius:12px;padding:14px}
+.detection-audit-disclosure>summary{cursor:pointer;font-weight:800;min-height:44px;padding:12px 4px}
+.detection-audit-disclosure>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit h3{font-size:1.05rem;margin:18px 0 12px}
+.detection-audit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.detection-audit-summary>div{background:var(--bg);border:1px solid var(--border);padding:13px;border-radius:10px;min-width:0}
+.detection-audit-summary dt{font-size:.82rem;color:var(--muted);line-height:1.45}
+.detection-audit-summary dd{font-size:1.5rem;font-weight:750;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.detection-audit-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 12px}
+.detection-audit-filters .field{display:grid;gap:8px;min-width:0}
+.detection-audit-filters select{width:100%;min-width:0;min-height:44px;padding:10px;
+  border:1px solid var(--border);border-radius:9px;color:var(--ink);background:var(--panel)}
+.detection-audit-filters input{min-width:0;max-width:100%}
+.detection-audit-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit-table{min-width:1100px}
+.detection-audit-table details>summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700}
+.detection-audit-table details>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit-table details li{margin:6px 0;overflow-wrap:anywhere}
+@media(max-width:1050px){.detection-audit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detection-audit-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.detection-audit-summary,.detection-audit-filters{grid-template-columns:1fr}}
+@media(forced-colors:active){.detection-audit-disclosure,.detection-audit-summary>div{border-color:CanvasText}}
+
+/* Agent 5: response-scoped SOC evidence snapshot, not endpoint protection status. */
+.snapshot-review h3{font-size:1rem;margin:14px 0 10px}
+.snapshot-review-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0}
+.snapshot-review-columns>section{min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:18px}
+.snapshot-review-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 20px}
+.snapshot-review-metrics>div{min-width:0;padding:14px;border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
+.snapshot-review-metrics dt{font-size:.82rem;line-height:1.45;color:var(--muted)}
+.snapshot-review-metrics dd{font-weight:750;font-size:1.55rem;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.snapshot-review-columns .snapshot-review-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+.snapshot-limits{margin:18px 0;padding:18px;border-radius:12px;border:1px dashed var(--border);background:var(--bg)}
+.snapshot-limits ul{margin:10px 0 20px;padding-left:24px;line-height:1.6}
+.snapshot-limits li{padding:4px 0;overflow-wrap:anywhere}
+.snapshot-review-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}
+.snapshot-review-filters .field{min-width:0;display:grid;gap:8px}
+.snapshot-review-filters select{min-width:0;width:100%;min-height:44px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--ink);padding:10px}
+.snapshot-review-filters input{min-width:0;max-width:100%}
+.snapshot-review-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.snapshot-sysmon{margin:14px 0;padding:12px;border:1px solid var(--border);border-radius:10px}
+.snapshot-sysmon>summary{cursor:pointer;font-weight:750;min-height:44px;padding:11px 4px}
+.snapshot-sysmon>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.snapshot-endpoint-table{min-width:900px}
+@media(max-width:1020px){.snapshot-review-metrics,.snapshot-review-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.snapshot-review-columns{grid-template-columns:1fr}}
+@media(max-width:540px){.snapshot-review-metrics,.snapshot-review-columns .snapshot-review-metrics,.snapshot-review-filters{grid-template-columns:1fr}}
+@media(forced-colors:active){.snapshot-review-columns>section,.snapshot-review-metrics>div,.snapshot-limits,.snapshot-sysmon{border-color:CanvasText}}
+
+/* Backend-aligned three-day sprint: policy evidence and scan job lifecycle. */
+.policy-evidence-summary,.scan-lifecycle-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.policy-evidence-summary>div,.scan-lifecycle-metrics>div{min-width:0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.policy-evidence-summary dt,.scan-lifecycle-metrics dt{font-size:.83rem;color:var(--muted);line-height:1.5}
+.policy-evidence-summary dd,.scan-lifecycle-metrics dd{margin:8px 0 0;font-size:1.5rem;font-weight:750;font-variant-numeric:tabular-nums}
+.policy-evidence-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}
+.policy-evidence-controls .field{display:grid;gap:8px;min-width:0}
+.policy-evidence-controls input{min-width:0;max-width:100%}
+.policy-evidence-controls select{background:var(--panel);color:var(--ink);width:100%;min-height:44px;min-width:0;border:1px solid var(--border);border-radius:9px;padding:10px}
+.policy-evidence-controls select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.policy-evidence-table,.scan-lifecycle-table{min-width:1000px}
+.scan-lifecycle{margin-top:24px}
+.scan-lifecycle-toggle{display:flex;align-items:center;gap:10px;max-width:650px;padding:12px 0;cursor:pointer}
+.scan-lifecycle-toggle input{width:20px;height:20px;min-height:20px;flex-shrink:0}
+.scan-lifecycle-table ul{padding-left:18px;margin:0}
+.scan-lifecycle-table li{margin:7px 0;overflow-wrap:anywhere}
+@media(max-width:900px){.policy-evidence-summary,.scan-lifecycle-metrics,.policy-evidence-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.policy-evidence-summary,.scan-lifecycle-metrics,.policy-evidence-controls{grid-template-columns:1fr}}
+@media(forced-colors:active){.policy-evidence-summary>div,.scan-lifecycle-metrics>div{border-color:CanvasText}}

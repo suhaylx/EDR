@@ -22,4 +22,7 @@ test('policy acknowledgement and last error never imply enforcement',()=>{
  assert.match(policyEvidenceLabel(e('a','online')),/No applied policy acknowledgment/);
  assert.match(policyEvidenceLabel(e('b','online',0,0,{applied_policy_id:'p1',applied_revision:2})),/NOT VERIFIED/);
  assert.match(policyEvidenceLabel(e('c','online',0,0,{last_policy_error:'collector failed',applied_policy_id:'p1'})),/Reported policy error/);
+ const sensitive=policyEvidenceLabel(e('d','offline',0,0,{last_policy_error:'C:\\Users\\PRIVATE_USER\\sysmon.xml <script>bad()</script>'}));
+ assert.match(sensitive,/details withheld/);
+ assert.doesNotMatch(sensitive,/PRIVATE_USER|sysmon\.xml|<script>/);
 });
