@@ -85,7 +85,10 @@ export function filterScanEvidence(jobs: readonly LabScanJob[], query: ScanWorkl
   return jobs.filter(job => {
     if (!matchesCategory(classifyScanEvidence(job),query.category)) return false;
     if (target && job.agent_id.trim().toLocaleLowerCase() !== target) return false;
-    if (mode && (job.scan_type || '').trim().toLocaleLowerCase() !== mode) return false;
+    if (mode) {
+      const reportedMode=(job.scan_type || '').trim().toLocaleLowerCase();
+      if (mode==='__other__' ? ['path','quick','full'].includes(reportedMode) : reportedMode!==mode) return false;
+    }
     if (!needle) return true;
     // No remote search, no privileged file access; bounded in-memory metadata.
     return [
