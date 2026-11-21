@@ -51,3 +51,21 @@ func ValidateIssuedAgentCertificate(der []byte,expected AgentIdentity,now time.T
     }
     return sha256.Sum256(cert.Raw),nil
 }
+
+// ValidateIssuedCertificateForCSR ensures the certificate issued by a trusted
+// CA contains the exact public key proven by the signed CSR. The caller must
+// separately authenticate the enrollment issuer and verify the issued chain.
+func ValidateIssuedCertificateForCSR(csrDER, certDER []byte, expected AgentIdentity, now time.Time) ([32]byte,error) {
+    var empty [32]byte
+    csrKey,err:=ValidateAgentCSR(csrDER,expected)
+    if err!=nil{return empty,err}
+    fingerprint,err:=ValidateIssuedAgentCertificate(certDER,expected,now)
+    if err!=nil{return empty,err}
+    cert,err:=x509.ParseCertificate(certDER)
+    if err!=nil{return empty,errors.New("invalid issued certificate")}
+    certKey:=sha256.Sum256(cert.RawSubjectPublicKeyInfo)
+    if certKey!=csrKey{
+        return empty,errors.New("issued certificate public key does not match signed CSR")
+    }
+    return fingerprint,nil
+}
