@@ -25,6 +25,7 @@ The React/Vite development server listens on `127.0.0.1:5173`; it proxies `/api`
 
 - Strictly typed parsers for `GET /api/overview?days=1|7|30` and `GET /api/scan-jobs`, rejecting malformed or oversized responses; explicit empty/error/loading states.
 - Reported scan statuses distinct from actual protection; real scan trust and signature DB freshness **not verified**.
+- Scan-history read-only, keyboard-labeled local filters for queued/leased, failed/expired/error, unscanned, completed reported signature match, completed signature-negative and unrecognized/malformed results; metadata search is in memory only and does not request more endpoint work. Counts refer to returned records only, with no fleet-completeness inference.
 - React-native text rendering for untrusted worker details; no HTML injection, no direct endpoint action.
 - System light/dark CSS tokens, keyboard-visible focus, reduced-motion styles and responsive layout.
 - Dev-only Vite proxy; no production server migration or authenticated multi-tenant API.
