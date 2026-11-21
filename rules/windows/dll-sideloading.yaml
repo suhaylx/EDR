@@ -17,10 +17,10 @@ inputs:
 match:
   extension: .dll
   case_insensitive_normalized_path_contains_any:
-    - '\\users\\'
-    - '\\appdata\\'
-    - '\\temp\\'
-    - '\\downloads\\'
+    - '\users\'
+    - '\appdata\'
+    - '\temp\'
+    - '\downloads\'
   source_file_creation_is_not_execution: true
 correlate_optional:
   normalized_type: file_create
