@@ -95,3 +95,26 @@
 @media(max-width:870px){.event-coverage-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.telemetry-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.telemetry-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.event-coverage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:390px){.telemetry-filters,.event-coverage-grid{grid-template-columns:1fr}}
+
+/* Agent 5 integration: original read-only multisignal detection and source evidence UX. */
+.alert-triage-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.alert-triage-summary>div{min-width:0;padding:15px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.alert-triage-summary dt{font-size:.88rem;line-height:1.4;color:var(--muted)}
+.alert-triage-summary dd{margin:8px 0 0;font-size:1.65rem;font-weight:750;font-variant-numeric:tabular-nums}
+.alert-triage-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) minmax(220px,1.5fr);gap:14px;margin:20px 0 12px}
+.alert-triage-filters .field{display:grid;gap:8px;min-width:0}
+.alert-triage-filters select{width:100%;min-height:44px;background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:9px;padding:9px}
+.alert-triage-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.alert-triage-filters input{max-width:100%}
+.alert-triage-actions{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px}
+.alert-triage-actions .source-button{margin:0}
+.source-inspection-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.source-inspection-details>div{padding:15px;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
+.source-inspection-details dt{color:var(--muted);font-size:.85rem;font-weight:700;margin-bottom:8px}
+.source-inspection-details dd{margin:0;font-weight:650;line-height:1.5;overflow-wrap:anywhere}
+.source-detail{overflow-wrap:anywhere}
+@media(max-width:900px){.alert-triage-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .alert-triage-filters .field:last-child{grid-column:1/-1}}
+@media(max-width:650px){.alert-triage-summary,.source-inspection-details,.alert-triage-filters{grid-template-columns:1fr}
+  .alert-triage-filters .field:last-child{grid-column:auto}}
+@media(forced-colors:active){.alert-triage-summary>div,.source-inspection-details>div,.alert-triage-filters select{border-color:CanvasText}}
