@@ -114,12 +114,15 @@ export function reviewEvidenceSnapshot(
   const types=new Map<number,number>();
   for(const event of events){
     const time=evidenceEventTime(event);
-    if(time.kind==='unknown')eventsUnknownTime++;
+    // Go BuildSOCOverview filters Event.Time, not Event.ReceivedAt.
+    // Track receipt/clock provenance separately from the period decision.
+    const eventTime=ms(event.time);
+    if(eventTime===null)eventsUnknownTime++;
     if(time.kind==='sender_report')eventsUsingSenderClock++;
     if(time.kind==='server_receipt')eventsUsingServerClock++;
-    if(time.value!==null&&time.value>generated)eventsAfterOverview++;
+    if(eventTime!==null&&eventTime>generated)eventsAfterOverview++;
     if(!known.has(event.device_id))eventsNotInInventory++;
-    if(!isInOverviewWindow(time.value,generated,overview.window_days))continue;
+    if(!isInOverviewWindow(eventTime,generated,overview.window_days))continue;
     eventsInWindow++;
     const row=perHost.get(event.device_id);if(row)row.events++;
     if(isSysmon(event)){
@@ -154,7 +157,8 @@ export function reviewEvidenceSnapshot(
   if(events.length===100)warnings.push('Event API sample reached 100 records; older matching evidence may be absent.');
   if(events.length===0)warnings.push('No event records returned; monitoring coverage remains unknown.');
   if(eventsUnknownTime)warnings.push('Some event records have no usable reported timestamp.');
-  if(eventsUsingSenderClock)warnings.push('Some event time filters use sender-reported time because Go receipt time is unavailable.');
+  warnings.push('Go overview event windows use the reported event time; receipt timestamps are separate provenance data, not the filtering clock.');
+  if(eventsUsingSenderClock)warnings.push('Some source records have no Go receipt timestamp; sender-only provenance remains unverified.');
   if(eventsAfterOverview||detectionsAfterOverview)
     warnings.push('Some reported timestamps are later than overview generation; API collection time and clocks are not synchronized.');
   if(eventsNotInInventory||detectionsNotInInventory||scanJobsNotInInventory)
