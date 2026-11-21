@@ -60,6 +60,38 @@ fn completion(job: &ScanLease, verdict: &'static str, threat_name: String, detai
     }
 }
 
+// Validate the wire path independently of the Go lab control plane. This is
+// lexical validation only; allowed_lab_file still enforces the configured root.
+fn windows_scan_target_allowed(p: &str) -> bool {
+    let bytes = p.as_bytes();
+    if bytes.len() < 4 || bytes.len() > 512 ||
+        !bytes[0].is_ascii_alphabetic() || bytes[1] != b':' || bytes[2] != b'\\' ||
+        p.contains('/') {
+        return false;
+    }
+    for component in p[3..].split('\\') {
+        if component.is_empty() || component == "." || component == ".." ||
+            component.ends_with('.') || component.ends_with(' ') ||
+            component.chars().any(|c| c <= '\u{1f}' || c == '\u{7f}' ||
+                matches!(c, '<' | '>' | ':' | '"' | '|' | '?' | '*')) {
+            return false;
+        }
+        let base = component.split('.').next().unwrap_or("").trim().to_uppercase();
+        if matches!(base.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$") {
+            return false;
+        }
+        for prefix in ["COM", "LPT"] {
+            if let Some(n) = base.strip_prefix(prefix) {
+                if matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" |
+                    "¹" | "²" | "³") {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
 fn validate_lease(job: &ScanLease, agent: &str) -> io::Result<()> {
     if !valid_id(&job.id) || !valid_id(&job.lease_id) || !valid_id(&job.agent_id) || job.agent_id != agent {
         return Err(error(io::ErrorKind::PermissionDenied, "invalid scan lease or agent mismatch"));
@@ -73,7 +105,99 @@ fn validate_lease(job: &ScanLease, agent: &str) -> io::Result<()> {
     if job.scan_type == "path" && (job.path.is_empty() || !Path::new(&job.path).is_absolute()) {
         return Err(error(io::ErrorKind::InvalidData, "path scan requires absolute local path"));
     }
+    #[cfg(windows)]
+    if job.scan_type == "path" && !windows_scan_target_allowed(&job.path) {
+        return Err(error(io::ErrorKind::PermissionDenied,
+            "unsafe or ambiguous Windows scan target"));
+    }
     Ok(())
+}
+
+// On Linux, bind the scan to the *opened* policy root, not to a pathname
+// checked separately from opening. openat2 resolves the entire relative path
+// atomically with respect to symlinks, mount crossings and traversal escapes.
+// Linux < 5.6, unsupported filesystems or kernels fail closed (no fallback).
+#[cfg(target_os = "linux")]
+fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
+    use std::ffi::CString;
+    use std::os::fd::{AsRawFd, FromRawFd};
+    use std::os::unix::ffi::OsStrExt;
+    // Validate raw path bytes: Path::components() normalizes a '.' segment.
+
+    #[repr(C)]
+    struct OpenHow {
+        flags: u64,
+        mode: u64,
+        resolve: u64,
+    }
+
+    let target = Path::new(path);
+    if !root.is_absolute() || !target.is_absolute() {
+        return Err(error(io::ErrorKind::PermissionDenied, "absolute scan root and target required"));
+    }
+    let root = fs::canonicalize(root)?;
+    if root.parent().is_none() || !root.is_dir() {
+        return Err(error(io::ErrorKind::PermissionDenied, "invalid lab scan root"));
+    }
+    let relative = target.strip_prefix(&root).map_err(|_| {
+        error(io::ErrorKind::PermissionDenied, "target is not beneath lab scan root")
+    })?;
+    if relative.as_os_str().is_empty() ||
+        !relative.as_os_str().as_bytes().split(|b| *b == b'/')
+            .all(|component| !component.is_empty() && component != b"." && component != b"..") {
+        return Err(error(io::ErrorKind::PermissionDenied, "invalid relative scan target"));
+    }
+
+    let root_c = CString::new(root.as_os_str().as_bytes())
+        .map_err(|_| error(io::ErrorKind::InvalidInput, "NUL in root"))?;
+    // O_PATH allows a directory capability without needing directory read
+    // privileges. O_NOFOLLOW plus metadata prevents a swapped final root link.
+    let root_fd = unsafe {
+        libc::open(root_c.as_ptr(), libc::O_PATH | libc::O_DIRECTORY |
+            libc::O_CLOEXEC | libc::O_NOFOLLOW)
+    };
+    if root_fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let root_handle = unsafe { std::fs::File::from_raw_fd(root_fd) };
+    if !root_handle.metadata()?.is_dir() {
+        return Err(error(io::ErrorKind::PermissionDenied, "scan root is not a directory"));
+    }
+
+    let relative_c = CString::new(relative.as_os_str().as_bytes())
+        .map_err(|_| error(io::ErrorKind::InvalidInput, "NUL in scan target"))?;
+    // openat2 UAPI: NO_XDEV=0x01, NO_SYMLINKS=0x04, BENEATH=0x08.
+    // O_NONBLOCK prevents a malicious FIFO/device path from hanging during
+    // open; the opened handle must still pass a regular-file type check.
+    let how = OpenHow {
+        flags: (libc::O_RDONLY | libc::O_CLOEXEC |
+            libc::O_NOFOLLOW | libc::O_NONBLOCK) as u64,
+        mode: 0,
+        resolve: 0x01 | 0x04 | 0x08,
+    };
+    let fd = unsafe {
+        libc::syscall(libc::SYS_openat2, root_handle.as_raw_fd(),
+            relative_c.as_ptr(), &how as *const OpenHow,
+            std::mem::size_of::<OpenHow>())
+    };
+    if fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let file = unsafe { std::fs::File::from_raw_fd(fd as i32) };
+    let info = file.metadata()?;
+    if !info.is_file() || info.len() > crate::MAX_SCAN_BYTES {
+        return Err(error(io::ErrorKind::InvalidInput,
+            "target must be a regular file within scan size cap"));
+    }
+    Ok(file)
+}
+
+// Windows and other non-Linux platforms retain the limited lab path check.
+// Windows production must use reparse-safe, handle-relative file opens.
+#[cfg(not(target_os = "linux"))]
+fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
+    let target = allowed_lab_file(path, root)?;
+    open_lab_scan_target(&target)
 }
 
 // Fail closed: both supplied root and target are resolved before file open.
@@ -99,8 +223,7 @@ fn scan_one(job: &ScanLease, root: &Path, socket: &str) -> ScanCompletion {
             "quick/full scan profiles require endpoint policy and are not implemented".into());
     }
     let outcome = (|| -> io::Result<clamav::Verdict> {
-        let target = allowed_lab_file(&job.path, root)?;
-        let mut file = open_lab_scan_target(&target)?;
+        let mut file = open_scoped_lab_file(&job.path, root)?;
         scan_lab_file(&mut file, socket)
     })();
     match outcome {
@@ -182,6 +305,35 @@ pub fn run(agent_id: &str) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn windows_scan_wire_target_rejects_streams_and_devices() {
+        for path in [
+            r"C:\Lab\sample.dll:payload",
+            r"C:\Lab\sample.dll::$DATA",
+            r"\\server\share\file.txt",
+            r"\\?\C:\Lab\file.txt",
+            r"C:\Lab\CON.txt",
+            r"C:\Lab\COM¹.log",
+            r"C:\Lab\LPT9",
+            r"C:\Lab\trailing.",
+            r"C:\Lab\trailing ",
+            r"C:\Lab\inva?lid.txt",
+            r"C:\Lab\part\\file.txt",
+            r"C:\Lab\..\secret.txt",
+            "C:\\Lab\\bad\u{7f}.txt",
+        ] {
+            assert!(!windows_scan_target_allowed(path), "accepted {path:?}");
+        }
+        for path in [
+            r"C:\Lab\file.txt",
+            r"D:\Windows\System32\kernel32.dll",
+            r"C:\Lab\COM10.txt",
+            r"C:\Lab\résumé.txt",
+        ] {
+            assert!(windows_scan_target_allowed(path), "rejected {path:?}");
+        }
+    }
+
     use super::*;
     fn lease() -> ScanLease {
         ScanLease { id: "job-01".into(), agent_id: "lab01".into(), lease_id: "lease-01".into(),
@@ -279,4 +431,47 @@ mod tests {
         assert!(allowed_lab_file(escaped.to_str().unwrap(), &root).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn scoped_open_reads_regular_file_only_inside_configured_root() {
+        use std::io::Read;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "turansec-openat2-{}-{n}", std::process::id()));
+        std::fs::create_dir_all(root.join("nested")).unwrap();
+        let good = root.join("nested").join("benign.txt");
+        std::fs::write(&good, b"openat2-scoped-test").unwrap();
+
+        let mut content = Vec::new();
+        open_scoped_lab_file(good.to_str().unwrap(), &root).unwrap()
+            .read_to_end(&mut content).unwrap();
+        assert_eq!(content, b"openat2-scoped-test");
+        assert!(open_scoped_lab_file(root.to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file("/etc/hosts", &root).is_err());
+
+        let escaped = root.join("escape");
+        std::os::unix::fs::symlink("/etc/hosts", &escaped).unwrap();
+        assert!(open_scoped_lab_file(escaped.to_str().unwrap(), &root).is_err());
+
+        let internal_link = root.join("inside-link");
+        std::os::unix::fs::symlink("nested/benign.txt", &internal_link).unwrap();
+        assert!(open_scoped_lab_file(internal_link.to_str().unwrap(), &root).is_err());
+
+        let intermediate_link = root.join("linked-dir");
+        std::os::unix::fs::symlink("nested", &intermediate_link).unwrap();
+        assert!(open_scoped_lab_file(
+            intermediate_link.join("benign.txt").to_str().unwrap(), &root).is_err());
+
+        assert!(open_scoped_lab_file(
+            root.join("nested/../nested/benign.txt").to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file(
+            root.join("nested/./benign.txt").to_str().unwrap(), &root).is_err());
+        assert!(open_scoped_lab_file(
+            root.join("nested").to_str().unwrap(), &root).is_err());
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
 }
