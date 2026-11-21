@@ -88,8 +88,10 @@ func BuildSOCOverview(data Snapshot, scans []ScanJob, now time.Time, days int) S
 		days = 7
 	}
 	now = now.UTC()
-	since := now.Add(-time.Duration(days) * 24 * time.Hour)
+	// Use the first UTC calendar midnight shown in the chart for all KPI windows.
+	// A rolling N*24h cutoff wrongly includes a day absent from the chart.
 	startDay := now.Truncate(24*time.Hour).AddDate(0, 0, -(days - 1))
+	since := startDay
 	result := SOCOverview{
 		GeneratedAt: now, WindowDays: days,
 		DataSource:          "development_in_memory_retained_telemetry",
