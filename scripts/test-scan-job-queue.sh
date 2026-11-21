@@ -183,4 +183,105 @@ BEGIN
 END $disable_tenant$;
 ROLLBACK;
 SQL
+# Multi-session regression: one committed job must never be issued to two
+# simultaneous claimers. Use a FIFO rendezvous instead of timing sleeps.
+# Existing SQL cases above ROLLBACK; this independent fixture commits so two
+# separate psql sessions can observe it.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO edr_tenants(tenant_id,display_name) VALUES ('tenantqa','QA concurrent claims');
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantqa','race-agent','linux');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES ('88888888-8888-4888-8888-888888888888','tenantqa','race-agent','/qa-race');
+SQL
+
+qa_tmp="$(mktemp -d)"
+export QA_RELEASE_FIFO="$qa_tmp/release"
+mkfifo "$QA_RELEASE_FIFO"
+claim_pid=''
+qa_cleanup() {
+  if [[ -n "$claim_pid" ]] && kill -0 "$claim_pid" 2>/dev/null; then
+    kill "$claim_pid" 2>/dev/null || true
+    wait "$claim_pid" 2>/dev/null || true
+  fi
+  rm -rf "$qa_tmp"
+}
+trap qa_cleanup EXIT
+
+# Worker 1 owns the row lock until the parent explicitly releases the FIFO.
+# Both statements run in the same uncommitted transaction.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 >"$qa_tmp/worker1.log" 2>&1 <<'SQL' &
+BEGIN;
+DO $first_claim$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantqa','race-agent',
+    'worker-1','99999999-9999-4999-8999-999999999999',30);
+  IF leased.job_id IS DISTINCT FROM '88888888-8888-4888-8888-888888888888'::uuid
+    OR leased.attempt_count <> 1 THEN
+    RAISE EXCEPTION 'first concurrent claim failed'; END IF;
+END $first_claim$;
+\echo QA_FIRST_CLAIM_HELD
+\! timeout 25 sh -c 'IFS= read -r response < "$QA_RELEASE_FIFO"'
+COMMIT;
+SQL
+claim_pid=$!
+
+# Wait for a positive signal, not an arbitrary sleep. Fail if worker 1 exits.
+for ((i=0; i<100; i++)); do
+  if grep -q 'QA_FIRST_CLAIM_HELD' "$qa_tmp/worker1.log"; then break; fi
+  if ! kill -0 "$claim_pid" 2>/dev/null; then
+    cat "$qa_tmp/worker1.log"
+    echo 'First concurrency worker exited before acquiring lease' >&2
+    exit 1
+  fi
+  sleep 0.1
+done
+if ! grep -q 'QA_FIRST_CLAIM_HELD' "$qa_tmp/worker1.log"; then
+  cat "$qa_tmp/worker1.log"
+  echo 'Timed out waiting for first concurrency worker' >&2
+  exit 1
+fi
+
+# Worker 2 must SKIP LOCKED and return immediately with zero rows.
+timeout 10 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $second_claim$
+BEGIN
+  IF EXISTS (SELECT 1 FROM edr_claim_scan_job('tenantqa','race-agent',
+      'worker-2','aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1',30)) THEN
+    RAISE EXCEPTION 'concurrent worker double-claimed locked job'; END IF;
+END $second_claim$;
+SQL
+
+# Allow worker 1 to commit; then verify the row was issued only once.
+printf 'release\n' | timeout 10 tee "$QA_RELEASE_FIFO" >/dev/null
+wait "$claim_pid"
+claim_pid=''
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $verify_claim$
+DECLARE j record;
+BEGIN
+  SELECT state,lease_owner,lease_token,attempt_count
+    INTO j FROM edr_scan_jobs
+    WHERE job_id='88888888-8888-4888-8888-888888888888';
+  IF j.state IS DISTINCT FROM 'leased'
+    OR j.lease_owner IS DISTINCT FROM 'worker-1'
+    OR j.lease_token IS DISTINCT FROM '99999999-9999-4999-8999-999999999999'::uuid
+    OR j.attempt_count IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION 'concurrent claims corrupted committed lease'; END IF;
+  IF EXISTS (SELECT 1 FROM edr_claim_scan_job('tenantqa','race-agent',
+      'worker-2','bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2',30)) THEN
+    RAISE EXCEPTION 'second claim accepted after worker 1 commit'; END IF;
+  IF NOT edr_complete_scan_job('tenantqa','race-agent',
+      '88888888-8888-4888-8888-888888888888',
+      '99999999-9999-4999-8999-999999999999',true) THEN
+    RAISE EXCEPTION 'valid first claim cannot complete'; END IF;
+END $verify_claim$;
+DELETE FROM edr_scan_jobs WHERE tenant_id='tenantqa';
+DELETE FROM edr_agents WHERE tenant_id='tenantqa';
+DELETE FROM edr_tenants WHERE tenant_id='tenantqa';
+SQL
+trap - EXIT
+rm -rf "$qa_tmp"
+
 echo "Durable scan-job queue integration passed"
