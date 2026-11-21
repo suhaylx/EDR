@@ -1,0 +1,5 @@
+FROM postgres:16-bookworm
+# Disposable test client only. Never use this image for the production database.
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends python3 bash coreutils \
+    && rm -rf /var/lib/apt/lists/*
