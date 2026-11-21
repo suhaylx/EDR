@@ -49,7 +49,7 @@ test('accessible analyst fields, reset, ordered pages and evidence gap summaries
 test('default worklist renders 25 rows, not all 60 returned records',()=>{
   const rows=Array.from({length:60},(_,i)=>detection('n'+i));
   const html=alerts(rows);
-  assert.match(html,/25 of 60/);
+  assert.match(html,/60 of 60 retained detection record/);
   assert.match(html,/Page 1 of 3/);
   assert.match(html,/rows 1–25/);
   const table=html.split('<tbody>')[1]?.split('</tbody>')[0]||'';
