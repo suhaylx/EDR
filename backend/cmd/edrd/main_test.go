@@ -1,28 +1,57 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
 
 func TestConfigurationRejectsAmbiguityAndPrivateFileExposure(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("EDR_SOC_UI_DIR", "")
 	name := filepath.Join(dir, "config.json")
-	valid := `{"agent_listen":"127.0.0.1:9443","soc_listen":"127.0.0.1:9444","registry_dsn_file":"/private/registry","runtime_dsn_file":"/private/runtime","ui_dir":"/srv/ui"}`
-	for _, tc := range []struct {
+	base := configuration{
+		AgentListen:     "127.0.0.1:9443",
+		SOCListen:       "127.0.0.1:9444",
+		RegistryDSNFile: filepath.Join(dir, "registry.dsn"),
+		RuntimeDSNFile:  filepath.Join(dir, "runtime.dsn"),
+		UIDir:           t.TempDir(),
+	}
+	encode := func(c configuration) string {
+		t.Helper()
+		body, err := json.Marshal(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(body)
+	}
+	valid := encode(base)
+	sameIdentity, relativeUI, sameListener := base, base, base
+	sameIdentity.RuntimeDSNFile = base.RegistryDSNFile
+	relativeUI.UIDir = "relative"
+	sameListener.SOCListen = base.AgentListen
+	type configCase struct {
 		name, body string
 		mode       os.FileMode
 		ok         bool
-	}{
+	}
+	cases := []configCase{
 		{"valid", valid, 0600, true}, {"trailing", valid + `{}`, 0600, false},
 		{"unknown", `{"password":"private-test-value"}`, 0600, false},
-		{"public", valid, 0644, false},
-		{"same identity", strings.Replace(valid, "/private/runtime", "/private/registry", 1), 0600, false},
-		{"relative UI", strings.Replace(valid, "/srv/ui", "relative", 1), 0600, false},
-		{"same listener", strings.Replace(valid, "9444", "9443", 1), 0600, false},
-	} {
+		{"same identity", encode(sameIdentity), 0600, false},
+		{"relative UI", encode(relativeUI), 0600, false},
+		{"same listener", encode(sameListener), 0600, false},
+	}
+	// Unix mode bits do not describe Windows ACLs. Keep the permission
+	// rejection where boundedFile enforces it; native Windows ACL acceptance
+	// remains separate from these configuration parsing and path checks.
+	if runtime.GOOS != "windows" {
+		cases = append(cases, configCase{"public", valid, 0644, false})
+	}
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := os.WriteFile(name, []byte(tc.body), 0600); err != nil {
 				t.Fatal(err)

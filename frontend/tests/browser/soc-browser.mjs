@@ -15,7 +15,7 @@ const fixtureDir = await mkdtemp(join(tmpdir(), 'turansec-browser-fixture-'));
 const originalMask = process.umask(0o077);
 const report = {
   scope: 'Built React browser contract and accessibility checks using synthetic local API fixtures with ephemeral mTLS. This is not Go/PostgreSQL integration, real Windows/Linux host acceptance or production approval.',
-  started_at: new Date().toISOString(), cases: [], accessibility: [], browser: '', status: 'running',
+  started_at: new Date().toISOString(), cases: [], accessibility: [], layout: [], browser: '', status: 'running',
 };
 let tlsServer, labServer, browser;
 let mode = 'ready';
@@ -145,6 +145,26 @@ async function accessibility(page, name) {
   report.accessibility.push({ name, violations: result.violations, incomplete: result.incomplete.map(x => ({ id: x.id, impact: x.impact, description: x.description })) });
   assert.deepEqual(result.violations.map(x => ({ id: x.id, impact: x.impact, nodes: x.nodes.map(n => n.target) })), [], name + ' accessibility violations');
 }
+async function recordViewportLayout(page, name) {
+  const layout = await page.evaluate(() => {
+    const viewportWidth = window.innerWidth;
+    const outsideViewport = [...document.querySelectorAll('body *')].flatMap(element => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      if (!rect.width || !rect.height || style.visibility === 'hidden' || (rect.left >= 0 && rect.right <= viewportWidth)) return [];
+      // Geometry and source CSS identifiers only: never retain input values or raw text.
+      return [{ tag: element.tagName.toLowerCase(), id: element.id, className: element.getAttribute('class') ?? '',
+        left: rect.left, right: rect.right, width: rect.width, clientWidth: element.clientWidth, scrollWidth: element.scrollWidth,
+        display: style.display, minWidth: style.minWidth, flexDirection: style.flexDirection, flexWrap: style.flexWrap,
+        whiteSpace: style.whiteSpace, overflowX: style.overflowX, insideTableScroll: Boolean(element.closest('.table-scroll')) }];
+    }).slice(0, 30);
+    return { viewportWidth, documentClientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth, bodyScrollWidth: document.body.scrollWidth,
+      outsideViewport };
+  });
+  report.layout.push({ name, ...layout });
+  return layout;
+}
 try {
   const openssl = (...args) => execFileSync('openssl', args, { cwd: fixtureDir, stdio: 'ignore' });
   openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-keyout', 'ca.key', '-out', 'ca.crt', '-subj', '/CN=TuranSec synthetic browser test CA');
@@ -230,9 +250,11 @@ try {
     await page.getByRole('button', { name: 'Connect to SOC', exact: true }).click();
     await waitText(page, 'Loaded records for tenant');
     await waitText(page, 'No protection state can be inferred');
-    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
-    await accessibility(page, 'Operator empty mobile');
+    const layout = await recordViewportLayout(page, 'Operator empty mobile');
+    await writeFile(join(resultsDir, 'operator-empty-mobile-layout.json'), JSON.stringify(layout, null, 2) + '\n');
     await page.screenshot({ path: join(resultsDir, 'operator-empty-mobile.png'), fullPage: true });
+    assert.ok(layout.documentScrollWidth <= layout.viewportWidth, 'Horizontal page overflow: ' + JSON.stringify(layout));
+    await accessibility(page, 'Operator empty mobile');
   });
   await check('401 and unavailable service errors are bounded and clear the current records', async () => {
     for (const [nextMode, expected] of [['deny', 'Operator authorization was denied'], ['unavailable', 'The authenticated SOC service is unavailable']]) {
