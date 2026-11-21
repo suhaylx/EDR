@@ -27,12 +27,12 @@ CREATE INDEX edr_scan_job_results_tenant_agent ON
 -- BE-112: an endpoint verdict is immutable after the lease is consumed.
 CREATE FUNCTION edr_deny_scan_result_mutation()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog,public
-AS $
+AS $immutable$
 BEGIN
     RAISE EXCEPTION 'scan verdict evidence cannot be edited or deleted'
         USING ERRCODE='insufficient_privilege';
 END;
-$;
+$immutable$;
 CREATE TRIGGER edr_scan_result_immutable
 BEFORE UPDATE OR DELETE ON edr_scan_job_results
 FOR EACH ROW EXECUTE FUNCTION edr_deny_scan_result_mutation();
