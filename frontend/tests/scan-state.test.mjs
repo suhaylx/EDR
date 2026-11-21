@@ -21,9 +21,23 @@ test('reported clean never implies safety', () => {
 test('malicious and malformed completion remain non-attested', () => {
   assert.equal(describeScan(job('completed','malicious', { threat_name: 'Test-Signature' })).tone, 'danger');
   assert.match(describeScan(job('completed','malicious')).explanation, /without a signature/i);
-  assert.equal(describeScan(job('completed','unscanned')).heading, 'Result not verified');
+  assert.equal(describeScan(job('completed')).heading, 'Result not verified');
 });
 test('missing engine and DB versions cannot imply freshness', () => {
   assert.match(scanEngineEvidence(job('completed','clean_by_signature')), /freshness NOT VERIFIED/);
   assert.match(scanEngineEvidence(job('completed','clean_by_signature')), /signature DB version: not reported/);
+});
+
+test('completed transport with scanner error never reads as successful scan', () => {
+  const result = describeScan(job('completed', 'error'));
+  assert.equal(result.heading, 'Scanner error');
+  assert.equal(result.tone, 'danger');
+  assert.equal(result.attested, false);
+  assert.match(result.explanation, /No successful scan/i);
+});
+test('completed unsupported mode remains explicitly unscanned', () => {
+  const result = describeScan(job('completed', 'unscanned'));
+  assert.equal(result.heading, 'Unscanned');
+  assert.equal(result.attested, false);
+  assert.match(result.explanation, /not performed/i);
 });
