@@ -60,6 +60,38 @@ fn completion(job: &ScanLease, verdict: &'static str, threat_name: String, detai
     }
 }
 
+// Validate the wire path independently of the Go lab control plane. This is
+// lexical validation only; allowed_lab_file still enforces the configured root.
+fn windows_scan_target_allowed(p: &str) -> bool {
+    let bytes = p.as_bytes();
+    if bytes.len() < 4 || bytes.len() > 512 ||
+        !bytes[0].is_ascii_alphabetic() || bytes[1] != b':' || bytes[2] != b'\\' ||
+        p.contains('/') {
+        return false;
+    }
+    for component in p[3..].split('\\') {
+        if component.is_empty() || component == "." || component == ".." ||
+            component.ends_with('.') || component.ends_with(' ') ||
+            component.chars().any(|c| c <= '\u{1f}' || c == '\u{7f}' ||
+                matches!(c, '<' | '>' | ':' | '"' | '|' | '?' | '*')) {
+            return false;
+        }
+        let base = component.split('.').next().unwrap_or("").trim().to_uppercase();
+        if matches!(base.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$") {
+            return false;
+        }
+        for prefix in ["COM", "LPT"] {
+            if let Some(n) = base.strip_prefix(prefix) {
+                if matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" |
+                    "¹" | "²" | "³") {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
 fn validate_lease(job: &ScanLease, agent: &str) -> io::Result<()> {
     if !valid_id(&job.id) || !valid_id(&job.lease_id) || !valid_id(&job.agent_id) || job.agent_id != agent {
         return Err(error(io::ErrorKind::PermissionDenied, "invalid scan lease or agent mismatch"));
@@ -72,6 +104,11 @@ fn validate_lease(job: &ScanLease, agent: &str) -> io::Result<()> {
     }
     if job.scan_type == "path" && (job.path.is_empty() || !Path::new(&job.path).is_absolute()) {
         return Err(error(io::ErrorKind::InvalidData, "path scan requires absolute local path"));
+    }
+    #[cfg(windows)]
+    if job.scan_type == "path" && !windows_scan_target_allowed(&job.path) {
+        return Err(error(io::ErrorKind::PermissionDenied,
+            "unsafe or ambiguous Windows scan target"));
     }
     Ok(())
 }
@@ -186,6 +223,34 @@ mod tests {
     fn lease() -> ScanLease {
         ScanLease { id: "job-01".into(), agent_id: "lab01".into(), lease_id: "lease-01".into(),
             scan_type: "path".into(), path: "/tmp/example.txt".into() }
+    }
+    #[test]
+    fn windows_scan_wire_target_rejects_streams_and_devices() {
+        for path in [
+            r"C:\Lab\sample.dll:payload",
+            r"C:\Lab\sample.dll::$DATA",
+            r"\\server\share\file.txt",
+            r"\\?\C:\Lab\file.txt",
+            r"C:\Lab\CON.txt",
+            r"C:\Lab\COM¹.log",
+            r"C:\Lab\LPT9",
+            r"C:\Lab\trailing.",
+            r"C:\Lab\trailing ",
+            r"C:\Lab\inva?lid.txt",
+            r"C:\Lab\part\\file.txt",
+            r"C:\Lab\..\secret.txt",
+            "C:\\Lab\\bad\u{7f}.txt",
+        ] {
+            assert!(!windows_scan_target_allowed(path), "accepted {path:?}");
+        }
+        for path in [
+            r"C:\Lab\file.txt",
+            r"D:\Windows\System32\kernel32.dll",
+            r"C:\Lab\COM10.txt",
+            r"C:\Lab\résumé.txt",
+        ] {
+            assert!(windows_scan_target_allowed(path), "rejected {path:?}");
+        }
     }
     #[test]
     fn rejects_malformed_cross_agent_lease() {
