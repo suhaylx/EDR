@@ -196,3 +196,27 @@
 @media(max-width:1000px){.scan-context-filters,.scan-context-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.scan-context-filters,.scan-context-metrics{grid-template-columns:1fr}}
 @media(forced-colors:active){.scan-context-selected,.scan-context-metrics>div{border-color:CanvasText}}
+
+/* Agent 5: honest lab detection/source-reference integrity audit. */
+.detection-audit-disclosure{margin:24px 0;border:1px solid var(--border);border-radius:12px;padding:14px}
+.detection-audit-disclosure>summary{cursor:pointer;font-weight:800;min-height:44px;padding:12px 4px}
+.detection-audit-disclosure>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit h3{font-size:1.05rem;margin:18px 0 12px}
+.detection-audit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.detection-audit-summary>div{background:var(--bg);border:1px solid var(--border);padding:13px;border-radius:10px;min-width:0}
+.detection-audit-summary dt{font-size:.82rem;color:var(--muted);line-height:1.45}
+.detection-audit-summary dd{font-size:1.5rem;font-weight:750;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.detection-audit-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 12px}
+.detection-audit-filters .field{display:grid;gap:8px;min-width:0}
+.detection-audit-filters select{width:100%;min-width:0;min-height:44px;padding:10px;
+  border:1px solid var(--border);border-radius:9px;color:var(--ink);background:var(--panel)}
+.detection-audit-filters input{min-width:0;max-width:100%}
+.detection-audit-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit-table{min-width:1100px}
+.detection-audit-table details>summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700}
+.detection-audit-table details>summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.detection-audit-table details li{margin:6px 0;overflow-wrap:anywhere}
+@media(max-width:1050px){.detection-audit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detection-audit-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.detection-audit-summary,.detection-audit-filters{grid-template-columns:1fr}}
+@media(forced-colors:active){.detection-audit-disclosure,.detection-audit-summary>div{border-color:CanvasText}}
