@@ -76,7 +76,7 @@ export function ScanEvidenceWorklist({jobs}:{jobs:readonly LabScanJob[]}) {
           <option value="path">Path</option>
           <option value="quick">Quick (not implemented)</option>
           <option value="full">Full (not implemented)</option>
-          <option value="unknown">Unknown/unrecognized string (use search)</option>
+          <option value="__other__">Missing or unrecognized mode</option>
         </select></div>
       <div className="field"><label htmlFor="scan-query">Search job metadata</label>
         <input id="scan-query" type="search" maxLength={200} autoComplete="off"
