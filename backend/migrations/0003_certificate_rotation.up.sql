@@ -27,13 +27,18 @@ BEGIN
             USING ERRCODE = 'invalid_parameter_value';
     END IF;
 
-    -- Serialize rotations per tenant/device and deny revoked agents or
-    -- disabled tenants. The tenant/device pair is never taken from a header.
+    -- Serialize rotations with both agent revocation AND tenant disablement.
+    -- An agent-only lock can observe an apparently active tenant while an
+    -- administrator is updating disabled_at in an uncommitted transaction.
+    -- FOR SHARE OF t blocks that update without serializing rotations on
+    -- unrelated devices in the same active tenant. The tenant/device pair
+    -- is never taken from an unauthenticated header.
     PERFORM 1 FROM public.edr_agents AS a
     JOIN public.edr_tenants AS t ON t.tenant_id = a.tenant_id
     WHERE a.tenant_id = p_tenant_id AND a.agent_id = p_agent_id
       AND a.revoked_at IS NULL AND t.disabled_at IS NULL
-    FOR UPDATE OF a;
+    FOR UPDATE OF a
+    FOR SHARE OF t;
     IF NOT FOUND THEN RETURN false; END IF;
 
     UPDATE public.edr_agent_certificates
