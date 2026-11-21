@@ -22,6 +22,9 @@
         details.open = true;
         const summary = doc.createElement('summary');
         summary.className = node.className;
+        if (node.hasAttribute('data-process-guid')) {
+          summary.setAttribute('data-process-guid', node.getAttribute('data-process-guid'));
+        }
         while (node.firstChild) summary.appendChild(node.firstChild);
         details.append(summary, children);
         li.replaceChildren(details);
