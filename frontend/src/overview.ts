@@ -14,6 +14,11 @@ export type EndpointActivity = {
   events: number;
   alerts: number;
   inactive_seconds: number;
+  group: string;
+  reported_health: string;
+  applied_policy_id: string;
+  applied_revision: number;
+  last_policy_error: string;
 };
 export type LabSOCOverview = {
   generated_at: string;
@@ -34,6 +39,7 @@ export type LabSOCOverview = {
   policy_coverage: PolicyCoverage[];
   most_active: EndpointActivity[];
   inactive_machines: EndpointActivity[];
+  endpoints: EndpointActivity[];
   scans: { queued: number; leased: number; completed: number; failed: number };
   unavailable: string[];
 };
@@ -43,6 +49,8 @@ const string = (x: unknown, where: string): string => {
   if (typeof x !== 'string') throw new Error('Invalid overview field: ' + where);
   return x;
 };
+const optionalString = (x: unknown, where: string): string =>
+  x === undefined || x === null ? '' : string(x, where);
 const count = (x: unknown, where: string): number => {
   if (typeof x !== 'number' || !Number.isSafeInteger(x) || x < 0) {
     throw new Error('Invalid overview count: ' + where);
@@ -78,6 +86,11 @@ const endpoint = (x: unknown, index: number): EndpointActivity => {
     events: count(e.events, 'endpoint.events'),
     alerts: count(e.alerts, 'endpoint.alerts'),
     inactive_seconds: count(e.inactive_seconds, 'endpoint.inactive_seconds'),
+    group: string(e.group, 'endpoint.group'),
+    reported_health: string(e.reported_health, 'endpoint.reported_health'),
+    applied_policy_id: optionalString(e.applied_policy_id, 'endpoint.applied_policy_id'),
+    applied_revision: e.applied_revision === undefined ? 0 : count(e.applied_revision, 'endpoint.applied_revision'),
+    last_policy_error: optionalString(e.last_policy_error, 'endpoint.last_policy_error'),
   };
 };
 const parseList = <T>(x: unknown, name: string, make: (v: unknown, i: number) => T, max = 1000): T[] =>
@@ -97,6 +110,20 @@ export function decodeLabOverview(raw: unknown, requestedDays: DayWindow): LabSO
   const unknown = count(o.unknown, 'unknown');
   if (online + offline + unknown !== agents) throw new Error('Overview heartbeat counts do not reconcile.');
   const scans = record(o.scans, 'scans');
+  const endpoints = parseList(o.endpoints, 'endpoints', endpoint, 1000);
+  if (endpoints.length !== agents) throw new Error('Overview endpoint inventory does not match the enrolled count.');
+  const seen = new Set<string>();
+  const inventoryCounts = {online: 0, offline: 0, unknown: 0};
+  for (const e of endpoints) {
+    if (!e.id || e.id.length > 96 || seen.has(e.id)) {
+      throw new Error('Overview endpoint inventory includes missing or duplicate IDs.');
+    }
+    seen.add(e.id);
+    inventoryCounts[e.status]++;
+  }
+  if (inventoryCounts.online !== online || inventoryCounts.offline !== offline || inventoryCounts.unknown !== unknown) {
+    throw new Error('Overview endpoint inventory heartbeat status does not reconcile.');
+  }
   return {
     generated_at: validUTC(o.generated_at, 'generated_at'),
     window_days: requestedDays,
@@ -135,6 +162,7 @@ export function decodeLabOverview(raw: unknown, requestedDays: DayWindow): LabSO
     }, 200),
     most_active: parseList(o.most_active, 'most_active', endpoint, 200),
     inactive_machines: parseList(o.inactive_machines, 'inactive_machines', endpoint, 1000),
+    endpoints,
     unavailable: parseList(o.unavailable, 'unavailable', (item, i) => string(item, 'unavailable ' + i), 200),
   };
 }
