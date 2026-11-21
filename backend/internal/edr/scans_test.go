@@ -60,7 +60,7 @@ func TestScanLeaseCompleteAndExpiry(t *testing.T) {
 	_, _ = s.CheckIn(Agent{ID: "win1", Platform: "windows"})
 	_, _ = s.CheckIn(Agent{ID: "win2", Platform: "windows"})
 	now := time.Date(2026, 11, 21, 0, 0, 0, 0, time.UTC)
-	job, err := s.CreateScan(ScanRequest{AgentID: "win1", RequestID: "abc", ScanType: "quick"}, now)
+	job, err := s.CreateScan(ScanRequest{AgentID: "win1", RequestID: "abc", ScanType: "path", Path: `C:\Lab\sample.txt`}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestScanAPIContract(t *testing.T) {
 	if r := call("POST", "/api/agents", `{"id":"win1","platform":"windows"}`, true); r.Code != 200 {
 		t.Fatalf("agent enrollment failed: %d", r.Code)
 	}
-	r := call("POST", "/api/scan-jobs", `{"agent_id":"win1","request_id":"first","scan_type":"quick"}`, true)
+	r := call("POST", "/api/scan-jobs", `{"agent_id":"win1","request_id":"first","scan_type":"path","path":"C:\\Lab\\sample.txt"}`, true)
 	if r.Code != 201 {
 		t.Fatalf("scan request failed: %d %s", r.Code, r.Body.String())
 	}
