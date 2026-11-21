@@ -1,30 +1,23 @@
 /** Presentation-only filtering of untrusted, lab-reported scan jobs.
  * Filtering does not request more work, attest a result, or change endpoint state. */
 import type { LabScanJob } from './lab-api.js';
+import {classifyScanEvidence} from './scan-evidence.js';
 
 export type ScanHistoryFilter =
   'all' | 'pending' | 'failed_or_error' | 'unscanned' | 'reported_match' | 'signature_negative' | 'unrecognized';
 
 export function scanFilterMatches(job: LabScanJob, filter: ScanHistoryFilter): boolean {
-  // Current lab worker reports quick/full as unscanned: a "successful" claim
-  // for either mode is inconsistent and must not enter signature categories.
-  const unsupportedSuccess = (job.scan_type === 'quick' || job.scan_type === 'full') &&
-    job.status === 'completed' &&
-    ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '');
+  const evidence=classifyScanEvidence(job);
   switch (filter) {
     case 'all': return true;
     case 'pending': return job.status === 'queued' || job.status === 'leased';
     case 'failed_or_error': return job.status === 'failed' || job.status === 'expired' || job.verdict === 'error';
     case 'unscanned': return job.verdict === 'unscanned';
-    case 'reported_match': return !unsupportedSuccess && job.status === 'completed' && job.verdict === 'malicious';
-    case 'signature_negative': return !unsupportedSuccess && job.status === 'completed' && job.verdict === 'clean_by_signature';
-    case 'unrecognized': {
-      if (!['queued', 'leased', 'failed', 'expired', 'completed'].includes(job.status)) return true;
-      if (job.status === 'completed') {
-        return unsupportedSuccess || !['malicious', 'suspicious', 'clean_by_signature'].includes(job.verdict || '');
-      }
-      return false;
-    }
+    case 'reported_match': return evidence === 'signature_match';
+    case 'signature_negative': return evidence === 'signature_negative';
+    case 'unrecognized': return ['unrecognized','unsupported_claim','unverified_mode'].includes(evidence) ||
+      (job.status === 'completed' && evidence === 'scanner_error');
+
   }
 }
 
