@@ -36,3 +36,8 @@ Track [the next 25 milestones](SPRINT_M38_M62_20261121.md), following [M13–M37
 ## Current engineering milestone batch M63–M87 (21 November 2026)
 
 The new authoritative [25-milestone M63–M87 board](SPRINT_M63_M87_20261121.md) follows [M38–M62](SPRINT_M38_M62_20261121.md) and earlier backlog. Exact artifact, test, dependency, owner and release gate per item; never call all 25 completed for a board update. Current shared P0 implementation is [draft PR #129](https://github.com/suhaylx/EDR/pull/129) (mTLS listener trust and loopback guard on the active scan-result stack), not a running service. [Priority backlog](PRIORITY_BACKLOG.md) and [five-role evidence](AGENT_ACTIVITY.md) retain separate code, CI, independent review, two-host lab and production statuses. No automatic merge or endpoint deployment.
+
+
+## Accelerated three-day checkpoint — 21 November 2026
+
+The user requested the entire three-day sprint be advanced immediately on Nov 21. Treat [ACCELERATED_3_DAY_SPRINT_20261121.md](ACCELERATED_3_DAY_SPRINT_20261121.md) as the evidence source: Day 1 code (listener/header trust port to latest Backend #136), Day 2 loopback TLS 1.3 + fake SQL heartbeat and revocation test, Day 3 QA matrix and **NO-GO**. Do not claim Nov 22–23 have elapsed, or that green CI on parent #136 means green CI on new [draft PR #142](https://github.com/suhaylx/EDR/pull/142). Its two latest workflows failed before runner steps appeared; exact root cause and independent code QA unknown. Real endpoint install, signer/PKI, approved Go PostgreSQL driver and live two-host tests remain blocked. No automatic main merge/deployment.
