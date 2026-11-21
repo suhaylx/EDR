@@ -223,3 +223,219 @@
 - Implementation blockers: [#103 mTLS startup/client](https://github.com/suhaylx/EDR/issues/103), [#104 durable telemetry](https://github.com/suhaylx/EDR/issues/104), [#105 Sysmon policy isolation](https://github.com/suhaylx/EDR/issues/105), [#106 AD/LDAPS dry-run](https://github.com/suhaylx/EDR/issues/106).
 
 **Production verdict: NO-GO.** Passing development CI authorizes only a controlled lab candidate for review, not enterprise/customer deployment.
+
+
+---
+
+# Next 25 QA milestones — M26–M50
+
+**Evidence snapshot, 21 November 2026.** Passing branch CI proves only the exercised test boundary. New PRs are draft and may not be merged; any unverified CI is explicitly marked pending. Actual endpoint/AD/ClamAV host tests remain scheduled for the owner on 22 November.
+
+### M26 — PR96 exact-head baseline
+
+**Owner:** Agent 3. **Evidence status:** VERIFIED PASS.
+
+**Proposed implementation / resolution:** Record all 4 GitHub workflow conclusions at `807e329e`, keep branch draft and no deploy.
+
+**Objective QA gate:** All Go race, Postgres restart, Ubuntu/Windows CI success; no host claims.
+
+### M27 — Development API loopback guard
+
+**Owner:** Agent 3 proposes; Agent 2 reviews. **Evidence status:** CODE + CI PASS (draft PR119).
+
+**Proposed implementation / resolution:** Refuse public, wildcard and LAN EDR_ADDR for bearer-only Go lab server; use SSH loopback tunnel.
+
+**Objective QA gate:** No unencrypted bearer HTTP on routable interfaces; Agent2 approval before merge.
+
+### M28 — Bind-target negative input matrix
+
+**Owner:** Agent 3. **Evidence status:** 25 TEST CASES CI PASS (draft PR119).
+
+**Proposed implementation / resolution:** Table-driven Go test with numeric IPv4/IPv6 loopback and 19 bad DNS/IP/port inputs.
+
+**Objective QA gate:** 25 named subtests pass in PR119 starter CI.
+
+### M29 — Claim vs agent revocation race
+
+**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PENDING (draft PR123).
+
+**Proposed implementation / resolution:** Share-lock principal rows during scan claim; leave SKIP LOCKED on job row.
+
+**Objective QA gate:** Separate sessions: deny post-commit revoked agent; observe lock wait before release.
+
+### M30 — Claim vs tenant disable race
+
+**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PENDING (draft PR123).
+
+**Proposed implementation / resolution:** Serialize tenant disabled_at update and scan claim in disposable DB.
+
+**Objective QA gate:** Two concurrent sessions: disabled tenant never receives lease after admin commit.
+
+### M31 — Completion vs revoked agent race
+
+**Owner:** Agent 3. **Evidence status:** TEST NOT RUN.
+
+**Proposed implementation / resolution:** Build transaction-level test with admin update in-flight and completion waiting on FOR SHARE.
+
+**Objective QA gate:** Record lock wait and denied completion after admin commit; unchanged lease.
+
+### M32 — Completion vs disabled tenant race
+
+**Owner:** Agent 3. **Evidence status:** TEST NOT RUN.
+
+**Proposed implementation / resolution:** Build parallel disable vs completion regression on separate-session PostgreSQL transactions.
+
+**Objective QA gate:** Denied completion after committed tenant disable; no success/failure mutation.
+
+### M33 — TLS cert identity and strict SAN
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** UNIT CI ONLY.
+
+**Proposed implementation / resolution:** Keep VerifyAgentCertificate peer/chain/fingerprint checks; add TLS valid/expired/rotated/SAN pinning cases.
+
+**Objective QA gate:** Strong TLS 1.3 mTLS end-to-end with real PostgreSQL registry, not only mocked records.
+
+### M34 — Enrollment challenge and rotation restart
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** PARTIAL, DATABASE CI ONLY.
+
+**Proposed implementation / resolution:** Persist single-use challenge digest, certificate revocation and issuance audit transactionally.
+
+**Objective QA gate:** Consumed challenge and old cert stay rejected after real disposable PostgreSQL restart.
+
+### M35 — Dedicated production mTLS listener startup
+
+**Owner:** Agent 2. **Evidence status:** BLOCKED #103.
+
+**Proposed implementation / resolution:** Wire existing NewAgentMTLSServer on a dedicated port with injected CA/server key/db; separate operator vs endpoint API.
+
+**Objective QA gate:** Real Rust client without bearer, tenant-bound endpoint route; no insecure fallback.
+
+### M36 — Rust mTLS key custody/rotation
+
+**Owner:** Agent 2 + Agent 1. **Evidence status:** BLOCKED #103.
+
+**Proposed implementation / resolution:** OS keystore-backed key, CSR proof, pinned trust and expiry rotation without exposing secrets.
+
+**Objective QA gate:** Windows/Linux build and negative cert rotation/expired/missing-key tests; host tomorrow.
+
+### M37 — Tenant-scoped heartbeat endpoint
+
+**Owner:** Agent 2. **Evidence status:** BLOCKED #103.
+
+**Proposed implementation / resolution:** Persist server-received heartbeats with cert principal and dedup; reject headers pretending another agent.
+
+**Objective QA gate:** Wrong-tenant/wrong-device heartbeat cannot update presence; offline >5min truthful.
+
+### M38 — Tenant-safe raw event ingestion
+
+**Owner:** Agent 2. **Evidence status:** BLOCKED #104.
+
+**Proposed implementation / resolution:** Authorize every event via cert identity, keep source ID/received_at; reject cross-device attribution.
+
+**Objective QA gate:** Attacker-controlled device_id not trusted, server ACK after committed event, no cross-tenant query.
+
+### M39 — Operator RBAC on SOC queries
+
+**Owner:** Agent 2 + Agent 5. **Evidence status:** BLOCKED #103.
+
+**Proposed implementation / resolution:** Role/tenant filter on overview, investigation, telemetry, rules and incident graph.
+
+**Objective QA gate:** Two-tenant fixture yields 403/404 for unauthorized paths, zero evidence leakage.
+
+### M40 — Expiry/nonce and signed response commands
+
+**Owner:** Agent 1 + Agent 2. **Evidence status:** BLOCKED.
+
+**Proposed implementation / resolution:** Sign tenant+agent+op+seq+nonce+TTL+policy hash and persist replay watermark.
+
+**Objective QA gate:** Wrong-device, duplicate, expired and rollback commands fail closed across restart.
+
+### M41 — Offline Rust spool with bounded resources
+
+**Owner:** Agent 2. **Evidence status:** BLOCKED #104.
+
+**Proposed implementation / resolution:** On-disk append/ACK journal with cap, encryption, quotas, backpressure and gap counters.
+
+**Objective QA gate:** Crash/reboot/offline reconnect replays once without unbounded RAM or forged event counts.
+
+### M42 — Durable SOC events through DB restart
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** BLOCKED #104.
+
+**Proposed implementation / resolution:** Store raw events and tenant scopes durably, distinct from already-tested scan-job queue.
+
+**Objective QA gate:** Kill/restart disposable ingest DB, assert chronological history/replay provenance retained.
+
+### M43 — Event ingest idempotency/crash before ACK
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** BLOCKED #104.
+
+**Proposed implementation / resolution:** Use `(tenant,agent,source_id,record_id)` dedup key, committed ACK, cursor persistence.
+
+**Objective QA gate:** Duplicate event/report and process restart yield one retained event and explicit loss accounting.
+
+### M44 — ClamAV benign/EICAR signature attestation
+
+**Owner:** Agent 1 + Agent 3. **Evidence status:** STUB CI ONLY; HOST NOT RUN.
+
+**Proposed implementation / resolution:** Use official signed ClamAV DB with EICAR-only, benign, stopped daemon, scanner ERROR semantics.
+
+**Objective QA gate:** No malicious live sample; clean_by_signature != safe; host run tomorrow.
+
+### M45 — DLL Event 11 vs Event 7, noise budget
+
+**Owner:** Agent 1 + Agent 3. **Evidence status:** UNIT CI ONLY; HOST NOT RUN.
+
+**Proposed implementation / resolution:** Correlate ImageLoad actual Event7 with Event1 host, treat Event11 as creation only; targeted noise thresholds.
+
+**Objective QA gate:** Synthetic negative/positive fixtures and server workload Event7 sampling; no false causal claim.
+
+### M46 — Sysmon policy update isolation/rollback
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** BLOCKED #105.
+
+**Proposed implementation / resolution:** Signed per-OS config, exclusive apply lock, separate worker, known-good revision+hash and auto rollback.
+
+**Objective QA gate:** Malformed XML, timeout, failed rollback, concurrent updates preserve core PID/heartbeat/ClamAV.
+
+### M47 — Windows/Linux unified Rust agent parity
+
+**Owner:** Agent 2 + Agent 3. **Evidence status:** BUILD CI ONLY; HOST NOT RUN.
+
+**Proposed implementation / resolution:** One agent identity/install, report capability gaps, preserve original source fidelity.
+
+**Objective QA gate:** Cross-OS compile/contract checks; actual Sysmon and Linux /proc host evidence tomorrow.
+
+### M48 — SOC and local UI accessible/non-disruptive
+
+**Owner:** Agent 5 + Agent 3. **Evidence status:** NODE UNIT ONLY; BROWSER NOT RUN.
+
+**Proposed implementation / resolution:** Keyboard tab order, Enter/Space graph, focus restoration, 200% zoom, error boundary, unprivileged local IPC.
+
+**Objective QA gate:** No UI crash changes core scan/heartbeat; screen-reader and actual desktop test pending.
+
+### M49 — AD/LDAPS dry-run and tamper audit
+
+**Owner:** Agent 2 + Agent 1 + Agent 3. **Evidence status:** BLOCKED #106.
+
+**Proposed implementation / resolution:** Read-only pinned LDAPS OU targeting and plan-only GPO; one-time signed maintenance and insert-only audit.
+
+**Objective QA gate:** Untrusted DC/replay/OU scope denied, no unauthorized deployment or silent disable.
+
+### M50 — Final security/QA release decision
+
+**Owner:** Agent 1 + Agent 3 + PM. **Evidence status:** PRODUCTION NO-GO.
+
+**Proposed implementation / resolution:** Gate InfoSec review, exact SHA reproducibility, signed installers, host evidence, rollout/rollback and all P0 race checks.
+
+**Objective QA gate:** NO-GO until all P0 satisfied; Agent2 alone handles any approved deployment.
+
+## Review and evidence links for M26–M50
+
+- [PR #96 — scan lease concurrency, replay, restart, Go race](https://github.com/suhaylx/EDR/pull/96): exact head `807e329e98417180716a688bd0b3412b3955c268`, all 4 CI workflows reported PASS before this documentation update.
+- [PR #119 — loopback-only shared-token lab listener, 25 named Go test cases](https://github.com/suhaylx/EDR/pull/119): all 3 reported CI workflows PASS at `f0d453100126dffb8afe00d2d0f252e9805deafa`, draft.
+- [PR #123 — claim vs revocation row-lock serialization](https://github.com/suhaylx/EDR/pull/123): new migration and concurrent test; CI pending at initial observation, draft, Agent 2/InfoSec review required.
+- [Issue #103 mTLS startup](https://github.com/suhaylx/EDR/issues/103), [#104 durable telemetry](https://github.com/suhaylx/EDR/issues/104), [#105 Sysmon isolation](https://github.com/suhaylx/EDR/issues/105), [#106 AD/LDAPS](https://github.com/suhaylx/EDR/issues/106).
+
+**Release:** NO-GO for any customer/production use. No live endpoint or domain controller contacted by QA.
