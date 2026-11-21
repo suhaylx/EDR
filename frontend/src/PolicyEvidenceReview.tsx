@@ -76,7 +76,7 @@ export function PolicyEvidenceReview({overview,policies,assignments}:{
        <td>{r.appliedID||'Not reported'}<span className="minor">
          Revision {r.appliedRevision||'not reported'}</span></td>
        <td><strong>{LABELS[r.status]}</strong>
-         {r.error&&<span className="minor">Reported error: {r.error}</span>}</td>
+         {r.errorReported&&<span className="minor">Reported policy error detail withheld from shared-token lab UI</span>}</td>
       </tr>)}</tbody>
     </table></div>
     <div className="analyst-paging" role="group" aria-label="Local policy evidence pages">
