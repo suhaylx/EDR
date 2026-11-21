@@ -23,8 +23,7 @@ BEGIN
     IF NOT FOUND THEN RETURN false; END IF;
 
     UPDATE public.edr_scan_jobs AS j
-    SET lease_expires_at=GREATEST(j.lease_expires_at,transaction_timestamp())
-          +make_interval(secs=>p_lease_seconds),
+    SET lease_expires_at=transaction_timestamp()+make_interval(secs=>p_lease_seconds),
         updated_at=transaction_timestamp()
     WHERE j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id AND j.job_id=p_job_id
       AND j.state='leased' AND j.lease_owner=p_lease_owner
