@@ -46,6 +46,29 @@ The endpoint uses the existing development-only bearer token, and events
 originate from an in-memory, unauthenticated-device lab model. This is NOT a
 production-safe source of detections and cannot be deployed to customer hosts.
 
+### Event provenance fields (laboratory only)
+
+Ingested `Event` records include `received_at` (server-stamped UTC receipt
+instant), `time_origin` (`sender_reported_unverified` or `server_received`),
+and optional `source_record_id` (up to 256 bytes, no control characters, DEL or Unicode replacement character). The existing
+`time` field is a sender-provided observation time when supplied; otherwise
+it falls back to receipt time. Incoming `received_at` and `time_origin`
+values are overwritten server-side. The server-generated `id` is an ingest
+record ID, **not** a source Sysmon EventRecordID. The optional source record
+identifier is an unverified sender claim, not cryptographic provenance.
+
+These fields improve investigative transparency only: they do not implement
+mTLS, source authentication, tenant scoping, replay protection, boot/session
+identity or tamper-proof evidence. Detection remains provisional and must not
+be used to trigger automated remediation.
+
+`GET /api/detections` now also exposes `load_source_record_id` (when supplied),
+`load_time_origin`, and `load_received_at` for the originating module-load
+record. These are informational fields: the sender-reported record ID and
+observation time remain untrusted, and the server receipt timestamp is not
+proof of the event's authenticity. Missing optional fields must never be
+presented as validated evidence by the SOC UI.
+
 ### QA acceptance
 
 1. FileCreate without ImageLoad => zero detections.
@@ -62,3 +85,7 @@ production-safe source of detections and cannot be deployed to customer hosts.
 No mTLS device identity, durable storage, event signatures, Sysmon collector,
 reliable de-duplication across reboots, signer verification or real ClamAV
 scanning yet. QA must execute Windows/Linux fixtures before broadening rollout.
+
+### Boot-scoped evidence correlation (lab)
+
+Events may carry an optional `boot_id` (maximum 128 bytes). This is a sender-reported, **unauthenticated** boot/session marker, not an attested Windows boot identity. The DLL-load heuristic emits a low-confidence signal on an eligible ImageLoad even without this marker, but only attaches earlier file-create evidence when **both** events provide the **same nonempty** `boot_id` as well as matching device, path, time window and compatible hashes. Missing or different boot markers must not create a file-to-load linkage. This prevents some cross-boot false correlations, but does **not** authenticate a device, prevent spoofing, or provide durable replay protection.
