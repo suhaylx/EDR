@@ -109,6 +109,7 @@ func TestDLLAlertExposesUnverifiedSourceRecordAndReceipt(t *testing.T) {
 	alert := got[0]
 	if alert.LoadEventID != load.ID ||
 		alert.LoadSourceRecordID != load.SourceRecordID ||
+		alert.LoadBootID != load.BootID ||
 		alert.LoadTimeOrigin != load.TimeOrigin ||
 		!alert.LoadReceivedAt.Equal(load.ReceivedAt) ||
 		!alert.ObservedAt.Equal(load.Time) {
@@ -245,5 +246,17 @@ func TestDLLCreateEvidenceRejectsConflictingProcessIdentity(t *testing.T) {
 				t.Fatalf("unexpected process-identity evidence link: %+v", got[0])
 			}
 		})
+	}
+}
+
+func TestDLLAlertWithoutBootScopeDoesNotClaimOne(t *testing.T) {
+	load := provenanceLoad()
+	load.BootID = ""
+	got := DetectSuspiciousDLLLoads([]Event{load})
+	if len(got) != 1 {
+		t.Fatalf("expected provisional load alert: %+v", got)
+	}
+	if got[0].LoadBootID != "" || got[0].Confidence != "low" {
+		t.Fatalf("missing boot scope was misrepresented: %+v", got[0])
 	}
 }
