@@ -23,6 +23,8 @@ JOIN edr_tenants AS t
   ON t.tenant_id = c.tenant_id
 WHERE c.tenant_id = $1 AND c.agent_id = $2
   AND c.revoked_at IS NULL
+  AND c.not_before <= CURRENT_TIMESTAMP
+  AND c.not_after > CURRENT_TIMESTAMP
   AND a.revoked_at IS NULL
   AND t.disabled_at IS NULL
 LIMIT 1`
