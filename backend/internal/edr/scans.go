@@ -204,6 +204,12 @@ func (s *Store) CompleteScan(jobID string, req ScanCompletion, now time.Time) (S
 		if j.LeaseID != req.LeaseID {
 			return ScanJob{}, errors.New("scan lease identity mismatch")
 		}
+		// LAB CAPABILITY GATE: quick/full scan execution is not implemented.
+		// A claimed successful verdict cannot establish that a scan occurred.
+		// Remove only after real worker capability negotiation and QA evidence.
+		if j.ScanType != "path" && req.Verdict != "unscanned" && req.Verdict != "error" {
+			return ScanJob{}, errors.New("quick/full scan not implemented: cannot claim scanned verdict")
+		}
 		if j.Status == "completed" || j.Status == "failed" {
 			if j.Verdict == req.Verdict && j.Engine == req.Engine && j.ThreatName == req.ThreatName && j.EngineVersion == req.EngineVersion && j.DatabaseVersion == req.DatabaseVersion && j.Detail == req.Detail {
 				return *j, nil
