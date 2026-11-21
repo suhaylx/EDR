@@ -25,7 +25,8 @@ func TestQASOCOperatorAuthRejectsMalformedVerifiedChainWithoutPanic(t *testing.T
   {Version:tls.VersionTLS13},
   {Version:tls.VersionTLS13,PeerCertificates:[]*x509.Certificate{leaf}},
   {Version:tls.VersionTLS13,PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{}}},
-  {PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{nil}}},
+  {Version:tls.VersionTLS13,PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{nil}}},
+  {Version:tls.VersionTLS12,PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{leaf}}},
  }
  for i,state:=range cases{
   _,err:=verifySOCOperator(context.Background(),state,&sql.DB{},time.Now().UTC())
