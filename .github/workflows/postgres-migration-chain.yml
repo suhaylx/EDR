@@ -14,6 +14,7 @@ on:
       - "scripts/test-soc-scheduling.sql"
       - "scripts/test-soc-alerts.sql"
       - "scripts/test-soc-case-audit.sql"
+      - "scripts/test-soc-endpoint-inventory.sql"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:
