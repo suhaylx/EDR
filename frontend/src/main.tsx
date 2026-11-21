@@ -6,6 +6,7 @@ import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow }
 import { InvestigationView } from './InvestigationView.js';
 import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
 import type { InvestigationSeed } from './investigation.js';
+import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -123,6 +124,41 @@ function Alerts({detections, generatedAt, days, onInvestigate}: {
   </section>;
 }
 
+function EndpointInventory({overview}: {overview: LabSOCOverview}) {
+  const [status,setStatus] = useState<InventoryFilter>('all');
+  const [query,setQuery] = useState('');
+  const [sort,setSort] = useState<InventorySort>('id');
+  const selected = filterEndpointInventory(overview.endpoints,status,query,sort);
+  return <section className="panel" aria-labelledby="endpoint-inventory-title">
+    <h2 id="endpoint-inventory-title">Managed endpoint records</h2>
+    <p>Statuses are server-derived from received heartbeats. Agent-reported health and policy acknowledgments do not attest to active protection, applied Sysmon enforcement or actual scanner readiness.</p>
+    <div className="inventory-filters">
+      <div className="field"><label htmlFor="endpoint-status">Heartbeat state</label><select id="endpoint-status" value={status} onChange={e=>setStatus(e.target.value as InventoryFilter)}>
+        <option value="all">All enrolled</option><option value="online">Online</option><option value="offline">Offline</option><option value="unknown">Unknown</option>
+      </select></div>
+      <div className="field"><label htmlFor="endpoint-query">Filter endpoint, group or policy</label><input id="endpoint-query" type="search" value={query} onChange={e=>setQuery(e.target.value)} autoComplete="off"/></div>
+      <div className="field"><label htmlFor="endpoint-sort">Sort records</label><select id="endpoint-sort" value={sort} onChange={e=>setSort(e.target.value as InventorySort)}>
+        <option value="id">Endpoint ID</option><option value="inactive">Inactivity duration</option><option value="events">Observed events</option>
+      </select></div>
+    </div>
+    <p role="status">{selected.length} of {overview.endpoints.length} enrolled endpoint record(s) shown in the selected {overview.window_days}-day reporting window.</p>
+    {selected.length===0 ? <p className="empty">No matching retained endpoint records; this does not establish protection or coverage.</p>
+      : <div className="table-scroll"><table>
+        <caption>Enrolled lab endpoint records and reported management state. No endpoint actions are available.</caption>
+        <thead><tr><th scope="col">Endpoint</th><th scope="col">OS / group</th><th scope="col">Heartbeat</th><th scope="col">Observed activity</th><th scope="col">Reported health</th><th scope="col">Policy evidence</th></tr></thead>
+        <tbody>{selected.map(e=><tr key={e.id}>
+          <th scope="row">{e.id}</th>
+          <td>{e.platform}<span className="minor">{e.group || 'No group reported'}</span></td>
+          <td><strong>{e.status}</strong><span className="minor">{heartbeatLabel(e)}</span><span className="minor">Last server heartbeat: {e.status==='unknown'?'unknown':e.last_seen}</span></td>
+          <td>{e.events} retained events<span className="minor">{e.alerts} alert(s) in window</span></td>
+          <td>{e.reported_health || 'Not reported'}<span className="minor">Agent supplied; NOT VERIFIED</span></td>
+          <td>{policyEvidenceLabel(e)}</td>
+        </tr>)}</tbody>
+      </table></div>}
+    <p className="minor">Missing or stale telemetry cannot prove a safe endpoint. Inventory is lab-wide only; production requires authenticated tenant-side filtering and durable records.</p>
+  </section>;
+}
+
 function App() {
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<LoadState>('disconnected');
@@ -131,7 +167,7 @@ function App() {
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
-  const [view, setView] = useState<'overview' | 'alerts' | 'scans' | 'investigations'>('overview');
+  const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'scans' | 'investigations'>('overview');
   const [error, setError] = useState('');
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const request = useRef<AbortController | null>(null);
@@ -238,6 +274,7 @@ function App() {
       </section>
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
+        <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
@@ -252,7 +289,10 @@ function App() {
         </section>
         {status === 'ready' && overview ? <Overview overview={overview}/> :
           <section className="panel"><p className="empty">No current overview. Connect and refresh to request retained evidence for the selected UTC period.</p></section>}
-      </> : view === 'alerts' ?
+      </> : view === 'endpoints' ?
+        (status === 'ready' && overview ? <EndpointInventory overview={overview}/> :
+          <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
+        : view === 'alerts' ?
         (status === 'ready' && overview
           ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
             onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}} />
