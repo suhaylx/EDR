@@ -2,6 +2,7 @@ package edr
 
 import (
     "crypto/sha256"
+    "bytes"
     "crypto/tls"
     "crypto/x509"
     "database/sql/driver"
@@ -25,6 +26,14 @@ func TestAgentScanQueueRealMutualTLS(t *testing.T) {
         Identity:id,FingerprintSHA256:sha256.Sum256(leaf.Raw),
     }}
     db:=scanDB(t,func(query string,args []driver.NamedValue)(driver.Rows,error){
+        if strings.Contains(query,"edr_renew_scan_job_lease") {
+            if len(args)!=6||args[0].Value!="tenantA"||args[1].Value!="win01"||
+                args[3].Value!="win01"||args[5].Value!=int64(30) {
+                t.Errorf("unscoped SQL renewal: %q %#v",query,args)
+                return nil,io.ErrUnexpectedEOF
+            }
+            return &scanRows{columns:[]string{"ok"},values:[][]driver.Value{{true}}},nil
+        }
         if !strings.Contains(query,"edr_claim_scan_job")||len(args)!=5||
             args[0].Value!="tenantA"||args[1].Value!="win01" {
             t.Errorf("unscoped SQL claim: %q %#v",query,args)
@@ -76,5 +85,22 @@ func TestAgentScanQueueRealMutualTLS(t *testing.T) {
     }
     if status:=claim("/agent/v1/tenants/tenantA/agents/other/scan-jobs/claim");status!=403{
         t.Fatalf("cross-agent client status %d",status)
+    }
+    renewBody:=[]byte(`{"job_id":"`+testUUID+`","lease_token":"`+leaseUUID+`","lease_seconds":30}`)
+    renew:=func(path string)int{
+        t.Helper()
+        resp,err:=client.Post(server.URL+path,"application/json",bytes.NewReader(renewBody))
+        if err!=nil {t.Fatal(err)}
+        defer resp.Body.Close()
+        return resp.StatusCode
+    }
+    if status:=renew("/agent/v1/tenants/tenantA/agents/win01/scan-jobs/renew");status!=204{
+        t.Fatalf("mTLS renewal status %d",status)
+    }
+    if status:=renew("/agent/v1/tenants/tenantB/agents/win01/scan-jobs/renew");status!=403{
+        t.Fatalf("cross-tenant renewal status %d",status)
+    }
+    if status:=renew("/agent/v1/tenants/tenantA/agents/other/scan-jobs/renew");status!=403{
+        t.Fatalf("cross-device renewal status %d",status)
     }
 }
