@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "tsc src/scan-state.ts src/lab-api.ts src/overview.ts src/investigation.ts --outDir .test-dist --module Node16 --moduleResolution Node16 --target es2022 --lib es2022,dom --strict --skipLibCheck && node --test tests/*.test.mjs",
+    "test": "tsc src/scan-state.ts src/lab-api.ts src/overview.ts src/investigation.ts src/detections.ts --outDir .test-dist --module Node16 --moduleResolution Node16 --target es2022 --lib es2022,dom --strict --skipLibCheck && node --test tests/*.test.mjs",
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
