@@ -33,7 +33,7 @@ fn error(kind: io::ErrorKind, reason: impl Into<String>) -> io::Error {
     io::Error::new(kind, reason.into())
 }
 
-fn valid_agent_id(id: &str) -> bool {
+pub(crate) fn valid_agent_id(id: &str) -> bool {
     !id.is_empty()
         && id.len() <= 96
         && id
@@ -41,12 +41,12 @@ fn valid_agent_id(id: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b"_-. ".contains(&b) && b != b' ')
 }
 
-fn valid_token(token: &str) -> bool {
+pub(crate) fn valid_token(token: &str) -> bool {
     (16..=1024).contains(&token.len())
         && token.bytes().all(|b| !b.is_ascii_control() && b != b' ')
 }
 
-fn api_port() -> io::Result<u16> {
+pub(crate) fn api_port() -> io::Result<u16> {
     let raw = env::var("TURANSEC_DEV_API_PORT").unwrap_or_else(|_| "8080".into());
     let port = raw
         .parse::<u16>()
