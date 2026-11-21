@@ -74,3 +74,33 @@ func TestIngestRejectsMalformedSourceRecordID(t *testing.T) {
 		t.Fatal("rejected events were persisted")
 	}
 }
+
+func TestIngestBoundsUntrustedTelemetryFields(t *testing.T) {
+	tests := []struct {
+		name string
+		mutate func(*Event)
+	}{
+		{"source", func(e *Event) { e.Source = strings.Repeat("s", 129) }},
+		{"process-guid", func(e *Event) { e.ProcessGUID = strings.Repeat("p", 129) }},
+		{"parent-process-guid", func(e *Event) { e.ParentProcessGUID = strings.Repeat("p", 129) }},
+		{"image", func(e *Event) { e.Image = strings.Repeat("i", 32769) }},
+		{"file-path", func(e *Event) { e.FilePath = strings.Repeat("f", 32769) }},
+		{"hash", func(e *Event) { e.Hash = strings.Repeat("h", 257) }},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			store := NewStore()
+			if _, err := store.CheckIn(Agent{ID: "win-01", Platform: "windows"}); err != nil {
+				t.Fatal(err)
+			}
+			event := Event{DeviceID: "win-01", Platform: "windows", Type: "module_load"}
+			tc.mutate(&event)
+			if _, err := store.Ingest(event); err == nil {
+				t.Fatalf("oversized %s field accepted", tc.name)
+			}
+			if got := len(store.Snapshot().Events); got != 0 {
+				t.Fatalf("rejected event persisted: %d", got)
+			}
+		})
+	}
+}
