@@ -106,6 +106,10 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 200, a)
+		case r.URL.Path == "/api/scan-job-metadata" && r.Method == "GET":
+			// The shared-token analyst UI receives only display metadata.
+			// Preserve the legacy /api/scan-jobs route for lab clients.
+			reply(w, 200, scanJobReviewMetadata(s.Store.ScanJobs()))
 		case r.URL.Path == "/api/scan-jobs" && r.Method == "GET":
 			reply(w, 200, s.Store.ScanJobs())
 		case r.URL.Path == "/api/scan-jobs" && r.Method == "POST":
