@@ -1,0 +1,26 @@
+name: rust-agent-ci
+on:
+  pull_request:
+    paths:
+      - "agent/**"
+      - ".github/workflows/agent-rust-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rust-agent:
+    name: Rust agent / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust compiler version
+        run: rustc --version
+      - name: Cargo test (includes ClamAV fake-stream and mTLS parsing unit tests)
+        run: cargo test --manifest-path agent/Cargo.toml --all-targets
+      - name: Cargo check
+        run: cargo check --manifest-path agent/Cargo.toml --all-targets

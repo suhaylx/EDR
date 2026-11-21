@@ -8,7 +8,7 @@ pub const MAX_CLAIM_BODY: usize = 8192;
 pub const MAX_SCAN_FILE: u64 = 128 * 1024 * 1024;
 pub const CLAIM_LEASE_SECONDS: u64 = 60;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ClaimedJob {
     pub job_id: String,

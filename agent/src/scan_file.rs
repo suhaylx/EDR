@@ -116,7 +116,7 @@ mod tests {
         let root=fixture();
         let p=root.join("sample");
         fs::write(&p,b"benign").unwrap();
-        assert_eq!(resolve_target(&root,p.to_str().unwrap()).unwrap(),p);
+        assert_eq!(resolve_target(&root,p.to_str().unwrap()).unwrap(),fs::canonicalize(&p).unwrap());
         fs::remove_dir_all(root).unwrap();
     }
     #[test]

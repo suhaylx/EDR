@@ -45,6 +45,7 @@ fn env_required(name: &str) -> io::Result<String> {
     env::var(name).map_err(|_| reject("required mTLS agent setting missing"))
 }
 
+#[derive(Clone)]
 pub struct AgentClient {
     http: Client,
     server: Url,
@@ -134,6 +135,33 @@ impl AgentClient {
             _ => Err(reject("scan completion rejected")),
         }
     }
+    pub fn complete_result(&self, job: &ClaimedJob, verdict: &str, threat_name: &str, detail: &str) -> io::Result<()> {
+        job.validate()?;
+        let valid_verdict = match verdict {
+            "malicious" => !threat_name.is_empty(),
+            "clean_by_signature"|"error"|"unscanned" => threat_name.is_empty(),
+            _ => false,
+        };
+        if !valid_verdict || threat_name.len() > 256 || detail.len() > 1024
+           || threat_name.contains('\0') || detail.contains('\0') {
+            return Err(reject("invalid ClamAV result"));
+        }
+        #[derive(serde::Serialize)]
+        struct ResultPayload<'a> {
+            job_id: &'a str, lease_token: &'a str, verdict: &'a str,
+            threat_name: &'a str, detail: &'a str,
+        }
+        let payload = ResultPayload{job_id:&job.job_id,lease_token:&job.lease_token,
+            verdict,threat_name,detail};
+        let response = self.http.post(self.endpoint("complete-result"))
+            .json(&payload).send().map_err(|_| reject("scan verdict transport failed"))?;
+        match response.status().as_u16() {
+            204 => Ok(()),
+            409 => Err(reject("scan verdict rejected: expired or revoked lease")),
+            _ => Err(reject("scan verdict was not persisted")),
+        }
+    }
+
 }
 
 #[cfg(test)]
