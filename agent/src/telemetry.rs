@@ -87,6 +87,7 @@ fn event_payload(agent_id: &str, r: &SysmonProcess) -> serde_json::Value {
         "device_id": agent_id,
         "platform": "windows",
         "source": "sysmon",
+        "source_record_id": r.record_id.to_string(),
         "type": "process_create",
         "time": r.time,
         "process_guid": r.process_guid,
@@ -268,6 +269,7 @@ mod tests {
         assert_eq!(v[0].image, r"C:\Windows\System32\notepad.exe");
         let payload = event_payload("win-lab-01", &v[0]);
         assert_eq!(payload["source"], "sysmon");
+        assert_eq!(payload["source_record_id"], "12");
         assert_eq!(payload["type"], "process_create");
         assert_eq!(payload["parent_process_guid"], "{B}");
         assert!(payload["detail"].as_str().unwrap().contains("EventRecordID=12"));
