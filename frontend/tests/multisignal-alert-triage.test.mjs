@@ -73,7 +73,7 @@ test('source inspection never matches a RecordID collision or another endpoint',
     telemetry('go-evt-7',{device_id:'host-B',source_record_id:'win-rec-17'}),
   ]);
   assert.equal(locateRetainedSource(events,{deviceID:'host-A',eventID:'go-evt-7'}),null);
-  const correct=decodeLabTelemetry([...events,telemetry('go-evt-7',{device_id:'host-A'})]);
+  const correct=decodeLabTelemetry([telemetry('other-go-event',{device_id:'host-B'}),telemetry('go-evt-7',{device_id:'host-A'})]);
   assert.equal(locateRetainedSource(correct,{deviceID:'host-A',eventID:'go-evt-7'})?.device_id,'host-A');
   assert.equal(locateRetainedSource(correct,{deviceID:'host-X',eventID:'go-evt-7'}),null);
 });
