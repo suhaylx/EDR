@@ -24,6 +24,7 @@ var ErrInvalidScanQueueRequest = errors.New("invalid scan queue request")
 
 const claimScanJobSQL = `SELECT job_id::text,scan_root,attempt_count
 FROM edr_claim_scan_job($1,$2,$3,$4::uuid,$5)`
+const renewScanJobSQL = `SELECT edr_renew_scan_job_lease($1,$2,$3::uuid,$4,$5::uuid,$6)`
 const completeScanJobSQL = `SELECT edr_complete_scan_job($1,$2,$3::uuid,$4::uuid,$5)`
 const recoverExpiredScanJobsSQL = `SELECT edr_recover_expired_scan_jobs($1)`
 
@@ -44,6 +45,22 @@ func (q PostgresScanJobQueue) Claim(ctx context.Context, tenantID, agentID, owne
         return nil,ErrScanQueueUnavailable
     }
     return &j,nil
+}
+
+// Renew extends a still-active lease for the authenticated device and original worker.
+// Authorization is rechecked transactionally in PostgreSQL.
+func (q PostgresScanJobQueue) Renew(ctx context.Context,tenantID,agentID,jobID,owner,leaseToken string,leaseSeconds int)(bool,error){
+    if !validQueueIdentity(tenantID,agentID) || !validUUID(jobID) ||
+        strings.TrimSpace(owner)=="" || len(owner)>256 || !validUUID(leaseToken) ||
+        leaseSeconds<5 || leaseSeconds>300 {
+        return false,ErrInvalidScanQueueRequest
+    }
+    if q.DB==nil {return false,ErrScanQueueUnavailable}
+    var renewed bool
+    if err:=q.DB.QueryRowContext(ctx,renewScanJobSQL,tenantID,agentID,jobID,owner,leaseToken,leaseSeconds).Scan(&renewed);err!=nil {
+        return false,fmt.Errorf("%w: renewal failed",ErrScanQueueUnavailable)
+    }
+    return renewed,nil
 }
 
 // Complete returns false when a job is absent, its lease expired, or the
