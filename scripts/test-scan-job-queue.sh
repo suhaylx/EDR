@@ -51,7 +51,7 @@ END $$;
 -- QA P0: isolate replay fixture on a dedicated agent so the existing
 -- expired-job recovery assertion remains deterministic.
 INSERT INTO edr_agents(tenant_id,agent_id,platform)
-VALUES ('tenantA','qa-replay','linux');
+VALUES ('tenantA','qa-replay','linux'),('tenantA','qa-other','linux');
 INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
 VALUES ('55555555-5555-4555-8555-555555555555','tenantA','qa-replay','/replay');
 DO $replay$
@@ -66,6 +66,8 @@ BEGIN
     RAISE EXCEPTION 'initial replay fixture claim failed'; END IF;
   UPDATE edr_scan_jobs SET lease_expires_at=transaction_timestamp()-interval '1 second'
     WHERE job_id=job;
+  IF edr_complete_scan_job('tenantA','qa-other',job,first_token,true) THEN
+    RAISE EXCEPTION 'same-tenant wrong-agent completion accepted'; END IF;
   IF edr_complete_scan_job('tenantA','qa-replay',job,first_token,true) THEN
     RAISE EXCEPTION 'expired lease completion accepted'; END IF;
   IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'leased' THEN
@@ -84,6 +86,28 @@ BEGIN
   IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'failed' THEN
     RAISE EXCEPTION 'failed result state not persisted'; END IF;
 END $replay$;
+-- Exhausted retry budget must fail the job rather than requeue forever.
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root,max_attempts)
+VALUES ('66666666-6666-4666-8666-666666666666','tenantA','qa-replay','/exhausted',1);
+DO $exhausted$
+DECLARE
+  job uuid := '66666666-6666-4666-8666-666666666666';
+  leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-3',
+    '33333333-cccc-4333-8333-333333333333',30);
+  IF leased.job_id IS DISTINCT FROM job OR leased.attempt_count <> 1 THEN
+    RAISE EXCEPTION 'retry-budget fixture claim failed'; END IF;
+  UPDATE edr_scan_jobs SET lease_expires_at=transaction_timestamp()-interval '1 second'
+    WHERE job_id=job;
+  IF edr_recover_expired_scan_jobs(10) <> 1 THEN
+    RAISE EXCEPTION 'exhausted job not recovered'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'failed' THEN
+    RAISE EXCEPTION 'exhausted job requeued'; END IF;
+  IF EXISTS(SELECT 1 FROM edr_claim_scan_job('tenantA','qa-replay','worker-4',
+    '44444444-dddd-4444-8444-444444444444',30)) THEN
+    RAISE EXCEPTION 'exhausted job claimed again'; END IF;
+END $exhausted$;
 UPDATE edr_tenants SET disabled_at=now() WHERE tenant_id='tenantB';
 DO $$
 BEGIN
