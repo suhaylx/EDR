@@ -6,6 +6,7 @@ export type ScanJob = {
   agent_id: string;
   status: JobStatus | string;
   verdict?: ScanVerdict | string;
+  scan_type?: string;
   engine?: string;
   engine_version?: string;
   database_version?: string;
@@ -26,6 +27,13 @@ export function describeScan(job: ScanJob): ScanDisplay {
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Worker reported an error; the scan did not complete successfully.', tone: 'danger' };
       return { ...common, heading: 'Failed', explanation: 'No successful scan completion; inspect the reported details.', tone: 'danger' };
     case 'completed':
+      // Defense in depth for stale/forged lab responses: the Rust lab worker
+      // implements path only. Go currently rejects quick/full success claims,
+      // but the read-only UI must not promote inconsistent source responses.
+      if ((job.scan_type === 'quick' || job.scan_type === 'full') &&
+        ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '')) {
+        return { ...common, heading: 'Unsupported scan claim', explanation: 'This lab worker does not implement quick/full scanning. A claimed successful verdict is inconsistent and not scan evidence.', tone: 'danger' };
+      }
       // A completed job can still report a failed or unsupported scanner run.
       // Delivery completion never certifies scan execution or protection.
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', tone: 'danger' };
