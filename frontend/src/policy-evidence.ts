@@ -82,3 +82,32 @@ export function policyEvidenceState(endpoint: EndpointActivity): string {
   if (endpoint.status !== 'online') return 'Reported policy ID; stale/unknown heartbeat — enforcement NOT VERIFIED';
   return 'Reported policy ID — enforcement NOT VERIFIED';
 }
+
+/** Local-only policy evidence triage; never changes the server policy or scopes API data. */
+export type PolicyEvidenceFilter = 'all' | 'attention' | 'offline_unknown' | 'reported_error' | 'missing_id';
+
+export function filterPolicyEndpoints(
+  endpoints: readonly EndpointActivity[],
+  filter: PolicyEvidenceFilter,
+  search: string,
+): EndpointActivity[] {
+  const query = search.trim().toLocaleLowerCase();
+  const requiresAttention = (endpoint: EndpointActivity) =>
+    !!endpoint.last_policy_error.trim() || !endpoint.applied_policy_id.trim() || endpoint.status !== 'online';
+  const priority = (endpoint: EndpointActivity) =>
+    endpoint.last_policy_error.trim() ? 0 :
+    !endpoint.applied_policy_id.trim() ? 1 :
+    endpoint.status !== 'online' ? 2 : 3;
+  return endpoints.filter(endpoint => {
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'attention' && requiresAttention(endpoint)) ||
+      (filter === 'offline_unknown' && endpoint.status !== 'online') ||
+      (filter === 'reported_error' && !!endpoint.last_policy_error.trim()) ||
+      (filter === 'missing_id' && !endpoint.applied_policy_id.trim());
+    if (!matchesFilter) return false;
+    if (!query) return true;
+    return [endpoint.id, endpoint.platform, endpoint.group, endpoint.applied_policy_id,
+      endpoint.last_policy_error].some(value => value.toLocaleLowerCase().includes(query));
+  }).sort((a, b) => priority(a) - priority(b) || a.id.localeCompare(b.id));
+}
