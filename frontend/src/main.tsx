@@ -296,6 +296,7 @@ function App() {
           ? sourceSelection
             ? <RetainedSourceInspection events={events} selection={sourceSelection}
                 onBack={() => setSourceSelection(null)}
+                onInspectSource={selection => setSourceSelection(selection)}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
             : <SysmonCoverage events={events}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
