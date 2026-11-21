@@ -129,6 +129,7 @@ fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
 #[cfg(windows)]
 const SYSMON_POWERSHELL: &str = r#"
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $channel = Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' -ErrorAction Stop
 if (-not $channel.IsEnabled) { throw 'Sysmon Operational channel disabled' }
 $records = @(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational';Id=1} -MaxEvents 32 -ErrorAction SilentlyContinue)
