@@ -36,6 +36,13 @@ type Detection struct {
 	DestinationIP      string    `json:"destination_ip,omitempty"`
 	DestinationPort    int       `json:"destination_port,omitempty"`
 	BootID             string    `json:"boot_id,omitempty"`
+	// Cross-process evidence is observed/reported, never proof of code injection.
+	ProcessAccessEventID string `json:"process_access_event_id,omitempty"`
+	RemoteThreadEventID string  `json:"remote_thread_event_id,omitempty"`
+	SourceProcessGUID string    `json:"source_process_guid,omitempty"`
+	TargetProcessGUID string    `json:"target_process_guid,omitempty"`
+	GrantedAccess     string    `json:"granted_access,omitempty"`
+	RemoteThreadID    uint32    `json:"remote_thread_id,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
