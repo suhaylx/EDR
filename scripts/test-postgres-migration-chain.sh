@@ -20,7 +20,8 @@ for migration in \
   0007_scan_job_lease_renewal \
   0008_scan_job_results \
   0009_agent_heartbeats \
-  0010_soc_operator_scan_jobs; do
+  0010_soc_operator_scan_jobs \
+  0011_soc_malware_alerts; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
@@ -133,4 +134,5 @@ ROLLBACK;
 SQL
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-agent-heartbeats.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-scheduling.sql
-echo "Full PostgreSQL migration chain (0001..0010) integration passed"
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-alerts.sql
+echo "Full PostgreSQL migration chain (0001..0011) integration passed"
