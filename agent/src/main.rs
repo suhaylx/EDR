@@ -17,6 +17,32 @@ use std::time::{Duration, Instant};
 fn main() {
     let args:Vec<String>=std::env::args().collect();
     if args.len()>1 {
+        if args.len()==2 && args[1]=="--clamav-health" {
+            if !scan_file::clamav_ready() {
+                eprintln!("clamav_health=unavailable");
+                std::process::exit(2);
+            }
+            println!("clamav_health=alive");
+            return;
+        }
+        if args.len()==2 && args[1]=="--agent-status-mtls" {
+            if let Err(e)=scan_runner::status_once() {
+                eprintln!("agent_status_failed={:?}",e.kind());
+                std::process::exit(2);
+            }
+            return;
+        }
+        if args.len()==3 && args[1]=="--scan-batch-mtls" {
+            let max_jobs=match args[2].parse::<usize>() {
+                Ok(n)=>n,
+                Err(_)=>{eprintln!("scan batch count must be 1..20");std::process::exit(2);}
+            };
+            if let Err(e)=scan_runner::run_batch(max_jobs) {
+                eprintln!("scan_batch_failed={:?}",e.kind());
+                std::process::exit(2);
+            }
+            return;
+        }
         if args.len()==2 && args[1]=="--heartbeat-mtls" {
             if let Err(e)=scan_runner::heartbeat_once() {
                 eprintln!("agent_mtls_heartbeat_failed={:?}",e.kind());
@@ -31,7 +57,7 @@ fn main() {
             }
             return;
         }
-        eprintln!("unsupported agent arguments; supported lab modes: --scan-once-mtls, --heartbeat-mtls");
+        eprintln!("unsupported agent arguments; supported lab modes: --scan-once-mtls, --scan-batch-mtls <1..20>, --heartbeat-mtls, --agent-status-mtls, --clamav-health");
         std::process::exit(2);
     }
     println!("TuranSec EDR agent LAB scaffold -- no endpoint protection active");
