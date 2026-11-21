@@ -113,7 +113,7 @@ test('M67 failed/error filter includes expired, failed and reported scanner erro
  const input=rows({status:'expired',verdict:undefined,threat_name:''},
   {status:'failed',verdict:'unscanned',threat_name:''},
   {verdict:'error',threat_name:''},{});
- assert.deepEqual(ids(input,{kind:'failed_or_error'}),['scan-0','scan-2']);
+ assert.deepEqual(ids(input,{kind:'failed_or_error'}),['scan-0','scan-1','scan-2']);
  assert.deepEqual(ids(input,{kind:'unscanned'}),['scan-1']);
 });
 test('M68 unsupported quick/full claims have a separate analyst filter',()=>{
@@ -175,7 +175,7 @@ test('M75 pagination, summary and strict scan API boundaries fail closed',()=>{
  assert.equal(summary.kinds.reported_match,61);
  assert.equal(summary.metadataGaps,0);
  assert.throws(()=>decodeScanJobs([job({id:'one'}),job({id:'one'})]),/Duplicate/);
- assert.throws(()=>decodeScanJobs([job({id:'\\nmalformed'})]),/record/);
+ assert.throws(()=>decodeScanJobs([job({id:'bad'+String.fromCharCode(10)+'newline'})]),/record/);
  assert.throws(()=>decodeScanJobs([job({detail:'x'.repeat(1025)})]),/record/);
  assert.throws(()=>decodeScanJobs([job({created_at:'not-an-iso-date'})]),/timestamp/);
 });
