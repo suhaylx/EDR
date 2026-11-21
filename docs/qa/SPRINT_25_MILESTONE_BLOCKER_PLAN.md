@@ -257,7 +257,7 @@
 
 ### M29 — Claim vs agent revocation race
 
-**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PENDING (draft PR123).
+**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PASS at PR123 commit `912cfa0959b5ca7e366ed2ad6f5f823f38392cdc`, unmerged.
 
 **Proposed implementation / resolution:** Share-lock principal rows during scan claim; leave SKIP LOCKED on job row.
 
@@ -265,7 +265,7 @@
 
 ### M30 — Claim vs tenant disable race
 
-**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PENDING (draft PR123).
+**Owner:** Agent 3 QA; Agent 2 fixes SQL. **Evidence status:** CI PASS at PR123 commit `912cfa0959b5ca7e366ed2ad6f5f823f38392cdc`, unmerged.
 
 **Proposed implementation / resolution:** Serialize tenant disabled_at update and scan claim in disposable DB.
 
@@ -273,7 +273,7 @@
 
 ### M31 — Completion vs revoked agent race
 
-**Owner:** Agent 3. **Evidence status:** TEST NOT RUN.
+**Owner:** Agent 3. **Evidence status:** NEW TEST COMMITTED in PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; CI pending.
 
 **Proposed implementation / resolution:** Build transaction-level test with admin update in-flight and completion waiting on FOR SHARE.
 
@@ -281,7 +281,7 @@
 
 ### M32 — Completion vs disabled tenant race
 
-**Owner:** Agent 3. **Evidence status:** TEST NOT RUN.
+**Owner:** Agent 3. **Evidence status:** NEW TEST COMMITTED in PR123 head `9052875fea7c2ebd63acbcebbb4178b25c392967`; CI pending.
 
 **Proposed implementation / resolution:** Build parallel disable vs completion regression on separate-session PostgreSQL transactions.
 
