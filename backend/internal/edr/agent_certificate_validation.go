@@ -69,3 +69,36 @@ func ValidateIssuedCertificateForCSR(csrDER, certDER []byte, expected AgentIdent
     }
     return fingerprint,nil
 }
+
+// VerifyIssuedAgentCertificateChain verifies the issued leaf against the
+// issuer-controlled CA pool for client authentication. The pool MUST contain
+// only explicitly approved agent issuers; never use the host's system roots.
+// Chain verification alone is not enrollment authorization.
+func VerifyIssuedAgentCertificateChain(certDER []byte, roots *x509.CertPool, intermediates *x509.CertPool, now time.Time) error {
+    if roots==nil || len(certDER)==0 || len(certDER)>64*1024 {
+        return errors.New("invalid agent certificate chain configuration")
+    }
+    cert,err:=x509.ParseCertificate(certDER)
+    if err!=nil || cert.IsCA {return errors.New("invalid issued agent certificate")}
+    if intermediates==nil {intermediates=x509.NewCertPool()}
+    _,err=cert.Verify(x509.VerifyOptions{
+        Roots:roots,Intermediates:intermediates,CurrentTime:now,
+        KeyUsages:[]x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+    })
+    if err!=nil {return errors.New("issued agent certificate chain not trusted")}
+    return nil
+}
+
+// ValidateTrustedIssuedCertificateForCSR combines the CSR proof-of-possession
+// check, key and identity binding, and controlled-CA chain verification.
+// The caller MUST still authorize issuance and bind a single-use challenge.
+func ValidateTrustedIssuedCertificateForCSR(csrDER,certDER []byte,
+    expected AgentIdentity,roots,intermediates *x509.CertPool,now time.Time)([32]byte,error){
+    var empty [32]byte
+    fp,err:=ValidateIssuedCertificateForCSR(csrDER,certDER,expected,now)
+    if err!=nil{return empty,err}
+    if err:=VerifyIssuedAgentCertificateChain(certDER,roots,intermediates,now);err!=nil{
+        return empty,err
+    }
+    return fp,nil
+}
