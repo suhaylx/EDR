@@ -47,6 +47,11 @@ type Detection struct {
 	RegistryCreateEventID string `json:"registry_create_event_id,omitempty"`
 	RegistryRenameEventID string `json:"registry_rename_event_id,omitempty"`
 	RegistryTarget   string    `json:"registry_target,omitempty"`
+	WMIFilterEventID string    `json:"wmi_filter_event_id,omitempty"`
+	WMIConsumerEventID string  `json:"wmi_consumer_event_id,omitempty"`
+	WMIBindingEventID string   `json:"wmi_binding_event_id,omitempty"`
+	WMIFilterName string      `json:"wmi_filter_name,omitempty"`
+	WMIConsumerName string    `json:"wmi_consumer_name,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }

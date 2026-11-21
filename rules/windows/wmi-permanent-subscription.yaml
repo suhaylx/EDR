@@ -1,0 +1,37 @@
+# Original TuranSec laboratory EDR heuristic (not production Sigma)
+id: TURAN-WIN-WMI-SUBSCRIPTION-001
+version: 1
+platform: windows
+status: lab_prototype
+name: WMI permanent event filter consumer binding chain
+required_events:
+  - {event_id: 19, type: wmi_filter, identity: wmi_filter_name}
+  - {event_id: 20, type: wmi_consumer, identity: wmi_consumer_name}
+  - {event_id: 21, type: wmi_binding, identity: [wmi_filter_name, wmi_consumer_name]}
+source: sysmon
+join:
+  exact_case_insensitive_names: true
+  same_reported_device_and_boot: true
+  component_creation_precedes_binding: true
+  max_prior_component_age_minutes: 30
+  distinct_source_record_ids: true
+  require_all_three_events: true
+privacy:
+  collect_filter_and_consumer_names_only: true
+  collect_query_text: false
+  collect_consumer_command_or_script_body: false
+output:
+  category: wmi_permanent_subscription_correlation
+  severity: medium
+  confidence: low
+  action: alert_only
+  evidence: [wmi_filter_event_id, wmi_consumer_event_id, wmi_binding_event_id]
+mitre_hypothesis: T1546.003
+false_positives:
+  - software management and endpoint security products may deploy legitimate permanent WMI subscriptions
+  - object creation and binding do not establish execution or malicious behavior
+  - source and boot identities are sender reported and unauthenticated in lab
+safety:
+  do_not_claim_malware: true
+  no_automatic_quarantine: true
+  no_production_deployment: true
