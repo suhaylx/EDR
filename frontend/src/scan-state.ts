@@ -39,7 +39,20 @@ export function describeScan(job: ScanJob): ScanDisplay {
       // Delivery completion never certifies scan execution or protection.
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', tone: 'danger' };
       if (job.verdict === 'unscanned') return { ...common, heading: 'Unscanned', explanation: 'Job delivery completed, but the requested scan was not performed. No protection is established.', tone: 'warning' };
-      if (job.verdict === 'malicious') return { ...common, heading: 'Signature match reported', explanation: (job.signature_reported || job.threat_name?.trim()) ? 'Lab worker reported a signature match; signature name withheld. Not independently attested.' : 'Malicious verdict reported without a signature indicator; investigate data integrity.', tone: 'danger' };
+      // Match scanEvidenceKind(): only path-mode jobs can carry a reported
+      // positive or signature-negative result from the current lab worker.
+      // The backend rejects quick/full success but can return stale/inconsistent
+      // data, so this detail view must not promote a missing/unknown mode.
+      if (['malicious', 'suspicious', 'clean_by_signature'].includes(job.verdict || '') &&
+        job.scan_type !== 'path') {
+        return { ...common, heading: 'Result not verified', explanation: 'Completed job claims a result without a supported path scan mode. No valid scan execution or verdict can be inferred.', tone: 'danger' };
+      }
+      if (job.verdict === 'malicious') {
+        if (!job.signature_reported && !job.threat_name?.trim()) {
+          return { ...common, heading: 'Malicious verdict lacks signature evidence', explanation: 'Malicious verdict reported without a signature indicator; investigate data integrity. No signature match is established.', tone: 'danger' };
+        }
+        return { ...common, heading: 'Signature match reported', explanation: 'Lab worker reported a signature match; signature name withheld. Not independently attested.', tone: 'danger' };
+      }
       if (job.verdict === 'clean_by_signature') return { ...common, heading: 'Clean by signature (reported)', explanation: 'No signature matched in the claimed scan. This is not proof the file or endpoint is safe.', tone: 'neutral' };
       if (job.verdict === 'suspicious') return { ...common, heading: 'Suspicious (reported)', explanation: 'Unconfirmed suspicious result. Analyst review required.', tone: 'warning' };
       return { ...common, heading: 'Result not verified', explanation: 'Completion lacks a recognized successful scan verdict.', tone: 'warning' };
