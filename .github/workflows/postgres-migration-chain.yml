@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "backend/migrations/**"
+      - "scripts/test-scan-job-lease-renewal.sh"
       - "scripts/test-postgres-migration-chain.sh"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
