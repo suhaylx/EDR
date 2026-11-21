@@ -3,7 +3,6 @@ package edr
 import (
  "encoding/json"
  "errors"
- "io"
  "net/http"
  "strings"
 )
@@ -80,11 +79,8 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
    if p.Role!="scanner"{http.Error(w,"forbidden",403);return}
    id:=strings.TrimSuffix(strings.TrimPrefix(operation,"scan-jobs/"),"/cancel")
    if !validUUID(id){http.Error(w,"invalid job",400);return}
-   // Cancellation is bodyless; no second request source may override target.
-   r.Body=http.MaxBytesReader(w,r.Body,1)
-   var probe [1]byte
-   n,err:=r.Body.Read(probe[:])
-   if n!=0||(err!=nil&&err!=io.EOF){http.Error(w,"invalid payload",400);return}
+   // Cancellation is bodyless; do not mistake a (0,nil) read for EOF.
+   if !requestBodyIsEmpty(w,r){http.Error(w,"invalid payload",400);return}
    done,e:=q.CancelSOCScan(r.Context(),p,id)
    if e!=nil{socRespondError(w,e);return}
    if !done{http.Error(w,"job is not pending or not owned",409);return}
