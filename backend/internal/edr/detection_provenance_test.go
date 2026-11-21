@@ -1,6 +1,7 @@
 package edr
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -10,7 +11,7 @@ func provenanceLoad() Event {
 		ID: "sysmon-7-101", Platform: "windows", DeviceID: "win-01",
 		Type: "module_load", FilePath: `C:\Users\Alice\AppData\Local\Temp\plugin.dll`,
 		Image: `C:\Windows\System32\rundll32.exe`, ProcessGUID: "{one}",
-		BootID: "boot-a", Hash: "abc123", Time: time.Date(2026, 11, 21, 12, 0, 0, 0, time.UTC),
+		BootID: "boot-a", Hash: strings.Repeat("a", 64), Time: time.Date(2026, 11, 21, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -155,11 +156,11 @@ func TestDLLCreateEvidenceRequiresMatchingNonemptyHashes(t *testing.T) {
 		loadHash string
 		wantLink bool
 	}{
-		{"matching", "abc123", "abc123", true},
-		{"case-insensitive-match", "ABC123", "abc123", true},
-		{"different", "different", "abc123", false},
-		{"missing-create-hash", "", "abc123", false},
-		{"missing-load-hash", "abc123", "", false},
+		{"matching", strings.Repeat("a", 64), strings.Repeat("a", 64), true},
+		{"case-insensitive-match", strings.Repeat("A", 64), strings.Repeat("a", 64), true},
+		{"different", "different", strings.Repeat("a", 64), false},
+		{"missing-create-hash", "", strings.Repeat("a", 64), false},
+		{"missing-load-hash", strings.Repeat("a", 64), "", false},
 		{"both-missing", "", "", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
