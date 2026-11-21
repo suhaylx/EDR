@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"runtime"
 )
 
 func makeTestTLSCert(t *testing.T, start, end time.Time, isCA bool, usage x509.ExtKeyUsage) ([]byte, []byte) {
@@ -96,5 +97,41 @@ func TestLoadAgentTLSMaterialsGate(t *testing.T) {
 				t.Fatal("key material leaked in error")
 			}
 		})
+	}
+}
+
+func TestAgentServerKeyFileAccessGate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows key permissions require NTFS ACL verification")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "key.pem")
+	if err := os.WriteFile(path, []byte("test-only-key-material"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateAgentServerPrivateKeyFile(path); err != nil {
+		t.Fatalf("private regular key rejected: %v", err)
+	}
+	if err := os.Chmod(path, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateAgentServerPrivateKeyFile(path); err == nil {
+		t.Fatal("world-readable key must be rejected")
+	}
+	if err := os.Chmod(path, 0600); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "key-link.pem")
+	if err := os.Symlink(path, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateAgentServerPrivateKeyFile(link); err == nil {
+		t.Fatal("symlink key must be rejected")
+	}
+	if err := validateAgentServerPrivateKeyFile(dir); err == nil {
+		t.Fatal("directory path must be rejected")
+	}
+	if err := validateAgentServerPrivateKeyFile(filepath.Join(dir, "missing")); err == nil {
+		t.Fatal("missing key must be rejected")
 	}
 }
