@@ -57,3 +57,10 @@
 
 /* Read-only alert action; never confused with a containment operation. */
 .source-selection{border-left:4px solid var(--focus);padding:10px 14px;background:var(--bg);overflow-wrap:anywhere}
+
+/* Lab endpoint inventory: readable filters and server-reported status. */
+.inventory-filters{display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) minmax(140px,1fr);gap:14px;margin:16px 0}
+.inventory-filters .field{display:grid;gap:8px;min-width:0}
+.inventory-filters select{width:100%;min-height:44px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:10px}
+.inventory-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+@media(max-width:760px){.inventory-filters{grid-template-columns:1fr}}
