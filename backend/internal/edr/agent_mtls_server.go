@@ -7,6 +7,7 @@ import (
     "errors"
     "net"
     "net/http"
+    "strconv"
     "time"
 )
 
@@ -19,12 +20,20 @@ func NewAgentMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,agentC
     if db==nil||agentCAs==nil||len(agentCAs.Subjects())==0||len(serverCert.Certificate)==0||serverCert.PrivateKey==nil{
         return nil,errors.New("agent mTLS requires database, trusted client CA, and server certificate")
     }
-    host,_,err:=net.SplitHostPort(addr)
-    if err!=nil||host==""{
-        return nil,errors.New("agent listener requires explicit host:port")
+    host,portText,err:=net.SplitHostPort(addr)
+    if err!=nil || host=="" || portText=="" {
+        return nil,errors.New("agent listener requires explicit numeric loopback host:port")
     }
-    if host=="0.0.0.0"||host=="::"{
-        return nil,errors.New("wildcard agent listener requires explicit security review")
+    port,err:=strconv.Atoi(portText)
+    if err!=nil || port<1 || port>65535 {
+        return nil,errors.New("agent listener requires valid TCP port")
+    }
+    ip:=net.ParseIP(host)
+    if ip==nil || !ip.IsLoopback() {
+        // Never bind an agent-identity API to a public interface by default.
+        // Remote lab hosts must use an approved tunnel or a separately
+        // reviewed management-network listener with explicit firewall rules.
+        return nil,errors.New("agent listener must bind a loopback IP")
     }
     handler:=AgentHTTPGuard(PostgresAgentIdentityRegistry{DB:db},
         AgentScanQueueHandler(PostgresScanJobQueue{DB:db}))
