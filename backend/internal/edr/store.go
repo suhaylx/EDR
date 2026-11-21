@@ -329,13 +329,43 @@ var allowedSysmonFields = map[string]bool{
     "operation":true, "event_type":true, "query_status":true,
     "target_filename":true, "initiated":true,
 }
+// Names are source classifications, not assertions that an event is authentic.
+// Require the reported numerical Sysmon ID and event type to agree.
+var expectedSysmonTypes = map[uint32]string{
+    1:"process_create",2:"file_creation_time",3:"network_connect",
+    4:"sysmon_service_state",5:"process_terminate",6:"driver_load",
+    7:"module_load",8:"create_remote_thread",9:"raw_access_read",
+    10:"process_access",11:"file_create",12:"registry_object",
+    13:"registry_value_set",14:"registry_rename",15:"file_stream_hash",
+    16:"sysmon_config_change",17:"pipe_create",18:"pipe_connect",
+    19:"wmi_filter",20:"wmi_consumer",21:"wmi_binding",22:"dns_query",
+    23:"file_delete_archive",24:"clipboard_change_metadata",
+    25:"process_tampering",26:"file_delete_detected",
+    27:"file_block_executable",28:"file_block_shredding",
+    29:"file_executable_detected",255:"sysmon_error",
+}
 func validateSysmonSourceFields(e Event) error {
     if e.SourceEventID == 0 && len(e.SourceFields) == 0 { return nil }
     if e.Source != "sysmon" || e.Platform != "windows" {
         return errors.New("source_event_id/source_fields require Windows Sysmon source")
     }
-    if (e.SourceEventID < 1 || e.SourceEventID > 29) && e.SourceEventID != 255 {
+    expected, known := expectedSysmonTypes[e.SourceEventID]
+    if !known {
         return errors.New("unsupported Sysmon source event ID")
+    }
+    if e.Type != expected {
+        return errors.New("Sysmon event ID and type do not match")
+    }
+    if e.SourceEventID == 1 && (e.ProcessGUID == "" || e.Image == "") {
+        return errors.New("Sysmon process creation requires reported process GUID and image")
+    }
+    if e.SourceEventID != 1 && e.ParentProcessGUID != "" {
+        return errors.New("Sysmon parent process link is only valid for process creation")
+    }
+    if e.SourceEventID == 24 &&
+        (len(e.SourceFields) != 0 || e.ProcessGUID != "" ||
+         e.Image != "" || e.FilePath != "" || e.ParentProcessGUID != "") {
+        return errors.New("clipboard event must contain source metadata only")
     }
     if len(e.SourceFields) > 19 {
         return errors.New("too many source fields")
