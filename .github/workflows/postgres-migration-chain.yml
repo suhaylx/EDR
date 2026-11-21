@@ -8,6 +8,7 @@ on:
       - "scripts/test-scan-job-results.sql"
       - "scripts/test-agent-heartbeats.sql"
       - "scripts/test-soc-scheduling.sql"
+      - "scripts/test-soc-alerts.sql"
       - ".github/workflows/postgres-migration-chain.yml"
   workflow_dispatch:
 permissions:
