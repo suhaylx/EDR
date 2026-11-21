@@ -15,8 +15,13 @@ DECLARE
   claimed record;
   before_expiry timestamptz;
 BEGIN
+  -- Claim a shorter lease, then renew to 30s in the same transaction.
+  -- Both functions use transaction_timestamp(), so claiming and renewing
+  -- for the *same* TTL inside a single transaction cannot extend expiry.
+  -- A 10s -> 30s change demonstrates real extension without weakening the
+  -- rejection tests for wrong tenant/worker/token, expiry or revocation.
   SELECT * INTO claimed FROM edr_claim_scan_job('renewA','device','worker1',
-    '88888888-8888-4888-8888-888888888888',30);
+    '88888888-8888-4888-8888-888888888888',10);
   IF claimed.job_id IS NULL THEN RAISE EXCEPTION 'claim failed'; END IF;
   SELECT lease_expires_at INTO before_expiry FROM edr_scan_jobs WHERE job_id=claimed.job_id;
   IF edr_renew_scan_job_lease('renewB','device',claimed.job_id,'worker1',
