@@ -37,7 +37,7 @@ export function scanEvidenceKind(job: LabScanJob): ScanKind {
   if (job.verdict === 'unscanned') return 'unscanned';
   // Do not classify successful signature evidence if mode is not a path scan.
   if (job.scan_type !== 'path') return 'unverified_completion';
-  if (job.verdict === 'malicious' && job.threat_name?.trim()) return 'reported_match';
+  if (job.verdict === 'malicious' && (job.signature_reported || job.threat_name?.trim())) return 'reported_match';
   if (job.verdict === 'suspicious') return 'reported_suspicious';
   if (job.verdict === 'clean_by_signature') return 'signature_negative';
   return 'unverified_completion';
@@ -92,9 +92,9 @@ export function scanEvidenceFlags(job: LabScanJob): ScanFlag[] {
   if (completed && positiveVerdict(job.verdict) && job.scan_type !== 'path')
     flags.push('completed_without_path_mode');
   if (completed && (!job.verdict?.trim())) flags.push('completed_without_verdict');
-  if (job.verdict === 'malicious' && !job.threat_name?.trim())
+  if (job.verdict === 'malicious' && !job.signature_reported && !job.threat_name?.trim())
     flags.push('malicious_without_signature');
-  if (job.threat_name?.trim() && job.verdict !== 'malicious')
+  if ((job.signature_reported || job.threat_name?.trim()) && job.verdict !== 'malicious')
     flags.push('unexpected_threat_name');
   if (!completed && positiveVerdict(job.verdict))
     flags.push('positive_verdict_without_completed_status');
@@ -159,7 +159,7 @@ export function filterReportedScanJobs(
     if(endpoint && job.agent_id.trim().toLocaleLowerCase()!==endpoint)return false;
     return !needle || [job.id,job.agent_id,job.status,job.verdict,
       job.scan_type,job.created_at,job.engine,job.engine_version,
-      job.database_version,job.threat_name,job.detail].some(v=>
+      job.database_version].some(v=>
       (v||'').toLocaleLowerCase().includes(needle));
   });
 }

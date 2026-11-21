@@ -58,11 +58,12 @@ test('the first 25 of 61 matching rows render in the first page without overflow
   const table=html.split('<tbody>')[1]?.split('</tbody>')[0]||'';
   assert.equal((table.match(/<tr>/g)||[]).length,25);
 });
-test('untrusted worker detail uses React text escaping instead of HTML insertion',()=>{
-  const html=view([row('unsafe',{detail:'<img src=x onerror=alert(1)>'})]);
-  assert.match(html,/&lt;img/);
-  assert.doesNotMatch(html,/<img\b/i);
-  assert.doesNotMatch(html,/<script\b/i);
+test('private worker detail and signature name never enter React markup',()=>{
+  const html=view([row('unsafe',{detail:'<img src=x onerror=alert(1)>',
+    verdict:'malicious',threat_name:'PRIVATE_SIGNATURE_NAME'})]);
+  assert.match(html,/name withheld|Name withheld/i);
+  assert.match(html,/Withheld from analyst metadata view/);
+  assert.doesNotMatch(html,/PRIVATE_SIGNATURE_NAME|&lt;img|onerror|<img\b|<script\b/i);
 });
 test('missing mode never becomes a trusted positive result in visible UI',()=>{
   const html=view([row('unspecified',{scan_type:undefined,verdict:'malicious',

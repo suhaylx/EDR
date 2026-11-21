@@ -10,8 +10,9 @@ export type ScanJob = {
   engine?: string;
   engine_version?: string;
   database_version?: string;
-  threat_name?: string;
-  detail?: string;
+  threat_name?: string; // legacy lab decoder only; never displayed verbatim
+  detail?: string; // legacy lab decoder only; never displayed verbatim
+  signature_reported?: boolean; // metadata-only Go endpoint, not attested
 };
 export type ScanDisplay = { heading: string; explanation: string; tone: 'neutral' | 'warning' | 'danger'; attested: false };
 
@@ -38,7 +39,7 @@ export function describeScan(job: ScanJob): ScanDisplay {
       // Delivery completion never certifies scan execution or protection.
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', tone: 'danger' };
       if (job.verdict === 'unscanned') return { ...common, heading: 'Unscanned', explanation: 'Job delivery completed, but the requested scan was not performed. No protection is established.', tone: 'warning' };
-      if (job.verdict === 'malicious') return { ...common, heading: 'Signature match reported', explanation: job.threat_name?.trim() ? `Lab worker reported signature: ${job.threat_name}. Not independently attested.` : 'Malicious verdict reported without a signature name; investigate data integrity.', tone: 'danger' };
+      if (job.verdict === 'malicious') return { ...common, heading: 'Signature match reported', explanation: (job.signature_reported || job.threat_name?.trim()) ? 'Lab worker reported a signature match; signature name withheld. Not independently attested.' : 'Malicious verdict reported without a signature indicator; investigate data integrity.', tone: 'danger' };
       if (job.verdict === 'clean_by_signature') return { ...common, heading: 'Clean by signature (reported)', explanation: 'No signature matched in the claimed scan. This is not proof the file or endpoint is safe.', tone: 'neutral' };
       if (job.verdict === 'suspicious') return { ...common, heading: 'Suspicious (reported)', explanation: 'Unconfirmed suspicious result. Analyst review required.', tone: 'warning' };
       return { ...common, heading: 'Result not verified', explanation: 'Completion lacks a recognized successful scan verdict.', tone: 'warning' };
