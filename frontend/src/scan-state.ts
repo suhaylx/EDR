@@ -6,6 +6,7 @@ export type ScanJob = {
   agent_id: string;
   status: JobStatus | string;
   verdict?: ScanVerdict | string;
+  scan_type?: string;
   engine?: string;
   engine_version?: string;
   database_version?: string;
@@ -26,6 +27,12 @@ export function describeScan(job: ScanJob): ScanDisplay {
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Worker reported an error; the scan did not complete successfully.', tone: 'danger' };
       return { ...common, heading: 'Failed', explanation: 'No successful scan completion; inspect the reported details.', tone: 'danger' };
     case 'completed':
+      // Lab quick/full worker profiles do not execute scans. Do not render a
+      // forged success claim as malware evidence or signature-negative proof.
+      if ((job.scan_type === 'quick' || job.scan_type === 'full') &&
+          ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '')) {
+        return { ...common, heading: 'Unsupported scan claim', explanation: 'A successful quick/full scan was reported, but this lab worker does not implement these modes. The result is not scanning evidence.', tone: 'danger' };
+      }
       // A completed job can still report a failed or unsupported scanner run.
       // Delivery completion never certifies scan execution or protection.
       if (job.verdict === 'error') return { ...common, heading: 'Scanner error', explanation: 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', tone: 'danger' };

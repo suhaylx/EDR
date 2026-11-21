@@ -49,3 +49,19 @@ test('completed scanner errors and unperformed scans remain explicit and unattes
     assert.match(result.explanation, /No successful scan|not performed/i);
   }
 });
+
+test('unsupported quick/full successful verdicts are marked as invalid claims', () => {
+  for (const scan_type of ['quick', 'full']) {
+    for (const verdict of ['malicious', 'suspicious', 'clean_by_signature']) {
+      const result = describeScan(job('completed', verdict, {scan_type}));
+      assert.equal(result.heading, 'Unsupported scan claim');
+      assert.equal(result.tone, 'danger');
+      assert.equal(result.attested, false);
+      assert.match(result.explanation, /does not implement/);
+    }
+    assert.equal(describeScan(job('completed', 'error', {scan_type})).heading, 'Scanner error');
+    assert.equal(describeScan(job('completed', 'unscanned', {scan_type})).heading, 'Unscanned');
+  }
+  assert.equal(describeScan(job('completed', 'clean_by_signature', {scan_type: 'path'})).heading,
+    'Clean by signature (reported)');
+});
