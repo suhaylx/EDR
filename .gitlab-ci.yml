@@ -30,6 +30,8 @@ variables:
 source_provenance:
   stage: preflight
   image: alpine:3.21
+  before_script:
+    - apk add --no-cache git
   script:
     - test -f backend/go.mod
     - test -f agent/Cargo.toml
@@ -51,7 +53,7 @@ go_backend:
 
 rust_linux:
   stage: test
-  image: rust:1.88-bookworm
+  image: rust:1-bookworm
   script:
     - rustc --version
     - cargo test --manifest-path agent/Cargo.toml --all-targets
@@ -59,9 +61,11 @@ rust_linux:
 
 rust_windows_cross_check:
   stage: test
-  image: rust:1.88-bookworm
+  image: rust:1-bookworm
   # Cross-target type checking on Linux: NOT a native Windows test run.
   before_script:
+    - apt-get update -qq
+    - apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
     - rustup target add x86_64-pc-windows-gnu
   script:
     - cargo check --manifest-path agent/Cargo.toml --target x86_64-pc-windows-gnu --all-targets
