@@ -16,6 +16,9 @@
         if (verdict === 'error') return out('Scanner error', 'Worker reported an error; the scan did not complete successfully.', 'danger');
         return out('Failed', 'No successful scan completion; inspect the reported details.', 'danger');
       case 'completed':
+        // Job completion is transport state, not a successful scanner attestation.
+        if (verdict === 'error') return out('Scanner error', 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', 'danger');
+        if (verdict === 'unscanned') return out('Unscanned', 'Job delivery completed, but the requested scan was not performed. No protection is established.', 'warning');
         if (verdict === 'malicious') return out('Signature match reported', name
           ? `Lab worker reported signature: ${name}. Not independently attested.`
           : 'Malicious verdict reported without a signature name; investigate data integrity.', 'danger');
