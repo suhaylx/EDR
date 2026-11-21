@@ -16,6 +16,13 @@
         if (verdict === 'error') return out('Scanner error', 'Worker reported an error; the scan did not complete successfully.', 'danger');
         return out('Failed', 'No successful scan completion; inspect the reported details.', 'danger');
       case 'completed':
+        // Quick/full execution is unsupported by the current lab Rust worker.
+        // Refuse a successful claim even if a malformed backend response includes one.
+        if ((job.scan_type === 'quick' || job.scan_type === 'full') &&
+            ['clean_by_signature', 'malicious', 'suspicious'].includes(verdict)) {
+          return out('Unsupported scan claim',
+            'A successful quick/full scan was reported, but this lab worker does not implement these modes. The result is not scanning evidence.', 'danger');
+        }
         // Job completion is transport state, not a successful scanner attestation.
         if (verdict === 'error') return out('Scanner error', 'Job delivery completed, but the worker reported a scanner error. No successful scan is established.', 'danger');
         if (verdict === 'unscanned') return out('Unscanned', 'Job delivery completed, but the requested scan was not performed. No protection is established.', 'warning');
