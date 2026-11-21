@@ -155,5 +155,6 @@ func DetectAllLabSignals(events []Event) []Detection {
 	all = append(all, DetectSuspiciousProcessDNSNetwork(events)...)
 	all = append(all, DetectProcessAccessRemoteThread(events)...)
 	all = append(all, DetectRegistryAutorunSet(events)...)
-	return append(all, DetectWMIPermanentSubscription(events)...)
+	all = append(all, DetectWMIPermanentSubscription(events)...)
+	return append(all, DetectProcessTampering(events)...)
 }
