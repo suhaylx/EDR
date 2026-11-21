@@ -56,3 +56,26 @@ The **Policy evidence** React view consumes only the existing, validated `GET /a
 ### Local policy evidence triage (Agent 5)
 
 Policy evidence supports in-memory attention/error/missing-ID/offline/unknown filters and case-insensitive search, sorted with reported errors first. An applied policy ID with revision `0` is flagged as **absent or zero revision evidence**, not automatically a policy mismatch: the lab API defaults missing revision to zero and does not expose the desired policy revision, signed agent acknowledgements, or enforcement attestations. Local filter counts never change server claims or send commands. Manual keyboard/assistive-technology validation is still required.
+
+## Local companion browser status-window prototype
+
+`local-companion.html` is a second Vite page built alongside the SOC lab app (open
+`http://127.0.0.1:5173/local-companion.html` after `npm run dev`). It renders
+`src/LocalCompanionView.tsx` using the shared design tokens and responsive
+`src/local-companion.css`. The bundled entry `src/local-companion-main.tsx`
+always passes `snapshot={null}`: **no IPC, local agent, or privileged endpoint
+service is connected**, and the interface cannot assert that any component is
+healthy. There are no mock endpoint-action buttons.
+
+`src/local-companion.ts` can format a candidate, separately authenticated
+local status snapshot for a future trusted native host. Reported states explicitly
+do **not** attest protection, scan verdict or Sysmon/collector coverage.
+Missing/stale/future-dated reports reset all component rows to **Unknown** and
+never retain a positive-looking state. Linux uses a Linux telemetry label rather
+than Sysmon. Completed scan-job status has **no verdict** in this proposed v1
+contract. The page is a browser **UX prototype**, not a Windows tray app, Linux
+desktop bundle, native IPC host, single-binary agent, or deployed product.
+
+Agent 2 must approve and implement authenticated, authorized local transport;
+Agent 3 must run real browser/AT + platform testing and confirm any future
+companion remains unprivileged and crash-isolated from Rust before release.
