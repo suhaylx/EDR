@@ -64,7 +64,7 @@ func (s *Server) Handler() http.Handler {
 			}
 			reply(w, 200, events)
 		case r.URL.Path == "/api/detections" && r.Method == "GET":
-			reply(w, 200, DetectSuspiciousDLLLoads(s.Store.Snapshot().Events))
+			reply(w, 200, allAgentOneDetections(s.Store.Snapshot().Events))
 		case r.URL.Path == "/api/events" && r.Method == "POST":
 			var e Event
 			if !decode(w, r, &e) {
@@ -155,7 +155,7 @@ func (s *Server) Handler() http.Handler {
 				maxNodes = n
 			}
 			snapshot := s.Store.Snapshot()
-			graph, err := BuildProcessInvestigation(snapshot.Events, DetectSuspiciousDLLLoads(snapshot.Events), r.URL.Query().Get("device_id"), r.URL.Query().Get("process_guid"), r.URL.Query().Get("detection_id"), depth, maxNodes)
+			graph, err := BuildProcessInvestigation(snapshot.Events, allAgentOneDetections(snapshot.Events), r.URL.Query().Get("device_id"), r.URL.Query().Get("process_guid"), r.URL.Query().Get("detection_id"), depth, maxNodes)
 			if errors.Is(err, ErrInvestigationNotFound) {
 				http.Error(w, "investigation seed not found", 404)
 				return
