@@ -3,7 +3,6 @@ package edr
 import (
  "context"
  "database/sql"
- "errors"
  "fmt"
  "strings"
  "time"
@@ -111,6 +110,3 @@ func(q PostgresScanJobQueue) MySOCAlerts(ctx context.Context,p SOCOperatorPrinci
  if rows.Err()!=nil{return nil,ErrScanQueueUnavailable}
  return out,nil
 }
-
-// Active assignment is never used as a substitute for operator mTLS auth.
-var _=errors.Is
