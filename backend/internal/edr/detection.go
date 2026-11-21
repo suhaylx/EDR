@@ -21,6 +21,10 @@ type Detection struct {
 	ProcessImage      string    `json:"process_image"`
 	ModulePath        string    `json:"module_path"`
 	LoadEventID       string    `json:"load_event_id"`
+	// Non-DLL rules have a primary evidence event, not an invented module load.
+	EvidenceEventID   string    `json:"evidence_event_id,omitempty"`
+	TargetObject      string    `json:"target_object,omitempty"`
+	EvidenceSourceEventID uint32 `json:"evidence_source_event_id,omitempty"`
 	// SourceRecordID is sender-reported and unauthenticated in the lab API.
 	LoadSourceRecordID string    `json:"load_source_record_id,omitempty"`
 	// A sender-reported boot marker; absence means the alert is not boot-scoped.
