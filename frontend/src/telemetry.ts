@@ -77,7 +77,11 @@ export function decodeLabTelemetry(raw: unknown): LabTelemetryEvent[] {
     for (const [key,val] of Object.entries(fields)) {
       if (!fieldNames.has(key) || sourceEventID===0 || sourceEventID===24)
         throw new Error('Private or unverified Sysmon field rejected');
-      sourceFields[key]=bounded(val,'source_fields.'+key,512);
+      const safeValue=bounded(val,'source_fields.'+key,512);
+      if (/[\x00-\x1f\x7f]/.test(safeValue)) {
+        throw new Error('Invalid Sysmon source metadata control character');
+      }
+      sourceFields[key]=safeValue;
     }
     const guid=bounded(v.process_guid,'process_guid',128);
     const parent=bounded(v.parent_process_guid,'parent_process_guid',128);
