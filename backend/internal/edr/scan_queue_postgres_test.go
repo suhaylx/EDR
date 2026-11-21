@@ -94,3 +94,22 @@ func TestPostgresScanQueueDatabaseError(t *testing.T){
         t.Fatalf("must fail closed without leaking SQL errors: %v",err)
     }
 }
+
+func TestPostgresScanQueueRenewal(t *testing.T){
+    db:=scanDB(t,func(q string,args []driver.NamedValue)(driver.Rows,error){
+        if !strings.Contains(q,"edr_renew_scan_job_lease")||len(args)!=6||
+            args[0].Value!="tenantA"||args[1].Value!="win01"||
+            args[2].Value!=testUUID||args[3].Value!="win01"||
+            args[4].Value!=leaseUUID||args[5].Value!=int64(30) {
+            t.Fatalf("bad renewal query: %q %#v",q,args)
+        }
+        return &scanRows{columns:[]string{"ok"},values:[][]driver.Value{{true}}},nil
+    })
+    q:=PostgresScanJobQueue{DB:db}
+    ok,err:=q.Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,30)
+    if err!=nil||!ok {t.Fatalf("renew: %v %v",ok,err)}
+    _,err=q.Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,301)
+    if !errors.Is(err,ErrInvalidScanQueueRequest){t.Fatalf("invalid duration: %v",err)}
+    _,err=(PostgresScanJobQueue{}).Renew(context.Background(),"tenantA","win01",testUUID,"win01",leaseUUID,30)
+    if !errors.Is(err,ErrScanQueueUnavailable){t.Fatalf("missing DB: %v",err)}
+}
