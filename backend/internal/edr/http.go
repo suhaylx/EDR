@@ -63,7 +63,7 @@ func (s *Server) Handler() http.Handler {
 			}
 			reply(w, 200, events)
 		case r.URL.Path == "/api/detections" && r.Method == "GET":
-			reply(w, 200, DetectSuspiciousDLLLoads(s.Store.Snapshot().Events))
+			reply(w, 200, DetectAllLabSignals(s.Store.Snapshot().Events))
 		case r.URL.Path == "/api/events" && r.Method == "POST":
 			var e Event
 			if !decode(w, r, &e) {
