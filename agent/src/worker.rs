@@ -85,7 +85,7 @@ fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
     use std::ffi::CString;
     use std::os::fd::{AsRawFd, FromRawFd};
     use std::os::unix::ffi::OsStrExt;
-    use std::path::Component;
+    // Validate raw path bytes: Path::components() normalizes a '.' segment.
 
     #[repr(C)]
     struct OpenHow {
@@ -106,7 +106,8 @@ fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
         error(io::ErrorKind::PermissionDenied, "target is not beneath lab scan root")
     })?;
     if relative.as_os_str().is_empty() ||
-        !relative.components().all(|component| matches!(component, Component::Normal(_))) {
+        !relative.as_os_str().as_bytes().split(|b| *b == b'/')
+            .all(|component| !component.is_empty() && component != b"." && component != b"..") {
         return Err(error(io::ErrorKind::PermissionDenied, "invalid relative scan target"));
     }
 
