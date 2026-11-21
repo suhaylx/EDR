@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - "backend/internal/edr/issuer_enrollment_*.go"
+      - "backend/internal/edr/issuer_challenge_*.go"
+      - "backend/internal/edr/issuer_certificate_signing*.go"
       - "backend/internal/edr/agent_certificate_validation.go"
       - "backend/internal/edr/agent_identity.go"
       - "backend/internal/edr/agent_enrollment_postgres.go"
