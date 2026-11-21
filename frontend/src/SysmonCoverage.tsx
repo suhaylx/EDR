@@ -86,6 +86,8 @@ export function SysmonCoverage({events,onInvestigate}:{
               <span className="minor">Received: {e.received_at||'unknown'}</span></td>
             <td><strong>{e.device_id}</strong><span className="minor">{e.platform} / {e.source||'source unknown'}</span></td>
             <td><span className="minor">RecordID: {e.source_record_id||'not reported'}</span>
+              <span className="minor">Provider: {e.source_provider||'not reported (legacy)'}</span>
+              <span className="minor">Channel: {e.source_channel||'not reported (legacy)'}</span>
               <span className="minor">Source time: {e.time_origin||'not established'}</span>
               <span className="minor">Go event ID: {e.id}</span>
               {Object.keys(e.source_fields).length>0 && <details className="event-field-details">

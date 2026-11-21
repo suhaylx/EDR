@@ -60,3 +60,30 @@ test('authorized API request is no-store and has no cookies',async()=>{
   assert.equal(request.opt.headers.Authorization,'Bearer 0123456789abcdef');
   await assert.rejects(fetchLabTelemetry('0123456789abcdef',undefined,async()=>({ok:false,status:401})),/401/);
 });
+
+test('SEC-076: Sysmon provider and channel remain explicitly sender-reported',()=>{
+  const valid=decodeLabTelemetry([event({
+    source_provider:'Microsoft-Windows-Sysmon',
+    source_channel:'Microsoft-Windows-Sysmon/Operational'
+  })]);
+  assert.equal(valid[0].source_provider,'Microsoft-Windows-Sysmon');
+  assert.equal(valid[0].source_channel,'Microsoft-Windows-Sysmon/Operational');
+  // Legacy records remain explicitly unknown; no provider attribution is invented.
+  const legacy=decodeLabTelemetry([event()]);
+  assert.equal(legacy[0].source_provider,'');
+  assert.equal(legacy[0].source_channel,'');
+  for(const candidate of [
+    {source_provider:'Microsoft-Windows-Security-Auditing',source_channel:'Security'},
+    {source_provider:'Microsoft-Windows-Sysmon',source_channel:'Security'},
+    {source_provider:'Microsoft-Windows-PowerShell',source_channel:'Microsoft-Windows-PowerShell/Operational'},
+    {source_provider:'Service Control Manager',source_channel:'System'},
+    {source_provider:'Microsoft-Windows-Sysmon',source_channel:''},
+    {source_provider:'',source_channel:'Microsoft-Windows-Sysmon/Operational'},
+  ]) {
+    assert.throws(()=>decodeLabTelemetry([event(candidate)]),/provider\/channel mismatch/);
+  }
+  assert.throws(()=>decodeLabTelemetry([event({
+    source:'procfs',platform:'linux',source_event_id:0,source_fields:{},
+    source_provider:'Microsoft-Windows-Sysmon',source_channel:'Microsoft-Windows-Sysmon/Operational'
+  })]),/provider\/channel mismatch/);
+});

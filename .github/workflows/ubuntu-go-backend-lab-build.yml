@@ -5,6 +5,7 @@ on:
     paths:
       - 'backend/**'
       - 'docs/LAB_RELEASE_CANDIDATE_DAY3.md'
+      - 'scripts/smoke-ubuntu-lab-api.sh'
       - '.github/workflows/ubuntu-go-backend-lab-build.yml'
   workflow_dispatch:
 
@@ -39,6 +40,11 @@ jobs:
           (cd dist/turansec-ubuntu-go-lab && \
             find bin web -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
           file dist/turansec-ubuntu-go-lab/bin/turansec-edr-api
+      - name: Run executable local-only API and SOC smoke matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/smoke-ubuntu-lab-api.sh dist/turansec-ubuntu-go-lab/bin/turansec-edr-api
       - name: Publish lab-only API and static dashboard assets
         uses: actions/upload-artifact@v4
         with:
