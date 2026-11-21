@@ -54,3 +54,6 @@
 .graph-warning{border-left:4px solid #ffba69;padding:12px;background:#453225;color:#ffe2bc}
 @media(prefers-color-scheme:light){.graph-warning{color:#623a09;background:#fff1d9}}
 @media(max-width:550px){.process-list,.process-list ul{padding-left:8px}.seed-choices{display:grid;gap:5px}.timeline{padding-left:17px}}
+
+/* Read-only alert action; never confused with a containment operation. */
+.source-selection{border-left:4px solid var(--focus);padding:10px 14px;background:var(--bg);overflow-wrap:anywhere}
