@@ -3,6 +3,12 @@
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Set a disposable PostgreSQL connection URL}"
 command -v psql >/dev/null
+# Never apply test migrations to a database already containing EDR data.
+existing="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_class WHERE relname IN ('edr_tenants','edr_agents','edr_agent_certificates','edr_scan_jobs') AND relkind='r'")"
+if [[ "$existing" != "0" ]]; then
+  echo "Refusing to run: EDR tables already exist; use an empty disposable database" >&2
+  exit 2
+fi
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0001_agent_enrollment.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f backend/migrations/0005_scan_job_queue.up.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
@@ -49,12 +55,12 @@ BEGIN
     RAISE EXCEPTION 'expired job not requeued'; END IF;
 END $$;
 UPDATE edr_tenants SET disabled_at=now() WHERE tenant_id='tenantB';
-DO $$
+DO $tenant_guard$
 BEGIN
   IF EXISTS(SELECT 1 FROM edr_claim_scan_job('tenantB','win01','agent-win01',
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',30)) THEN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
-END $;
+END $tenant_guard$;
 
 -- A live lease is not valid evidence of current authorization. Revoke or
 -- disable the principal *after* claiming, and ensure completion is refused.
