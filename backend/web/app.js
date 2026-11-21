@@ -2,14 +2,35 @@
 // The SOC console is deliberately a lab-only UI. Values come from the Go API;
 // no synthetic detections, endpoint status or scan result is fabricated here.
 const state={token:'',view:'overview',days:7,agentFilter:'',graph:null,data:{}};
+const authSession=globalThis.TuranSecAuthSession.create(globalThis.location,()=>globalThis.sessionStorage);
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const count=n=>Number(n||0).toLocaleString('en-US');
 const labelTime=t=>t?new Date(t).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}):'Never reported';
 const rows=(arr,keys)=>arr.length?`<div class="table-wrap"><table><thead><tr>${keys.map(k=>`<th>${esc(k[0])}</th>`).join('')}</tr></thead><tbody>${arr.map(x=>`<tr>${keys.map(k=>`<td>${esc(typeof k[1]==='function'?k[1](x):x[k[1]])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<div class="empty">No records for this selection. This does not establish the fleet is safe.</div>';
 const notice=(msg,failed=false)=>{const n=$('notice');n.textContent=msg;n.className=failed?'danger':'';};
-async function api(path,opt={}){if(!state.token)throw Error('Enter a development API token first.');const r=await fetch('/api'+path,{...opt,headers:{Authorization:'Bearer '+state.token,...(opt.body?{'Content-Type':'application/json'}:{}),...(opt.headers||{})}});if(!r.ok)throw Error((await r.text()).slice(0,200));return r.json();}
-async function refresh(){try{const paths=['/overview?days='+state.days,'/agents','/events','/detections','/policies','/assignments','/scan-jobs'];const [overview,agents,events,alerts,policies,assignments,scans]=await Promise.all(paths.map(p=>api(p)));state.data={overview,agents,events,alerts,policies,assignments,scans};notice('Connected to the development Go API. Metrics cover retained in-memory telemetry, not verified production endpoint protection.');draw();}catch(e){notice('Connection failed: '+e.message,true);}}
+async function api(path,opt={}){if(!state.token)throw Error('Enter a development API token first.');const r=await fetch('/api'+path,{...opt,headers:{Authorization:'Bearer '+state.token,...(opt.body?{'Content-Type':'application/json'}:{}),...(opt.headers||{})}});if(r.status===401){const e=Error('Session rejected (HTTP 401). Please connect again.');e.authRejected=true;throw e;}if(!r.ok)throw Error((await r.text()).slice(0,200));return r.json();}
+function disconnect(msg='Disconnected from the development API.',failed=false){
+  authSession.clear();
+  state.token='';state.data={};state.graph=null;
+  $('token').value='';$('connect').textContent='Connect';
+  draw();notice(msg,failed);
+}
+async function refresh(){
+  const requestToken=state.token;
+  if(!requestToken){notice('Enter a development API token first.');return;}
+  try{
+    const paths=['/overview?days='+state.days,'/agents','/events','/detections','/policies','/assignments','/scan-jobs'];
+    const [overview,agents,events,alerts,policies,assignments,scans]=await Promise.all(paths.map(p=>api(p)));
+    if(requestToken!==state.token)return; // A newer connection or logout wins.
+    state.data={overview,agents,events,alerts,policies,assignments,scans};
+    notice('Connected to the development Go API. Metrics cover retained in-memory telemetry, not verified production endpoint protection.');draw();
+  }catch(e){
+    if(requestToken!==state.token)return;
+    if(e.authRejected){disconnect(e.message,true);return;}
+    notice('Connection failed: '+e.message,true);
+  }
+}
 function navigate(view,filter=''){const target=document.querySelector(`.nav[data-view="${view}"]`);if(!target)return;document.querySelectorAll('.nav').forEach(b=>{b.classList.toggle('active',b===target);b.setAttribute('aria-current',b===target?'page':'false');});state.view=view;state.agentFilter=filter;draw();}
 const formatInactive=e=>e.status==='unknown'?'Unknown (no trustworthy heartbeat)':e.status==='online'?'Active now':e.inactive_days<1?`${Math.max(0,Math.round(e.inactive_seconds/60))} minutes`:`${e.inactive_days.toFixed(2)} days`;
 const renderPill=e=>e==='online'?'Online':e==='offline'?'Offline':'Unknown';
@@ -128,5 +149,30 @@ function draw(){
   c.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.go,b.dataset.filter||'')));
 }
 document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));
-$('connect').addEventListener('click',()=>{state.token=$('token').value;$('token').value='';refresh();});
+const rememberToken=$('rememberToken');
+rememberToken.disabled=!authSession.allowed;
+rememberToken.checked=authSession.allowed;
+if(!authSession.allowed){
+  $('connect').disabled=true;$('token').disabled=true;
+  notice('Unsafe public HTTP connection: do not enter the lab token. Use HTTPS or a localhost SSH tunnel.',true);
+}
+rememberToken.addEventListener('change',()=>{
+  if(!authSession.allowed){rememberToken.checked=false;return;}
+  if(state.token){if(rememberToken.checked)authSession.save(state.token);else authSession.clear();}
+});
+$('connect').addEventListener('click',()=>{
+  if(!authSession.allowed)return;
+  if(state.token){disconnect();return;}
+  const token=$('token').value.trim();
+  if(!token){notice('Enter a development API token first.',true);return;}
+  state.token=token;$('token').value='';
+  if(rememberToken.checked)authSession.save(token);else authSession.clear();
+  $('connect').textContent='Disconnect';
+  refresh();
+});
 $('refresh').addEventListener('click',refresh);
+const remembered=authSession.read();
+if(remembered){
+  state.token=remembered;$('connect').textContent='Disconnect';
+  refresh(); // A rejected/rotated token is cleared on HTTP 401.
+}
