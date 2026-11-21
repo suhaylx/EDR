@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeLocalCompanionSnapshot, localCompanionPresentation } from '../.test-dist/local-companion.js';
+import { decodeLocalCompanionSnapshot, localCompanionPresentation, localCompanionRows } from '../.test-dist/local-companion.js';
 
 const valid = () => ({
   schema_version: 1, source: 'local_agent_ipc_v1', platform: 'windows',
@@ -40,4 +40,43 @@ test('invalid schema, origin label and unexpected component states are rejected'
 test('null or array payload never renders a positive state', () => {
   assert.throws(() => decodeLocalCompanionSnapshot(null));
   assert.throws(() => decodeLocalCompanionSnapshot([]));
+});
+
+test('disconnected and stale views erase all previous component reports', () => {
+  const snapshot = decodeLocalCompanionSnapshot(valid());
+  const fresh = Date.parse(snapshot.observed_at);
+  const freshRows = localCompanionRows(snapshot, fresh + 1000);
+  assert.equal(freshRows.find(row => row.key === 'core')?.value, 'Running (reported)');
+  for (const rows of [localCompanionRows(null, fresh), localCompanionRows(snapshot, fresh + 60001),
+    localCompanionRows(snapshot, fresh - 1000)]) {
+    assert.equal(rows.length, 6);
+    assert.ok(rows.every(row => row.value === 'Unknown'));
+    assert.ok(rows.every(row => row.detail.includes('No current authenticated')));
+  }
+});
+test('platform-specific telemetry never labels Linux state as Sysmon', () => {
+  const linux = decodeLocalCompanionSnapshot({...valid(), platform:'linux', telemetry_state:'reported_available'});
+  const rows = localCompanionRows(linux, Date.parse(linux.observed_at) + 500);
+  assert.equal(rows.find(row=>row.key==='telemetry')?.label,'Linux telemetry collector');
+  assert.match(rows.find(row=>row.key==='telemetry')?.value || '', /reported/);
+  assert.ok(!rows.some(row => /Sysmon/.test(row.label)));
+});
+test('scan lifecycle never claims a verified verdict, even after completion', () => {
+  for (const state of ['queued', 'leased', 'completed', 'failed', 'expired', 'unknown']) {
+    const snapshot = decodeLocalCompanionSnapshot({...valid(), scan_state:state});
+    const scanRow = localCompanionRows(snapshot, Date.parse(snapshot.observed_at) + 500)
+      .find(row=>row.key==='scan');
+    assert.ok(scanRow);
+    assert.match(scanRow.detail, /not a verified malware verdict/);
+    assert.doesNotMatch(scanRow.value, /safe|clean|protected/i);
+    if (state === 'completed') assert.match(scanRow.value, /verdict unavailable/);
+  }
+});
+test('unknown policy revision never renders as applied or enforced', () => {
+  for (const revision of [null, 0]) {
+    const snapshot = decodeLocalCompanionSnapshot({...valid(), policy_revision:revision});
+    const policy = localCompanionRows(snapshot, Date.parse(snapshot.observed_at)).find(row=>row.key==='policy');
+    assert.match(policy?.value || '', /unknown or zero/);
+    assert.match(policy?.detail || '', /not an authenticated/);
+  }
 });
