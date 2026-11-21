@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { fetchLabScanJobs, type LabScanJob } from './lab-api.js';
 import { ScanEvidenceWorkbench } from './ScanEvidenceWorkbench.js';
+import { ScanEvidenceContext } from './ScanEvidenceContext.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
 import { fetchLabDetections, type LabDetection } from './detections.js';
@@ -128,6 +129,7 @@ function App() {
   const [events, setEvents] = useState<LabTelemetryEvent[]>([]);
   const [investigationSeed, setInvestigationSeed] = useState<InvestigationSeed | null>(null);
   const [sourceSelection, setSourceSelection] = useState<RetainedSourceSelection | null>(null);
+  const [scanSelection, setScanSelection] = useState<string | null>(null);
   const [overview, setOverview] = useState<LabSOCOverview | null>(null);
   const [days, setDays] = useState<DayWindow>(7);
   const [view, setView] = useState<'overview' | 'endpoints' | 'alerts' | 'telemetry' | 'scans' | 'investigations'>('overview');
@@ -155,6 +157,7 @@ function App() {
     setEvents([]);
     setInvestigationSeed(null);
     setSourceSelection(null);
+    setScanSelection(null);
     setLoadedAt(null);
     try {
       // Both requests must succeed; do not display stale or partially labeled
@@ -179,6 +182,7 @@ function App() {
       setEvents([]);
       setInvestigationSeed(null);
       setSourceSelection(null);
+    setScanSelection(null);
       setOverview(null);
       setLoadedAt(null);
       setStatus('error');
@@ -196,6 +200,7 @@ function App() {
     setEvents([]);
     setInvestigationSeed(null);
     setSourceSelection(null);
+    setScanSelection(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -211,6 +216,7 @@ function App() {
     setEvents([]);
     setInvestigationSeed(null);
     setSourceSelection(null);
+    setScanSelection(null);
     setJobs([]);
     setOverview(null);
     setLoadedAt(null);
@@ -225,6 +231,7 @@ function App() {
     setEvents([]);
     setInvestigationSeed(null);
     setSourceSelection(null);
+    setScanSelection(null);
     setOverview(null);
     setJobs([]);
     setLoadedAt(null);
@@ -256,7 +263,8 @@ function App() {
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
-        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
+        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);
+    setScanSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
@@ -294,7 +302,17 @@ function App() {
         ? (status === 'ready' ? <InvestigationView token={token} initialSeed={investigationSeed} /> :
           <section className="panel"><p className="empty">Connect to the development API before requesting retained investigation evidence.</p></section>)
         : <section className="panel" aria-labelledby="history-title">
-        {status === 'ready' ? <ScanEvidenceWorkbench jobs={jobs} />
+        {status === 'ready' && overview
+          ? (scanSelection && jobs.some(job => job.id === scanSelection)
+            ? <ScanEvidenceContext
+                key={scanSelection} selected={jobs.find(job => job.id === scanSelection)!}
+                jobs={jobs} detections={detections} events={events} generatedAt={overview.generated_at}
+                onBack={() => setScanSelection(null)}
+                onSelectScan={id => setScanSelection(id)}
+                onInspectSource={selection => {setSourceSelection(selection);setView('telemetry');}}
+                onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
+            : <ScanEvidenceWorkbench jobs={jobs}
+                onInspectContext={id => setScanSelection(id)}/>)
           : <><h2 id="history-title">Retained scan jobs</h2>
             <p className="empty">No scan results displayed until a successful authenticated lab request.</p></>}
       </section>}

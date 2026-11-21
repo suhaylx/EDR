@@ -10,7 +10,10 @@ import {
 } from './scan-evidence.js';
 
 /** Never issues scan commands or assumes reported ClamAV evidence is authentic. */
-export function ScanEvidenceWorkbench({jobs}: {jobs:readonly LabScanJob[]}) {
+export function ScanEvidenceWorkbench({jobs,onInspectContext}: {
+  jobs:readonly LabScanJob[];
+  onInspectContext?: (id:string)=>void;
+}) {
   const [filter,setFilter]=useState<ScanQuery>(DEFAULT_SCAN_QUERY);
   const [sort,setSort]=useState<ScanSort>('newest');
   const [pageSize,setPageSize]=useState<ScanPageSize>(25);
@@ -129,6 +132,7 @@ export function ScanEvidenceWorkbench({jobs}: {jobs:readonly LabScanJob[]}) {
           <th scope="col">Evidence interpretation</th>
           <th scope="col">Reported scanner</th>
           <th scope="col">Inspect metadata</th>
+          {onInspectContext && <th scope="col">Adjacent evidence</th>}
         </tr></thead>
         <tbody>{page.rows.map(job=>{
           const kind=scanEvidenceKind(job);
@@ -174,6 +178,9 @@ export function ScanEvidenceWorkbench({jobs}: {jobs:readonly LabScanJob[]}) {
                 rendered as text; this view cannot attest ClamAV signature
                 updates, scan execution or tamper resistance.</p>
             </details></td>
+            {onInspectContext && <td><button type="button" className="source-button"
+              aria-label={'Inspect same-endpoint retained context for scan job '+job.id}
+              onClick={()=>onInspectContext(job.id)}>Inspect same-endpoint evidence</button></td>}
           </tr>;
         })}</tbody>
       </table></div>
