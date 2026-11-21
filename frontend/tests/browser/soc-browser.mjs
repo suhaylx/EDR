@@ -95,7 +95,14 @@ async function handler(request, response, secure) {
         if (alertState !== 'open') return sendJSON(response, { error: 'state conflict' }, 409);
         alertState = 'acknowledged'; caseFields.acknowledged_by = session.operator_id;
         observation.acknowledgementCommitted = true;
-        if (mode === 'ack-drop') { request.socket.destroy(); return; }
+        if (mode === 'ack-drop') {
+          // The acknowledgement is committed, but incomplete HTTPS headers end at EOF.
+          // Partial headers model a truncated response rather than an empty keep-alive
+          // close that the browser may transparently retry. A complete 204 header block
+          // is already a full acknowledgement (there is no body), so cannot model loss.
+          request.socket.end('HTTP/1.1 204 No Content\r\nX-Fixture-Truncated:');
+          return;
+        }
       } else if (url.pathname === base + `alerts/${alertID}/notes`) {
         if (!body?.note || Buffer.byteLength(body.note) > 2048) return sendJSON(response, { error: 'bad note' }, 400);
         const activity_id = '44444444-4444-4444-8444-444444444444';
@@ -185,6 +192,30 @@ async function accessibility(page, name) {
   report.accessibility.push({ name, status: result.violations.length ? 'violations' : incomplete.length ? 'needs-review' : 'no-violations-or-incomplete',
     violations: result.violations, incomplete });
   assert.deepEqual(result.violations.map(x => ({ id: x.id, impact: x.impact, nodes: x.nodes.map(n => n.target) })), [], name + ' accessibility violations');
+}
+async function accessibilityUnclipped(page, name, screenshotName) {
+  const viewport = page.viewportSize();
+  assert.ok(viewport, 'The browser check requires a known viewport');
+  const position = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY,
+    tables: [...document.querySelectorAll('.table-scroll')].map(element => ({ left: element.scrollLeft, top: element.scrollTop })) }));
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.screenshot({ path: join(resultsDir, screenshotName), fullPage: true });
+    // Preserve the mobile scan and repeat every enabled rule with unclipped tables.
+    await accessibility(page, name);
+    const scan = report.accessibility.at(-1);
+    assert.equal(scan.incomplete.length, 0, name + ' must have no incomplete checks: ' +
+      JSON.stringify(scan.incomplete.map(rule => ({ id: rule.id, targets: rule.nodes.map(node => node.target) }))));
+  } finally {
+    await page.setViewportSize(viewport);
+    await page.evaluate(saved => {
+      [...document.querySelectorAll('.table-scroll')].forEach((element, index) => {
+        const value = saved.tables[index];
+        if (value) { element.scrollLeft = value.left; element.scrollTop = value.top; }
+      });
+      window.scrollTo(saved.x, saved.y);
+    }, position);
+  }
 }
 async function recordViewportLayout(page, name) {
   const layout = await page.evaluate(() => {
@@ -346,6 +377,7 @@ try {
     assert.ok(writes.every(x => x.sameOrigin && x.fetchSite === 'same-origin' && x.authorizedTLS && !x.bearerPresent));
     await accessibility(page, 'Operator acknowledged case');
     await page.screenshot({ path: join(resultsDir, 'operator-acknowledged.png'), fullPage: true });
+    await accessibilityUnclipped(page, 'Operator acknowledged case desktop unclipped', 'operator-acknowledged-desktop.png');
   });
   await check('scanner case forms submit notes, assignment, resolution and reopening with keyboard-accessible controls', async () => {
     await page.getByLabel('Case note', { exact: true }).fill('Synthetic keyboard case note');
@@ -367,6 +399,7 @@ try {
     assert.equal(await page.getByRole('button', { name: 'Resolve case', exact: true }).count(), 0);
     await accessibility(page, 'Operator case controls mobile');
     await page.screenshot({ path: join(resultsDir, 'operator-case-workflow.png'), fullPage: true });
+    await accessibilityUnclipped(page, 'Operator case controls desktop unclipped', 'operator-case-workflow-desktop.png');
   });
   await check('path request rejects invalid input, queues once and cancels only pending work without inventing a result', async () => {
     await page.getByLabel('Endpoint to scan', { exact: true }).selectOption('fixture-linux');
@@ -388,6 +421,7 @@ try {
     assert.ok(observedSOC.filter(x => x.method === 'POST').every(x => x.sameOrigin && x.fetchSite === 'same-origin' && x.authorizedTLS && !x.bearerPresent));
     await accessibility(page, 'Operator scan controls mobile');
     await page.screenshot({ path: join(resultsDir, 'operator-scan-workflow.png'), fullPage: true });
+    await accessibilityUnclipped(page, 'Operator scan controls desktop unclipped', 'operator-scan-workflow-desktop.png');
   });
   await check('lost acknowledgement response remains uncertain with no automatic retry', async () => {
     mode = 'ack-drop'; alertState = 'open';
