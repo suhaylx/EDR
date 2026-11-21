@@ -1,5 +1,18 @@
 # TuranSec EDR — prioritized implementation backlog
 
+## ACTIVE 12-MILESTONE SPRINT BOARD — 21 Nov 2026, 22:35 Asia/Tashkent
+
+**Authoritative current implementation queue:** [docs/SPRINT_12_MILESTONES_20261121.md](https://github.com/suhaylx/EDR/blob/pm/evidence-led-sprint-20261121-1700/docs/SPRINT_12_MILESTONES_20261121.md). This file records M01–M12 with P0/P1/P2, exact owner, file/API/behavior, test and approval gate, dependency, evidence SHA/PR and honest observed status. Earlier dated entries below are historical, NOT up-to-date completion flags.
+
+**Newest P0 delivery:** [draft PR #77](https://github.com/suhaylx/EDR/pull/77) exact SHA `821c6747e47a427194e6daee99f527a39ce31888` prevents world-readable/symlinked Unix agent TLS server private-key files; isolated local Go race+vet PASS and GitHub [starter 44930382779](https://github.com/suhaylx/EDR/actions/runs/44930382779), [Ubuntu 44930382757](https://github.com/suhaylx/EDR/actions/runs/44930382757), [Windows 44930382749](https://github.com/suhaylx/EDR/actions/runs/44930382749) all SUCCESS. Windows ACL review NOT RUN; formal InfoSec/QA approval pending.
+
+**New blocking regression:** [PR #78](https://github.com/suhaylx/EDR/pull/78) exact head `934900dbf19051c2570145134edcfe9b821f603e` PostgreSQL [CI 44930392398](https://github.com/suhaylx/EDR/actions/runs/44930392398) **FAIL** (`expiry not extended`); test claimed 30s and renewed 30s in one `transaction_timestamp()` transaction. [Dependent draft PR #86](https://github.com/suhaylx/EDR/pull/86) `ff2aec99da6ae0ac08fb9d142411cedea608a0f6` changes only fixture claim to 10s, renewal remains 30s, keeps negative checks. **Await exact-head PostgreSQL CI; no green claim.**
+
+**Top three priorities:** **P0** Agent 2 mount real TLS1.3 client-cert-only PostgreSQL agent service and reconcile scan renewal (#2; M01–M06), InfoSec and QA required; **P1** Agent 1 original DLL/Sysmon+ClamAV rules (M07–M09) with Agent 2 integration and Agent 3 safe fixtures/actual OS tests; **P2** Agent 5 original React SOC/local UI with truthfulness and accessibility (M10–M11), Agent 3 review. **M12 blocked** pending real authorized Windows/Linux host evidence and explicit release gates. No main merge/deployment.
+
+---
+
+
 **Verified:** 2026-11-21, after 22:24 Asia/Tashkent (latest priorities above; older hourly orders below are historical). **Repository:** [suhaylx/EDR](https://github.com/suhaylx/EDR). **Architecture:** [authoritative Page](https://chatgpt.com/space/page_dec24f52e8a88191baead60bf5ef9a56). **PM activity tracker:** [docs/AGENT_ACTIVITY.md](AGENT_ACTIVITY.md). Tickets are **assigned, not completed** unless release/acceptance evidence exists.
 
 ## Current delivery priorities — 21 November 2026, after 22:24 Asia/Tashkent
