@@ -181,3 +181,19 @@ func TestDLLCreateEvidenceRequiresMatchingNonemptyHashes(t *testing.T) {
 		})
 	}
 }
+
+func TestDLLAlertFingerprintSeparatesReportedBootSessions(t *testing.T) {
+	first := provenanceLoad()
+	second := first
+	second.BootID = "boot-b"
+	alerts := DetectSuspiciousDLLLoads([]Event{first, second})
+	if len(alerts) != 2 {
+		t.Fatalf("same record ID in distinct boot sessions collapsed: %+v", alerts)
+	}
+	if alerts[0].ID == alerts[1].ID {
+		t.Fatalf("distinct reported boot sessions share detection ID: %+v", alerts)
+	}
+	if got := DetectSuspiciousDLLLoads([]Event{first, first}); len(got) != 1 {
+		t.Fatalf("duplicate record within one reported boot was not deduplicated: %+v", got)
+	}
+}
