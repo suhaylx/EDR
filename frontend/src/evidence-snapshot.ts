@@ -196,7 +196,7 @@ export function filterSnapshotEndpoints(rows:readonly EvidenceEndpointRow[],filt
         case 'scans':primary=b.scanJobsReturned-a.scanJobsReturned;break;
         case 'heartbeat':primary=statusRank(a.heartbeat)-statusRank(b.heartbeat);break;
       }
-      return primary||a.id.localeCompare(b.id,'en',{sensitivity:'base'});
+      return primary||a.id.localeCompare(b.id,'en',{sensitivity:'base'})||a.id.localeCompare(b.id,'en');
     });
 }
 export function pageSnapshotEndpoints(rows:readonly EvidenceEndpointRow[],requested:number,size:SnapshotPageSize){
