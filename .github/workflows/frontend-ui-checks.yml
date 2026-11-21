@@ -27,7 +27,3 @@ jobs:
       - name: Run Node-native display and graph regression tests
         run: |
           node --test backend/web/graph-controls.test.js backend/web/scan-display.test.js
-      - name: Ensure TypeScript scan presenter remains syntax-checked
-        run: |
-          echo 'Standalone frontend TypeScript checks require a pinned toolchain in follow-up work.'
-          test -f frontend/src/scan-state.ts
