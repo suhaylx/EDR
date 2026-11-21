@@ -78,7 +78,7 @@ func TestEnrolledMTLSHeartbeatUsesVerifiedPrincipal(t *testing.T) {
     if code := send(server.URL + path); code != http.StatusNoContent {
         t.Fatalf("genuine client cert heartbeat status %d, want 204", code)
     }
-    if writes.Load() != 1 {t.Fatalf("expected 1 SQL heartbeat write, got %d", writes)}
+    if writes.Load() != 1 {t.Fatalf("expected 1 SQL heartbeat write, got %d", writes.Load())}
     if code := send(server.URL + "/agent/v1/tenants/other/agents/win01/heartbeat");
         code != http.StatusForbidden {
         t.Fatalf("wrong tenant path status %d, want 403", code)
