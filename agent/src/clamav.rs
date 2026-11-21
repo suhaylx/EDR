@@ -123,8 +123,8 @@ mod tests {
     }
     #[test]
     fn be097_rejects_control_characters_in_signature_and_error() {
-        assert!(parse_reply(b"stream: injected\\rname FOUND").is_err());
-        assert!(parse_reply(b"stream: internal\\nproblem ERROR").is_err());
+        assert!(parse_reply(b"stream: injected\rname FOUND").is_err());
+        assert!(parse_reply(b"stream: internal\nproblem ERROR").is_err());
     }
     #[test]
     fn be098_rejects_oversized_signature() {
@@ -133,7 +133,7 @@ mod tests {
     }
     #[test]
     fn be099_rejects_embedded_nul_or_empty_error() {
-        assert!(parse_reply(b"stream: M\\0AL FOUND").is_err());
+        assert!(parse_reply(b"stream: M\0AL FOUND").is_err());
         assert!(parse_reply(b"stream:  ERROR").is_err());
     }
     #[test]
