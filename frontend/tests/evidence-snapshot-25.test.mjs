@@ -55,12 +55,13 @@ test('M126 the server-generated UTC anchor is retained, never replaced with brow
   const s=review();assert.equal(s.generatedAt,now);assert.equal(s.days,7);
   assert.equal(s.serverReported.events,17);assert.equal(s.serverReported.alerts,8);
 });
-test('M127 inclusive one-day and seven-day windows use absolute milliseconds',()=>{
+test('M127 Go overview uses inclusive UTC calendar days (not rolling durations)',()=>{
   const end=Date.parse(now);
   assert.equal(isInOverviewWindow(end,end,1),true);
-  assert.equal(isInOverviewWindow(end-86400000,end,1),true);
-  assert.equal(isInOverviewWindow(end-86400001,end,1),false);
-  assert.equal(isInOverviewWindow(end-7*86400000,end,7),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-21T00:00:00Z'),end,1),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-20T23:59:59Z'),end,1),false);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-15T00:00:00Z'),end,7),true);
+  assert.equal(isInOverviewWindow(Date.parse('2026-11-14T23:59:59Z'),end,7),false);
 });
 test('M128 invalid/unknown UTC anchors and windows fail closed',()=>{
   assert.equal(isInOverviewWindow(Date.parse(now),Number.NaN,7),false);
