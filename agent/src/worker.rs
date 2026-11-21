@@ -76,6 +76,92 @@ fn validate_lease(job: &ScanLease, agent: &str) -> io::Result<()> {
     Ok(())
 }
 
+// On Linux, bind the scan to the *opened* policy root, not to a pathname
+// checked separately from opening. openat2 resolves the entire relative path
+// atomically with respect to symlinks, mount crossings and traversal escapes.
+// Linux < 5.6, unsupported filesystems or kernels fail closed (no fallback).
+#[cfg(target_os = "linux")]
+fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
+    use std::ffi::CString;
+    use std::os::fd::{AsRawFd, FromRawFd};
+    use std::os::unix::ffi::OsStrExt;
+    use std::path::Component;
+
+    #[repr(C)]
+    struct OpenHow {
+        flags: u64,
+        mode: u64,
+        resolve: u64,
+    }
+
+    let target = Path::new(path);
+    if !root.is_absolute() || !target.is_absolute() {
+        return Err(error(io::ErrorKind::PermissionDenied, "absolute scan root and target required"));
+    }
+    let root = fs::canonicalize(root)?;
+    if root.parent().is_none() || !root.is_dir() {
+        return Err(error(io::ErrorKind::PermissionDenied, "invalid lab scan root"));
+    }
+    let relative = target.strip_prefix(&root).map_err(|_| {
+        error(io::ErrorKind::PermissionDenied, "target is not beneath lab scan root")
+    })?;
+    if relative.as_os_str().is_empty() ||
+        !relative.components().all(|component| matches!(component, Component::Normal(_))) {
+        return Err(error(io::ErrorKind::PermissionDenied, "invalid relative scan target"));
+    }
+
+    let root_c = CString::new(root.as_os_str().as_bytes())
+        .map_err(|_| error(io::ErrorKind::InvalidInput, "NUL in root"))?;
+    // O_PATH allows a directory capability without needing directory read
+    // privileges. O_NOFOLLOW plus metadata prevents a swapped final root link.
+    let root_fd = unsafe {
+        libc::open(root_c.as_ptr(), libc::O_PATH | libc::O_DIRECTORY |
+            libc::O_CLOEXEC | libc::O_NOFOLLOW)
+    };
+    if root_fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let root_handle = unsafe { std::fs::File::from_raw_fd(root_fd) };
+    if !root_handle.metadata()?.is_dir() {
+        return Err(error(io::ErrorKind::PermissionDenied, "scan root is not a directory"));
+    }
+
+    let relative_c = CString::new(relative.as_os_str().as_bytes())
+        .map_err(|_| error(io::ErrorKind::InvalidInput, "NUL in scan target"))?;
+    // openat2 UAPI: NO_XDEV=0x01, NO_SYMLINKS=0x04, BENEATH=0x08.
+    // O_NONBLOCK prevents a malicious FIFO/device path from hanging during
+    // open; the opened handle must still pass a regular-file type check.
+    let how = OpenHow {
+        flags: (libc::O_RDONLY | libc::O_CLOEXEC |
+            libc::O_NOFOLLOW | libc::O_NONBLOCK) as u64,
+        mode: 0,
+        resolve: 0x01 | 0x04 | 0x08,
+    };
+    let fd = unsafe {
+        libc::syscall(libc::SYS_openat2, root_handle.as_raw_fd(),
+            relative_c.as_ptr(), &how as *const OpenHow,
+            std::mem::size_of::<OpenHow>())
+    };
+    if fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let file = unsafe { std::fs::File::from_raw_fd(fd as i32) };
+    let info = file.metadata()?;
+    if !info.is_file() || info.len() > crate::MAX_SCAN_BYTES {
+        return Err(error(io::ErrorKind::InvalidInput,
+            "target must be a regular file within scan size cap"));
+    }
+    Ok(file)
+}
+
+// Windows and other non-Linux platforms retain the limited lab path check.
+// Windows production must use reparse-safe, handle-relative file opens.
+#[cfg(not(target_os = "linux"))]
+fn open_scoped_lab_file(path: &str, root: &Path) -> io::Result<std::fs::File> {
+    let target = allowed_lab_file(path, root)?;
+    open_lab_scan_target(&target)
+}
+
 // Fail closed: both supplied root and target are resolved before file open.
 // This reduces symlink traversal but is not a TOCTOU-safe production sandbox.
 fn allowed_lab_file(path: &str, root: &Path) -> io::Result<PathBuf> {
@@ -99,8 +185,7 @@ fn scan_one(job: &ScanLease, root: &Path, socket: &str) -> ScanCompletion {
             "quick/full scan profiles require endpoint policy and are not implemented".into());
     }
     let outcome = (|| -> io::Result<clamav::Verdict> {
-        let target = allowed_lab_file(&job.path, root)?;
-        let mut file = open_lab_scan_target(&target)?;
+        let mut file = open_scoped_lab_file(&job.path, root)?;
         scan_lab_file(&mut file, socket)
     })();
     match outcome {
