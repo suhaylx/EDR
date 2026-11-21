@@ -10,7 +10,7 @@ func provenanceLoad() Event {
 		ID: "sysmon-7-101", Platform: "windows", DeviceID: "win-01",
 		Type: "module_load", FilePath: `C:\Users\Alice\AppData\Local\Temp\plugin.dll`,
 		Image: `C:\Windows\System32\rundll32.exe`, ProcessGUID: "{one}",
-		Hash: "abc123", Time: time.Date(2026, 11, 21, 12, 0, 0, 0, time.UTC),
+		BootID: "boot-a", Hash: "abc123", Time: time.Date(2026, 11, 21, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -44,7 +44,7 @@ func TestDLLCreateEnrichmentIgnoresIncompleteProvenance(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			valid := Event{ID: "valid-create", Platform: "windows",
 				DeviceID: load.DeviceID, Type: "file_create",
-				FilePath: load.FilePath, Hash: load.Hash,
+				FilePath: load.FilePath, BootID: load.BootID, Hash: load.Hash,
 				Time: load.Time.Add(-2 * time.Minute),
 			}
 			malformed := valid
@@ -64,7 +64,7 @@ func TestDLLCorrelationRejectsOutOfScopeCreatesAndDeduplicates(t *testing.T) {
 	load := provenanceLoad()
 	valid := Event{ID: "valid-create", Platform: "windows",
 		DeviceID: load.DeviceID, Type: "file_create",
-		FilePath: load.FilePath, Hash: load.Hash,
+		FilePath: load.FilePath, BootID: load.BootID, Hash: load.Hash,
 		Time: load.Time.Add(-time.Minute),
 	}
 	created := []Event{
@@ -76,7 +76,7 @@ func TestDLLCorrelationRejectsOutOfScopeCreatesAndDeduplicates(t *testing.T) {
 		{ID: "old-create", Platform: "windows", DeviceID: load.DeviceID,
 			Type: "file_create", FilePath: load.FilePath, Time: load.Time.Add(-25 * time.Hour)},
 		{ID: "wrong-hash", Platform: "windows", DeviceID: load.DeviceID,
-			Type: "file_create", FilePath: load.FilePath, Hash: "different",
+			Type: "file_create", FilePath: load.FilePath, BootID: load.BootID, Hash: "different",
 			Time: load.Time.Add(-time.Second)},
 	}
 	if got := DetectSuspiciousDLLLoads(created); len(got) != 0 {
@@ -112,5 +112,37 @@ func TestDLLAlertExposesUnverifiedSourceRecordAndReceipt(t *testing.T) {
 	}
 	if alert.Confidence != "low" {
 		t.Fatalf("unauthenticated source must not increase confidence: %+v", alert)
+	}
+}
+
+func TestDLLCreateEvidenceRequiresSameExplicitBootScope(t *testing.T) {
+	load := provenanceLoad()
+	for _, tc := range []struct {
+		name string
+		createBoot string
+		loadBoot string
+		wantLink bool
+	}{
+		{"same-boot", "boot-a", "boot-a", true},
+		{"different-boot", "boot-b", "boot-a", false},
+		{"missing-create-boot", "", "boot-a", false},
+		{"missing-load-boot", "boot-a", "", false},
+		{"both-missing", "", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			l := load
+			l.BootID = tc.loadBoot
+			create := Event{ID: "create-1", Platform: "windows", DeviceID: l.DeviceID,
+				Type: "file_create", FilePath: l.FilePath, Hash: l.Hash,
+				BootID: tc.createBoot, Time: l.Time.Add(-time.Minute)}
+			got := DetectSuspiciousDLLLoads([]Event{create, l})
+			if len(got) != 1 {
+				t.Fatalf("module load must still alert: %+v", got)
+			}
+			linked := got[0].FileCreateEventID != ""
+			if linked != tc.wantLink {
+				t.Fatalf("unexpected cross-boot evidence link: %+v", got[0])
+			}
+		})
 	}
 }
