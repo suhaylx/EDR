@@ -15,11 +15,11 @@ Stacked on draft frontend PR #140 → #131 → #124 → #114 → #100 → #76
   not `ReceivedAt`; detections on `ObservedAt`; scan jobs on
   `CreatedAt`. The Go overview is a separate in-memory request and
   **not atomic** with `GET /api/events` (last 100), `/api/detections`
-  (all retained), `/api/scan-jobs` (all returned jobs), `/api/policies`
+  (all retained), `/api/scan-jobs` (all returned jobs), `/api/policy-metadata`
   or `/api/assignments`.
 - `backend/internal/edr/http.go`: GET-only lab endpoints exist for
   `/api/overview?days=1|7|30`, `/api/events`, `/api/detections`,
-  `/api/scan-jobs`, `/api/policies`, `/api/assignments`,
+  `/api/scan-jobs`, `/api/policy-metadata`, `/api/assignments`,
   `/api/investigations`; they are guarded by **one shared development
   bearer token**. Policy mutation and scan job POST endpoints exist
   but are never invoked by this frontend sprint.
@@ -57,7 +57,7 @@ false discrepancies. Existing M127 acceptance was corrected.
 **Implementation:** `policy-readonly.ts` decodes bounded policy
 metadata and assignment IDs from **GET** only through the backend metadata-only policy route (raw XML never delivered to the browser); checks policy revision,
 date, digest and duplicate IDs; intentionally **does not retain or
-display raw Sysmon XML**, even though the Go GET policy object includes it.
+display raw Sysmon XML**; the new backend metadata route excludes XML before serialization (the legacy lab `/api/policies` route still carries XML and is not used by React).
 It computes actual server precedence agent > group > default and
 compares intended ID/revision to endpoint acknowledgments.
 `PolicyEvidenceReview.tsx` adds a read-only dashboard tab with
