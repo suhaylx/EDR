@@ -26,7 +26,7 @@ func TestSOCMalwareAlertsReadAndTriage(t *testing.T) {
     values:[][]driver.Value{{int64(1),int64(0),int64(0)}}},nil
   case strings.Contains(q,"FROM edr_soc_alerts"):
    return &scanRows{columns:[]string{"alert_id","job_id","agent_id","category","severity",
-     "signature_name","state","created_at","updated_at","acknowledged_by","resolved_by","note"},
+     "signature_name","state","created_at","updated_at","acknowledged_by","resolved_by","note","assigned_to"},
     values:[][]driver.Value{{testUUID,leaseUUID,"win01","malware_signature",
       "high","Lab-Signature","open",now,now,"","","",""}}},nil
   }
