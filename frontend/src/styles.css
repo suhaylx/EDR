@@ -64,3 +64,11 @@
 .inventory-filters select{width:100%;min-height:44px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:10px}
 .inventory-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 @media(max-width:760px){.inventory-filters{grid-template-columns:1fr}}
+
+/* Local scan-history triage only: filters do not submit endpoint commands. */
+.scan-history-filters{display:grid;grid-template-columns:minmax(220px,1fr) minmax(240px,1.2fr);gap:14px;margin:16px 0}
+.scan-history-filters .field{display:grid;gap:8px;min-width:0}
+.scan-history-filters select{width:100%;max-width:100%;min-height:44px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:10px}
+.scan-history-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.scan-history-filters input{max-width:100%}
+@media(max-width:760px){.scan-history-filters{grid-template-columns:1fr}}
