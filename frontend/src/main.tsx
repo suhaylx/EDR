@@ -17,6 +17,7 @@ import { SysmonCoverage } from './SysmonCoverage.js';
 import { EvidenceSnapshotReview } from './EvidenceSnapshotReview.js';
 import {fetchPolicyMetadata,fetchPolicyAssignments,type PolicyMeta,type PolicyAssignment} from './policy-readonly.js';
 import {PolicyEvidenceReview} from './PolicyEvidenceReview.js';
+import {ScanLifecycleReview} from './ScanLifecycleReview.js';
 import './styles.css';
 
 type LoadState = 'disconnected' | 'loading' | 'ready' | 'error';
@@ -341,8 +342,9 @@ function App() {
                 onSelectScan={id => setScanSelection(id)}
                 onInspectSource={selection => {setSourceSelection(selection);setView('telemetry');}}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
-            : <ScanEvidenceWorkbench jobs={jobs}
-                onInspectContext={id => setScanSelection(id)}/>)
+            : <><ScanEvidenceWorkbench jobs={jobs}
+                onInspectContext={id => setScanSelection(id)}/>
+              <ScanLifecycleReview jobs={jobs} generatedAt={overview.generated_at}/></>)
           : <><h2 id="history-title">Retained scan jobs</h2>
             <p className="empty">No scan results displayed until a successful authenticated lab request.</p></>}
       </section>}
