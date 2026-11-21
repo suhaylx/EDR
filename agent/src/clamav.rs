@@ -117,4 +117,63 @@ mod tests {
         let mut conn = stub(b"PONG\0");
         assert!(scan_stream(&mut conn, &mut Cursor::new(b"x"), 3).is_err());
     }
+
+    // Synthetic clamd replies only: this test never opens a real daemon
+    // and never uses a malware file. ERROR or malformed input cannot be CLEAN.
+    #[test]
+    fn qa_clamd_rejects_ten_malformed_verdicts_without_false_clean() {
+        let malformed: [&[u8]; 10] = [
+            b"PONG\0",
+            b"stream: \0",
+            b"stream: FOUND\0",
+            b"stream:  FOUND\0",
+            b"stream: clean\0",
+            b"stream: OK extra\0",
+            b"stream: ERROR\0",
+            b"stream: ambiguous DETECTED\0",
+            b"stream: OK\n\0",
+            b"\xff\0",
+        ];
+        for (index, response) in malformed.into_iter().enumerate() {
+            let mut conn = stub(response);
+            let result = scan_stream(&mut conn, &mut Cursor::new(b"benign-only"), 64);
+            assert!(result.is_err(), "malformed reply {index} was accepted: {result:?}");
+        }
+    }
+
+    #[test]
+    fn qa_clamd_error_and_named_test_signature_are_distinct() {
+        let cases: [(&[u8], Verdict); 3] = [
+            (b"stream: OK\0", Verdict::CleanBySignature),
+            (b"stream: Eicar-Test-Signature FOUND\0",
+                Verdict::Malicious("Eicar-Test-Signature".into())),
+            (b"stream: scanner unavailable ERROR\0",
+                Verdict::ScannerError("scanner unavailable".into())),
+        ];
+        for (reply, expected) in cases {
+            let mut conn = stub(reply);
+            let result = scan_stream(&mut conn, &mut Cursor::new(b"benign-only"), 64).unwrap();
+            assert_eq!(result, expected);
+        }
+    }
+
+    #[test]
+    fn qa_clamd_limits_and_truncated_reply_do_not_produce_clean_verdict() {
+        for cap in [0, 1024_u64 * 1024 * 1024 + 1] {
+            let mut conn = stub(b"stream: OK\0");
+            assert!(scan_stream(&mut conn, &mut Cursor::new(b"x"), cap).is_err());
+            assert!(conn.sent.is_empty(), "invalid cap must fail before sending input");
+        }
+        let mut conn = stub(b"stream: OK\0");
+        assert!(scan_stream(&mut conn, &mut Cursor::new(b"over-cap"), 3).is_err());
+        let mut conn = stub(b"stream: OK");
+        assert!(scan_stream(&mut conn, &mut Cursor::new(b"x"), 16).is_err(),
+            "missing clamd NUL terminator must not be treated as a clean result");
+        let mut oversized = b"stream: ".to_vec();
+        oversized.extend(vec![b'a'; 2050]);
+        let mut conn = stub(&oversized);
+        assert!(scan_stream(&mut conn, &mut Cursor::new(b"x"), 16).is_err(),
+            "unbounded scanner reply must never become a clean result");
+    }
+
 }
