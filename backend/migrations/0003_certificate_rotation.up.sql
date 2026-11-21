@@ -22,18 +22,24 @@ BEGIN
        OR p_new_fingerprint IS NULL OR octet_length(p_new_fingerprint) <> 32
        OR p_old_fingerprint = p_new_fingerprint
        OR p_not_before IS NULL OR p_not_after IS NULL
+       -- Never revoke a working leaf to replace it with an unusable one.
+       -- Database authorization is [not_before, not_after).
+       OR p_not_before > transaction_timestamp()
+       OR p_not_after <= transaction_timestamp()
        OR p_not_before >= p_not_after THEN
         RAISE EXCEPTION 'invalid certificate rotation parameters'
             USING ERRCODE = 'invalid_parameter_value';
     END IF;
 
-    -- Serialize rotations per tenant/device and deny revoked agents or
-    -- disabled tenants. The tenant/device pair is never taken from a header.
+    -- Lock both authorization rows through the whole rotation. The device
+    -- UPDATE lock serializes simultaneous rotations, and the tenant SHARE
+    -- lock prevents a concurrent disablement committing mid-rotation.
+    -- Tenant/device input must come from an authorized issuer, never headers.
     PERFORM 1 FROM public.edr_agents AS a
     JOIN public.edr_tenants AS t ON t.tenant_id = a.tenant_id
     WHERE a.tenant_id = p_tenant_id AND a.agent_id = p_agent_id
       AND a.revoked_at IS NULL AND t.disabled_at IS NULL
-    FOR UPDATE OF a;
+    FOR UPDATE OF a FOR SHARE OF t;
     IF NOT FOUND THEN RETURN false; END IF;
 
     UPDATE public.edr_agent_certificates
