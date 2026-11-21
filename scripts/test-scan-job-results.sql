@@ -61,11 +61,16 @@ BEGIN
     RAISE EXCEPTION 'DELETE of malware evidence succeeded';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-  -- BE-113: composite result FK prevents a result with a spoofed tenant/device.
+  -- BE-113: scope FK must fail before any job_id uniqueness conflict.
+  -- Use a cancelled, result-free job so no other constraint masks the FK.
+  INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root,state)
+  VALUES ('11111111-1111-4111-8111-111111111107','resultA','win01',
+      'C:/Lab/unclaimed','cancelled');
   BEGIN
     INSERT INTO edr_scan_job_results(
         job_id,tenant_id,agent_id,engine,verdict)
-    VALUES (job.job_id,'resultB','win01','clamav','error');
+    VALUES ('11111111-1111-4111-8111-111111111107',
+        'resultB','win01','clamav','error');
     RAISE EXCEPTION 'cross-tenant result row inserted';
   EXCEPTION WHEN foreign_key_violation THEN NULL;
   END;
