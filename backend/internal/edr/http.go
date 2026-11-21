@@ -136,14 +136,18 @@ func (s *Server) Handler() http.Handler {
 			}
 			reply(w, 200, job)
 		case r.URL.Path == "/api/overview" && r.Method == "GET":
-			data := s.Store.Snapshot()
-			online := 0
-			for _, a := range data.Agents {
-				if time.Since(a.LastSeen) < 5*time.Minute {
-					online++
-				}
+			days := 7
+			switch r.URL.Query().Get("days") {
+			case "", "7":
+			case "1":
+				days = 1
+			case "30":
+				days = 30
+			default:
+				http.Error(w, "days must be 1, 7 or 30", http.StatusBadRequest)
+				return
 			}
-			reply(w, 200, map[string]int{"agents": len(data.Agents), "online": online, "events": len(data.Events), "policies": len(data.Policies), "assignments": len(data.Assignments)})
+			reply(w, 200, BuildSOCOverview(s.Store.Snapshot(), s.Store.ScanJobs(), time.Now().UTC(), days))
 		case strings.HasPrefix(r.URL.Path, "/api/agents/") && r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/desired-policy"):
 			agentID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/agents/"), "/desired-policy")
 			if !validID(agentID) {
