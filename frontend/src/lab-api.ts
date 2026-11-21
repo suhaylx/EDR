@@ -43,6 +43,8 @@ export function decodeScanJobs(value: unknown): LabScanJob[] {
         throw new Error('Malformed scan job at record ' + (index + 1) + '.');
       }
     }
+    if (item.signature_reported !== undefined && typeof item.signature_reported !== 'boolean')
+      throw new Error('Invalid scan signature indicator at record ' + (index + 1));
     const id = item.id as string;
     if (seen.has(id)) throw new Error('Duplicate lab scan job ID in response.');
     seen.add(id);
@@ -70,15 +72,32 @@ export function decodeScanJobs(value: unknown): LabScanJob[] {
       database_version: get('database_version'),
       threat_name: get('threat_name'),
       detail: get('detail'),
+      ...(typeof item.signature_reported === 'boolean'
+        ? {signature_reported: item.signature_reported} : {}),
     };
   });
 }
 
+/** Strict metadata-only wire contract for analyst GET. Legacy raw queue
+ * responses are rejected rather than copied into the browser and stripped
+ * only after delivery. decodeScanJobs remains a testable legacy decoder. */
+export function decodeLabScanReviewJobs(value:unknown):LabScanJob[] {
+  if(!Array.isArray(value))throw new Error('Invalid scan metadata response');
+  for(const [i,entry] of value.entries()){
+    if(!isObject(entry) || typeof entry.signature_reported!=='boolean')
+      throw new Error('Scan review signature indicator missing at record '+(i+1));
+    for(const field of ['request_id','path','lease_id','threat_name','detail']){
+      if(Object.hasOwn(entry,field))
+        throw new Error('Unexpected private scan field in review response at record '+(i+1));
+    }
+  }
+  return decodeScanJobs(value);
+}
 export async function fetchLabScanJobs(
   token: string, signal?: AbortSignal, fetcher: typeof fetch = fetch,
 ): Promise<LabScanJob[]> {
   if (token.length < 16) throw new Error('The development token must contain at least 16 characters.');
-  const response = await fetcher('/api/scan-jobs', {
+  const response = await fetcher('/api/scan-job-metadata', {
     method: 'GET',
     headers: { Authorization: 'Bearer ' + token },
     credentials: 'omit',
@@ -89,5 +108,5 @@ export async function fetchLabScanJobs(
     if (response.status === 401) throw new Error('Development token rejected (HTTP 401).');
     throw new Error('Lab scan API returned HTTP ' + response.status + '.');
   }
-  return decodeScanJobs(await response.json() as unknown);
+  return decodeLabScanReviewJobs(await response.json() as unknown);
 }
