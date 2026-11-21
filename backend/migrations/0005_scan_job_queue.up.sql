@@ -82,13 +82,20 @@ DECLARE changed integer;
 BEGIN
     IF p_tenant_id IS NULL OR p_agent_id IS NULL OR p_job_id IS NULL
        OR p_lease_token IS NULL OR p_success IS NULL THEN RETURN false; END IF;
-    UPDATE public.edr_scan_jobs
+    -- Revalidate the live enrollment at completion, not just at claim.
+    -- A previously leased job is no authority after the agent is revoked
+    -- or its tenant disabled.
+    UPDATE public.edr_scan_jobs AS j
     SET state=CASE WHEN p_success THEN 'succeeded' ELSE 'failed' END,
         lease_owner=NULL,lease_token=NULL,lease_expires_at=NULL,
         updated_at=transaction_timestamp()
-    WHERE tenant_id=p_tenant_id AND agent_id=p_agent_id AND job_id=p_job_id
-      AND state='leased' AND lease_token=p_lease_token
-      AND lease_expires_at > transaction_timestamp();
+    FROM public.edr_agents AS a
+    JOIN public.edr_tenants AS t ON t.tenant_id=a.tenant_id
+    WHERE j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id AND j.job_id=p_job_id
+      AND a.tenant_id=j.tenant_id AND a.agent_id=j.agent_id
+      AND a.revoked_at IS NULL AND t.disabled_at IS NULL
+      AND j.state='leased' AND j.lease_token=p_lease_token
+      AND j.lease_expires_at > transaction_timestamp();
     GET DIAGNOSTICS changed = ROW_COUNT;
     RETURN changed=1;
 END;
