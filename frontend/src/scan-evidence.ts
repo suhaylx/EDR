@@ -142,7 +142,7 @@ export function filterReportedScanJobs(
     const kind=scanEvidenceKind(job);
     if(query.kind==='attention' && !scanNeedsAttention(job))return false;
     if(query.kind==='pending' && kind!=='queued' && kind!=='leased')return false;
-    if(query.kind==='failed_or_error' &&
+    if(query.kind==='failed_or_error' && job.status!=='failed' &&
       !['expired','failed','scanner_error'].includes(kind))return false;
     if(query.kind==='unscanned' && kind!=='unscanned')return false;
     if(query.kind==='unsupported_claim' && kind!=='unsupported_claim')return false;
