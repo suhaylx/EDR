@@ -73,6 +73,68 @@ BEGIN
     RAISE EXCEPTION 'SOC fleet summary or cross-tenant scope invalid';
   END IF;
 END $qa$;
+-- Exercise the *same* Go SQL projections through state transitions.
+-- The temporary views must recompute health and tenant visibility; assertions
+-- below guard the distinction between reported liveness and protection.
+UPDATE edr_agent_heartbeats SET scan_ready=false
+ WHERE tenant_id='qa-soc-cte-a' AND agent_id='win01';
+DO $qa$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM qa_inventory_detail
+     WHERE health='degraded' AND scan_ready=false) THEN
+   RAISE EXCEPTION 'SOC inventory degraded: scan readiness mislabeled online';
+ END IF;
+END $qa$;
+
+UPDATE edr_agent_heartbeats
+ SET last_seen=CURRENT_TIMESTAMP-INTERVAL '10 minutes'
+ WHERE tenant_id='qa-soc-cte-a' AND agent_id='win01';
+DO $qa$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM qa_inventory_detail WHERE health='stale') THEN
+   RAISE EXCEPTION 'SOC inventory stale heartbeat mislabeled';
+ END IF;
+END $qa$;
+
+UPDATE edr_agents SET revoked_at=CURRENT_TIMESTAMP
+ WHERE tenant_id='qa-soc-cte-a' AND agent_id='win01';
+DO $qa$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM qa_inventory_detail WHERE health='revoked') THEN
+   RAISE EXCEPTION 'SOC inventory revocation did not override stale health';
+ END IF;
+END $qa$;
+
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+ VALUES ('qa-soc-cte-a','unseen','linux');
+DO $qa$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM qa_inventory_list
+       WHERE agent_id='unseen' AND platform='linux'
+         AND health='unseen' AND last_seen IS NULL
+         AND received_count=0 AND agent_version='') THEN
+   RAISE EXCEPTION 'SOC inventory missing heartbeat incorrectly reported';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM qa_inventory_summary
+       WHERE total=2 AND windows=1 AND linux=1
+         AND revoked=1 AND unseen=1 AND online=0
+         AND degraded=0 AND stale=0) THEN
+   RAISE EXCEPTION 'SOC inventory summary does not classify missing/revoked';
+ END IF;
+END $qa$;
+
+-- A disabled tenant must disappear even with stored heartbeat and enrolled
+-- device rows; a same-named agent in another tenant must not leak.
+UPDATE edr_tenants SET disabled_at=CURRENT_TIMESTAMP
+ WHERE tenant_id='qa-soc-cte-a';
+DO $qa$
+BEGIN
+ IF (SELECT count(*) FROM qa_inventory_list)<>0 OR
+    (SELECT count(*) FROM qa_inventory_detail)<>0 OR
+    NOT EXISTS (SELECT 1 FROM qa_inventory_summary WHERE total=0) THEN
+   RAISE EXCEPTION 'Disabled tenant inventory still returns endpoints';
+ END IF;
+END $qa$;
 ROLLBACK;""")
 PY
 echo "SOC inventory list/detail/summary query projections passed disposable PostgreSQL"
