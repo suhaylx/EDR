@@ -21,6 +21,9 @@ func NewAgentMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,agentC
         len(serverCert.Certificate)==0||serverCert.PrivateKey==nil{
         return nil,errors.New("agent mTLS requires database, nonempty controlled CA and complete server keypair")
     }
+    if err:=validateAgentServerKeyPair(serverCert);err!=nil{
+        return nil,err
+    }
     host,portText,err:=net.SplitHostPort(addr)
     if err!=nil||host==""||portText==""{
         return nil,errors.New("agent listener requires explicit numeric loopback host:port")
