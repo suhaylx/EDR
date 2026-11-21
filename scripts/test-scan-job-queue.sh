@@ -50,8 +50,9 @@ BEGIN
 END $$;
 -- QA: an expired lease cannot complete, and its token cannot be replayed
 -- after the recovery worker issues a new lease for the same job.
+INSERT INTO edr_agents(tenant_id,agent_id,platform) VALUES ('tenantA','qa-replay','linux');
 INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
-VALUES ('55555555-5555-4555-8555-555555555555','tenantB','win01','/replay');
+VALUES ('55555555-5555-4555-8555-555555555555','tenantA','qa-replay','/replay');
 DO $replay$
 DECLARE
   job uuid := '55555555-5555-4555-8555-555555555555';
@@ -59,25 +60,25 @@ DECLARE
   next_token uuid := '22222222-bbbb-4222-8222-222222222222';
   leased record;
 BEGIN
-  SELECT * INTO leased FROM edr_claim_scan_job('tenantB','win01','worker-1',first_token,30);
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-1',first_token,30);
   IF leased.job_id IS DISTINCT FROM job THEN
     RAISE EXCEPTION 'initial replay fixture claim failed'; END IF;
   UPDATE edr_scan_jobs SET lease_expires_at=transaction_timestamp()-interval '1 second'
     WHERE job_id=job;
-  IF edr_complete_scan_job('tenantB','win01',job,first_token,true) THEN
+  IF edr_complete_scan_job('tenantA','qa-replay',job,first_token,true) THEN
     RAISE EXCEPTION 'expired lease completion accepted'; END IF;
   IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'leased' THEN
     RAISE EXCEPTION 'expired completion mutated job'; END IF;
   IF edr_recover_expired_scan_jobs(10) <> 1 THEN
     RAISE EXCEPTION 'replay fixture recovery failed'; END IF;
-  SELECT * INTO leased FROM edr_claim_scan_job('tenantB','win01','worker-2',next_token,30);
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-2',next_token,30);
   IF leased.job_id IS DISTINCT FROM job OR leased.attempt_count <> 2 THEN
     RAISE EXCEPTION 'recovered lease not issued'; END IF;
-  IF edr_complete_scan_job('tenantB','win01',job,first_token,true) THEN
+  IF edr_complete_scan_job('tenantA','qa-replay',job,first_token,true) THEN
     RAISE EXCEPTION 'stale token replay accepted'; END IF;
   IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'leased' THEN
     RAISE EXCEPTION 'replay mutated active lease'; END IF;
-  IF NOT edr_complete_scan_job('tenantB','win01',job,next_token,false) THEN
+  IF NOT edr_complete_scan_job('tenantA','qa-replay',job,next_token,false) THEN
     RAISE EXCEPTION 'valid recovered completion rejected'; END IF;
   IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'failed' THEN
     RAISE EXCEPTION 'failed result state not persisted'; END IF;
