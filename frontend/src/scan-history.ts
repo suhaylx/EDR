@@ -6,17 +6,22 @@ export type ScanHistoryFilter =
   'all' | 'pending' | 'failed_or_error' | 'unscanned' | 'reported_match' | 'signature_negative' | 'unrecognized';
 
 export function scanFilterMatches(job: LabScanJob, filter: ScanHistoryFilter): boolean {
+  // Current lab worker reports quick/full as unscanned: a "successful" claim
+  // for either mode is inconsistent and must not enter signature categories.
+  const unsupportedSuccess = (job.scan_type === 'quick' || job.scan_type === 'full') &&
+    job.status === 'completed' &&
+    ['clean_by_signature', 'malicious', 'suspicious'].includes(job.verdict || '');
   switch (filter) {
     case 'all': return true;
     case 'pending': return job.status === 'queued' || job.status === 'leased';
     case 'failed_or_error': return job.status === 'failed' || job.status === 'expired' || job.verdict === 'error';
     case 'unscanned': return job.verdict === 'unscanned';
-    case 'reported_match': return job.status === 'completed' && job.verdict === 'malicious';
-    case 'signature_negative': return job.status === 'completed' && job.verdict === 'clean_by_signature';
+    case 'reported_match': return !unsupportedSuccess && job.status === 'completed' && job.verdict === 'malicious';
+    case 'signature_negative': return !unsupportedSuccess && job.status === 'completed' && job.verdict === 'clean_by_signature';
     case 'unrecognized': {
       if (!['queued', 'leased', 'failed', 'expired', 'completed'].includes(job.status)) return true;
       if (job.status === 'completed') {
-        return !['malicious', 'suspicious', 'clean_by_signature'].includes(job.verdict || '');
+        return unsupportedSuccess || !['malicious', 'suspicious', 'clean_by_signature'].includes(job.verdict || '');
       }
       return false;
     }
