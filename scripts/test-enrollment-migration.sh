@@ -68,6 +68,65 @@ BEGIN
   END;
 END $$;
 
+-- A valid X.509 leaf is insufficient when its database enrollment window
+-- is future-dated or expired. Boundary semantics are [not_before,not_after).
+DO $validity$
+DECLARE allowed_count integer;
+BEGIN
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates AS c
+  JOIN edr_agents AS a ON a.tenant_id=c.tenant_id AND a.agent_id=c.agent_id
+  JOIN edr_tenants AS t ON t.tenant_id=c.tenant_id
+  WHERE c.tenant_id='tenantA' AND c.agent_id='win01'
+    AND c.revoked_at IS NULL AND a.revoked_at IS NULL AND t.disabled_at IS NULL
+    AND c.not_before <= CURRENT_TIMESTAMP AND c.not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 1 THEN RAISE EXCEPTION 'active enrollment rejected'; END IF;
+
+  UPDATE edr_agent_certificates
+    SET not_before=CURRENT_TIMESTAMP+interval '1 hour',
+        not_after=CURRENT_TIMESTAMP+interval '2 hours'
+    WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+    WHERE tenant_id='tenantA' AND agent_id='win01'
+      AND revoked_at IS NULL
+      AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 0 THEN RAISE EXCEPTION 'future enrollment accepted'; END IF;
+
+  UPDATE edr_agent_certificates
+    SET not_before=CURRENT_TIMESTAMP-interval '2 hours',
+        not_after=CURRENT_TIMESTAMP-interval '1 hour'
+    WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+    WHERE tenant_id='tenantA' AND agent_id='win01'
+      AND revoked_at IS NULL
+      AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 0 THEN RAISE EXCEPTION 'expired enrollment accepted'; END IF;
+
+  UPDATE edr_agent_certificates
+    SET not_before=CURRENT_TIMESTAMP,
+        not_after=CURRENT_TIMESTAMP+interval '1 hour'
+    WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+    WHERE tenant_id='tenantA' AND agent_id='win01'
+      AND revoked_at IS NULL
+      AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 1 THEN RAISE EXCEPTION 'inclusive start rejected'; END IF;
+
+  UPDATE edr_agent_certificates
+    SET not_before=CURRENT_TIMESTAMP-interval '1 hour',
+        not_after=CURRENT_TIMESTAMP
+    WHERE tenant_id='tenantA' AND agent_id='win01';
+  SELECT count(*) INTO allowed_count FROM edr_agent_certificates
+    WHERE tenant_id='tenantA' AND agent_id='win01'
+      AND revoked_at IS NULL
+      AND not_before <= CURRENT_TIMESTAMP AND not_after > CURRENT_TIMESTAMP;
+  IF allowed_count <> 0 THEN RAISE EXCEPTION 'exclusive expiry accepted'; END IF;
+
+  UPDATE edr_agent_certificates
+    SET not_before=CURRENT_TIMESTAMP-interval '1 hour',
+        not_after=CURRENT_TIMESTAMP+interval '1 day'
+    WHERE tenant_id='tenantA' AND agent_id='win01';
+END $validity$;
+
 -- Certificate rotation: revoke old leaf, then enroll new leaf atomically.
 UPDATE edr_agent_certificates
 SET revoked_at=now(),revoke_reason='rotation'
