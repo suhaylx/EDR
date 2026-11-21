@@ -44,6 +44,9 @@ type Event struct {
 	DeviceID          string    `json:"device_id"`
 	Platform          string    `json:"platform"`
 	Source            string    `json:"source"`
+	// Sender-reported event-log provider and channel, never a verified OS assertion.
+	SourceProvider    string    `json:"source_provider,omitempty"`
+	SourceChannel     string    `json:"source_channel,omitempty"`
 	// Sysmon numerical event ID, reported by the lab agent (not authenticated).
 	SourceEventID     uint32    `json:"source_event_id,omitempty"`
 	// Bounded, explicitly allowlisted non-secret source metadata.
@@ -344,6 +347,25 @@ var expectedSysmonTypes = map[uint32]string{
     27:"file_block_executable",28:"file_block_shredding",
     29:"file_executable_detected",255:"sysmon_error",
 }
+// Legacy lab records may predate provider/channel tagging. They remain
+// explicitly unverified; newer records MUST report the pair consistently.
+// No other Windows Event Log provider (Security, System or PowerShell) may
+// masquerade as the Sysmon provider or reuse a numeric Sysmon event label.
+func validateEventProvider(e Event) error {
+    if e.SourceProvider == "" && e.SourceChannel == "" {
+        return nil // backward-compatible, provider not verified
+    }
+    if len(e.SourceProvider) > 96 || len(e.SourceChannel) > 128 {
+        return errors.New("source provider/channel too long")
+    }
+    if e.Source == "sysmon" && e.Platform == "windows" &&
+        e.SourceProvider == "Microsoft-Windows-Sysmon" &&
+        e.SourceChannel == "Microsoft-Windows-Sysmon/Operational" {
+        return nil
+    }
+    return errors.New("source provider/channel mismatch or unsupported channel")
+}
+
 func validateSysmonSourceFields(e Event) error {
     if e.SourceEventID == 0 && len(e.SourceFields) == 0 { return nil }
     if e.Source != "sysmon" || e.Platform != "windows" {
@@ -394,6 +416,9 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.ParentProcessGUID) > 128 || len(e.Image) > 32768 ||
 		len(e.FilePath) > 32768 || len(e.Hash) > 256 {
 		return Event{}, errors.New("invalid event fields")
+	}
+	if err := validateEventProvider(e); err != nil {
+		return Event{}, err
 	}
 	if err := validateSysmonSourceFields(e); err != nil {
 		return Event{}, err
