@@ -16,9 +16,9 @@ import { summarizeReturnedEvidenceGaps } from './evidence-gaps.js';
  * Retained detection triage: Source IDs identify Go-retained events, not
  * authenticated endpoint/tenant evidence. No endpoint response controls.
  */
-export function MultisignalAlertTriage({detections,events,generatedAt,days,onInvestigate,onInspectSource}: {
+export function MultisignalAlertTriage({detections,events=[],generatedAt,days,onInvestigate,onInspectSource}: {
   detections: LabDetection[];
-  events: readonly LabTelemetryEvent[];
+  events?: readonly LabTelemetryEvent[];
   generatedAt: string;
   days: DayWindow;
   onInvestigate: (seed: InvestigationSeed) => void;
