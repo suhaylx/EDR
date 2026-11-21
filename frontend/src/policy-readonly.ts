@@ -1,5 +1,5 @@
 /** Read-only Go Store policy contracts: backend/internal/edr/{http,store}.go.
- * No raw XML is retained in UI state. Policy, assignment and acks are only
+ * Server must exclude raw XML from the response; UI rejects it if present. Policy, assignment and acks are only
  * lab sender-reported management records; NOT verified Sysmon enforcement.
  */
 import type { LabSOCOverview, EndpointActivity } from './overview.js';
@@ -38,10 +38,10 @@ export function decodePolicyMetadata(raw:unknown):PolicyMeta[]{
    const created=clean(value.created_at,64,'timestamp');
    if(!/^\d{4}-\d\d-\d\dT/.test(created)||!Number.isFinite(Date.parse(created)))
      throw new Error('Invalid policy creation timestamp');
-   // Backend GET includes xml. We intentionally validate its shape/size
-   // without retaining, displaying or exporting potentially sensitive content.
-   if(typeof value.xml!=='string'||value.xml.length>65536)
-     throw new Error('Invalid policy XML source field');
+   // Never accept a fallback to the legacy XML-bearing /api/policies
+   // response. Metadata-only payloads must be produced by the backend.
+   if(Object.hasOwn(value,'xml'))
+     throw new Error('Unexpected Sysmon XML in policy metadata response');
    return {id:policyID,name,platform:os,revision:rev,sha256:sha,created_at:created};
  });
 }
@@ -71,7 +71,7 @@ async function read(token:string,url:string,signal?:AbortSignal,fetcher:typeof f
  return await response.json() as unknown;
 }
 export async function fetchPolicyMetadata(token:string,signal?:AbortSignal,fetcher:typeof fetch=fetch){
- return decodePolicyMetadata(await read(token,'/api/policies',signal,fetcher));
+ return decodePolicyMetadata(await read(token,'/api/policy-metadata',signal,fetcher));
 }
 export async function fetchPolicyAssignments(token:string,signal?:AbortSignal,fetcher:typeof fetch=fetch){
  return decodePolicyAssignments(await read(token,'/api/assignments',signal,fetcher));
