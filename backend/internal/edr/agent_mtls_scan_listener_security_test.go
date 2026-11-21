@@ -13,9 +13,13 @@ import (
 // listener constructor, not a separate auth-probe or development bearer API.
 func TestIntegratedAgentListenerFailClosed(t *testing.T) {
     now := time.Now().UTC()
-    _, serverCert, trusted := createTestAgentCertificate(t, now,
-        []string{"spiffe://turansec.local/tenants/lab/agents/worker"},
-        []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth})
+    // A TLS listener must present a ServerAuth leaf, not an agent client cert.
+    serverCert := testAgentServerPair(t, now.Add(-time.Hour), now.Add(time.Hour),
+        []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}, x509.KeyUsageDigitalSignature, false)
+    root, err := x509.ParseCertificate(serverCert.Certificate[1])
+    if err != nil { t.Fatal(err) }
+    trusted := x509.NewCertPool()
+    trusted.AddCert(root)
     db := &sql.DB{}
     for _, addr := range []string{"127.0.0.1:9443", "127.0.0.2:9443", "[::1]:9443"} {
         t.Run("allow_"+strings.ReplaceAll(addr, ":", "_"),func(t *testing.T) {
