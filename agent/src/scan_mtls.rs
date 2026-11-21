@@ -5,8 +5,8 @@ use reqwest::blocking::Client;
 use reqwest::tls::Version;
 use reqwest::{Certificate, Identity, Url};
 use std::env;
-use std::fs;
-use std::io::{self};
+use std::fs::{self, File};
+use std::io::{self, Read};
 use std::path::Path;
 use std::time::Duration;
 
@@ -26,19 +26,62 @@ pub fn validated_origin(s: &str) -> io::Result<Url> {
     Ok(u)
 }
 
+// These bounds apply before parsing TLS material and are intentionally much
+// larger than a conventional PEM key/certificate. Never read arbitrary-size
+// files supplied through the agent environment.
+const MAX_PRIVATE_KEY_BYTES: u64 = 64 * 1024;
+const MAX_CERT_BUNDLE_BYTES: u64 = 1024 * 1024;
+
+fn read_pem_bounded(path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+    let mut file = File::open(path)?;
+    let opened = file.metadata()?;
+    if !opened.is_file() || opened.len() == 0 || opened.len() > limit {
+        return Err(reject("TLS certificate material must be a bounded regular file"));
+    }
+    let mut content = Vec::new();
+    file.by_ref().take(limit + 1).read_to_end(&mut content)?;
+    if content.is_empty() || (content.len() as u64) > limit {
+        return Err(reject("TLS certificate material exceeded size limit"));
+    }
+    Ok(content)
+}
+
 fn read_key(path: &Path) -> io::Result<Vec<u8>> {
-    let meta = fs::symlink_metadata(path)?;
-    if !meta.is_file() || meta.file_type().is_symlink() {
+    let original = fs::symlink_metadata(path)?;
+    if !original.is_file() || original.file_type().is_symlink() {
         return Err(reject("private key path must be a regular file"));
     }
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        if meta.permissions().mode() & 0o077 != 0 {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        if original.permissions().mode() & 0o077 != 0 {
             return Err(reject("client key must not be group/world accessible"));
         }
+        // Open first; before reading any secret, check that the opened inode
+        // still matches the non-symlink file we inspected. This closes the
+        // check-then-fs::read path-substitution window on Unix.
+        let mut file = File::open(path)?;
+        let opened = file.metadata()?;
+        if !opened.is_file() || opened.dev() != original.dev()
+            || opened.ino() != original.ino()
+            || opened.permissions().mode() & 0o077 != 0
+            || opened.len() == 0 || opened.len() > MAX_PRIVATE_KEY_BYTES
+        {
+            return Err(reject("private key changed or has unsafe file permissions"));
+        }
+        let mut bytes = Vec::new();
+        file.by_ref().take(MAX_PRIVATE_KEY_BYTES + 1).read_to_end(&mut bytes)?;
+        if bytes.is_empty() || (bytes.len() as u64) > MAX_PRIVATE_KEY_BYTES {
+            return Err(reject("client private key exceeded size limit"));
+        }
+        return Ok(bytes);
     }
-    fs::read(path)
+    #[cfg(not(unix))]
+    {
+        // Windows ACL and reparse-point checks still require deployment-time
+        // verification; a filesystem mode bit does not establish NTFS ACLs.
+        read_pem_bounded(path, MAX_PRIVATE_KEY_BYTES)
+    }
 }
 
 fn env_required(name: &str) -> io::Result<String> {
@@ -58,8 +101,8 @@ impl AgentClient {
         let origin = env_required("TURANSEC_MTLS_ORIGIN")?;
         let tenant = env_required("TURANSEC_MTLS_TENANT_ID")?;
         let agent = env_required("TURANSEC_MTLS_AGENT_ID")?;
-        let ca = fs::read(env_required("TURANSEC_MTLS_CA_PEM")?)?;
-        let cert = fs::read(env_required("TURANSEC_MTLS_CERT_PEM")?)?;
+        let ca = read_pem_bounded(Path::new(&env_required("TURANSEC_MTLS_CA_PEM")?), MAX_CERT_BUNDLE_BYTES)?;
+        let cert = read_pem_bounded(Path::new(&env_required("TURANSEC_MTLS_CERT_PEM")?), MAX_CERT_BUNDLE_BYTES)?;
         let key = read_key(Path::new(&env_required("TURANSEC_MTLS_KEY_PEM")?))?;
         Self::new(&origin, &tenant, &agent, &ca, &cert, &key)
     }
@@ -189,5 +232,65 @@ mod tests {
     fn be080_rejects_missing_identity_before_network() {
         let err = AgentClient::new("https://edr.test", "..", "win01", b"", b"", b"");
         assert!(err.is_err());
+    }
+
+    // The material reader must not consume attacker-controlled huge files or
+    // follow an on-disk client-key symlink as a substitute for enrollment.
+    fn private_key_fixture(name: &str, contents: &[u8]) -> std::path::PathBuf {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static COUNTER: AtomicUsize = AtomicUsize::new(0);
+        let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "turansec-agent-mtls-{}-{}-{name}", std::process::id(), seq));
+        std::fs::write(&path, contents).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path,
+                std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        path
+    }
+
+    #[test]
+    fn pm101_reads_only_bounded_private_key() {
+        let p = private_key_fixture("key", b"test-only-private-key");
+        let bytes = read_key(&p).unwrap();
+        assert_eq!(bytes, b"test-only-private-key");
+        std::fs::remove_file(p).unwrap();
+    }
+
+    #[test]
+    fn pm102_rejects_oversized_secret_and_cert_bundle() {
+        let key = private_key_fixture("large-key", &vec![b'k'; (MAX_PRIVATE_KEY_BYTES + 1) as usize]);
+        assert!(read_key(&key).is_err());
+        std::fs::remove_file(key).unwrap();
+        let ca = private_key_fixture("large-ca", &vec![b'c'; (MAX_CERT_BUNDLE_BYTES + 1) as usize]);
+        assert!(read_pem_bounded(&ca, MAX_CERT_BUNDLE_BYTES).is_err());
+        std::fs::remove_file(ca).unwrap();
+    }
+
+    #[test]
+    fn pm103_rejects_empty_cert_material() {
+        let ca = private_key_fixture("empty-ca", b"");
+        assert!(read_pem_bounded(&ca, MAX_CERT_BUNDLE_BYTES).is_err());
+        std::fs::remove_file(ca).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn pm104_rejects_world_readable_key_and_symlink() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+        let p = private_key_fixture("key-perms", b"test-only-key");
+        std::fs::set_permissions(&p,
+            std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(read_key(&p).is_err());
+        std::fs::set_permissions(&p,
+            std::fs::Permissions::from_mode(0o600)).unwrap();
+        let link = p.with_extension("symlink");
+        symlink(&p, &link).unwrap();
+        assert!(read_key(&link).is_err());
+        std::fs::remove_file(&link).unwrap();
+        std::fs::remove_file(p).unwrap();
     }
 }
