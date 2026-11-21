@@ -5,6 +5,8 @@ on:
     paths:
       - "backend/internal/edr/agent_mtls_server.go"
       - "backend/internal/edr/agent_mtls_scan_listener_security_test.go"
+      - "backend/internal/edr/agent_http.go"
+      - "backend/internal/edr/agent_http_untrusted_headers_test.go"
       - ".github/workflows/p0-agent-mtls-scan-listener.yml"
   workflow_dispatch:
 
