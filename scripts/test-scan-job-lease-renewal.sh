@@ -19,6 +19,12 @@ BEGIN
     '88888888-8888-4888-8888-888888888888',30);
   IF claimed.job_id IS NULL THEN RAISE EXCEPTION 'claim failed'; END IF;
   SELECT lease_expires_at INTO before_expiry FROM edr_scan_jobs WHERE job_id=claimed.job_id;
+  IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,NULL,
+    '88888888-8888-4888-8888-888888888888',30) THEN
+    RAISE EXCEPTION 'null worker renewed'; END IF;
+  IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
+    NULL,30) THEN
+    RAISE EXCEPTION 'null token renewed'; END IF;
   IF edr_renew_scan_job_lease('renewB','device',claimed.job_id,'worker1',
     '88888888-8888-4888-8888-888888888888',30) THEN
     RAISE EXCEPTION 'cross tenant renewal'; END IF;
