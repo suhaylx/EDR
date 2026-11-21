@@ -6,7 +6,8 @@ import { filterScanHistory, type ScanHistoryFilter } from './scan-history.js';
 import { fetchLabOverview, heartbeatLabel, type LabSOCOverview, type DayWindow } from './overview.js';
 import { InvestigationView } from './InvestigationView.js';
 import { PolicyEvidenceView } from './PolicyEvidenceView.js';
-import { fetchLabDetections, detectionsInWindow, seedForDetection, type LabDetection } from './detections.js';
+import { fetchLabDetections, type LabDetection } from './detections.js';
+import { AlertsTriageView } from './AlertsTriageView.js';
 import type { InvestigationSeed } from './investigation.js';
 import { filterEndpointInventory, policyEvidenceLabel, type InventoryFilter, type InventorySort } from './endpoint-inventory.js';
 import './styles.css';
@@ -124,34 +125,6 @@ function Overview({ overview }: { overview: LabSOCOverview }) {
       <p className="minor">Data source: {overview.data_source} · generated {overview.generated_at}. No tenant isolation, historical guarantee, or endpoint protection attestation is claimed by this lab view.</p>
     </section>
   </>;
-}
-
-function Alerts({detections, generatedAt, days, onInvestigate}: {
-  detections: LabDetection[]; generatedAt: string; days: DayWindow;
-  onInvestigate: (seed: InvestigationSeed) => void;
-}) {
-  const visible = detectionsInWindow(detections, generatedAt, days);
-  return <section className="panel" aria-labelledby="alerts-title">
-    <h2 id="alerts-title">Observed detection signals</h2>
-    <p>Heuristic rule matches from the retained lab API, filtered to the selected {days}-day interval ending at server overview generation time. These are not confirmed incidents or malware infections.</p>
-    <p role="status">{visible.length} observed detection record(s) in this retained window.</p>
-    {visible.length === 0 ? <p className="empty">No matching retained alerts. This is not evidence the fleet is safe.</p>
-      : <div className="table-scroll"><table>
-        <caption>Retained detection evidence. Investigate actions navigate to a prefilled, read-only evidence query.</caption>
-        <thead><tr><th scope="col">Observed UTC</th><th scope="col">Severity / confidence</th><th scope="col">Endpoint</th><th scope="col">Rule</th><th scope="col">Observed module</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead>
-        <tbody>{visible.map(d=><tr key={d.id}>
-          <td>{d.observed_at}</td>
-          <td>{d.severity} / {d.confidence}</td>
-          <td>{d.device_id}<span className="minor">Process: {d.process_guid}</span></td>
-          <td>{d.rule_id}<span className="minor">{d.category}</span></td>
-          <td>{d.module_path}<span className="minor">Host image: {d.process_image}</span></td>
-          <td>{d.load_event_id}{d.file_create_event_id && <span className="minor">Separate file-create event: {d.file_create_event_id}</span>}</td>
-          <td><button className="source-button" type="button" onClick={()=>onInvestigate(seedForDetection(d))}
-            aria-label={'Investigate evidence for '+d.rule_id+' on '+d.device_id}>Investigate evidence</button></td>
-        </tr>)}</tbody>
-      </table></div>}
-    <p className="minor">A DLL file-create observation is separate from a module-load event. Analyst review is required; no blocking or quarantine occurs here.</p>
-  </section>;
 }
 
 function EndpointInventory({overview}: {overview: LabSOCOverview}) {
@@ -325,7 +298,7 @@ function App() {
           <section className="panel"><p className="empty">Connect and refresh to retrieve enrolled lab endpoint records.</p></section>)
         : view === 'alerts' ?
         (status === 'ready' && overview
-          ? <Alerts detections={detections} generatedAt={overview.generated_at} days={days}
+          ? <AlertsTriageView detections={detections} generatedAt={overview.generated_at} days={days}
             onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}} />
           : <section className="panel"><p className="empty">Connect and refresh to retrieve retained lab detection evidence.</p></section>)
         : view === 'policies'
