@@ -74,3 +74,43 @@ test('QA absence of signature marker does not invent signature match',()=>{
 test('QA empty scan metadata list is valid unknown state',()=>{
  assert.deepEqual(decodeLabScanReviewJobs([]),[]);
 });
+
+
+test('QA review contract rejects unknown source fields even if null or empty',()=>{
+  for(const key of ['raw_signature','operator_cert','tenant_secret','future_scan_path','unexpected']){
+    assert.throws(()=>decodeLabScanReviewJobs([redacted({[key]:null})]),/Unexpected scan metadata field/);
+    assert.throws(()=>decodeLabScanReviewJobs([redacted({[key]:''})]),/Unexpected scan metadata field/);
+  }
+  // Go omits absent pointer timestamps; allow null only for known optional fields.
+  assert.equal(decodeLabScanReviewJobs([redacted({lease_until:null,completed_at:null})]).length,1);
+});
+
+test('QA rejects Unicode display reordering and replacement characters in metadata',()=>{
+  for(const control of ['\u202e','\u2066','\u2069','\u200e','\u200f','\u061c','\ufffd']){
+    for(const field of ['id','agent_id','status','verdict','engine','engine_version','database_version']){
+      assert.throws(
+        ()=>decodeLabScanReviewJobs([redacted({[field]:'safe'+control+'spoof'})]),
+        /Malformed scan job at record 1/,
+      );
+    }
+  }
+  const healthy=decodeLabScanReviewJobs([redacted({engine_version:'ClamAV 1.5.5'})]);
+  assert.equal(healthy[0].engine_version,'ClamAV 1.5.5');
+});
+
+test('QA scan timestamps require explicit timezone and do not reinterpret local wall clock',()=>{
+  for(const stamp of [
+    '2026-11-21T12:00:00','2026-11-21T12:00:00.000',
+    '2026-11-21T12:00:00+05','2026-11-21T12:00:00foo',
+  ]){
+    assert.throws(()=>decodeLabScanReviewJobs([redacted({created_at:stamp})]),/UTC timestamp/);
+  }
+  assert.equal(
+    decodeLabScanReviewJobs([redacted({created_at:'2026-11-21T17:00:00+05:00'})])[0].created_at,
+    '2026-11-21T17:00:00+05:00',
+  );
+  assert.equal(
+    decodeLabScanReviewJobs([redacted({created_at:'2026-11-21T12:00:00.123456789Z'})])[0].created_at,
+    '2026-11-21T12:00:00.123456789Z',
+  );
+});
