@@ -16,7 +16,8 @@ for migration in \
   0003_certificate_rotation \
   0004_enrollment_challenges \
   0005_scan_job_queue \
-  0006_atomic_agent_enrollment; do
+  0006_atomic_agent_enrollment \
+  0007_enrollment_challenge_issuance; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
