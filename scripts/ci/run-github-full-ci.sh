@@ -72,7 +72,9 @@ if [[ -f "$SOURCE_ROOT/frontend/package.json" ]]; then
     node:22-bookworm bash -euo pipefail -c \
     'npm install --no-audit --no-fund; npm run typecheck; npm test; npm run build' || true
 else
-  record "NOT INTEGRATED | React absent from current SOC backend SHA"
+  record "BLOCKED | React UI is not integrated into current SOC backend SHA"
+  failures=$((failures+1))
+  record "NOT RELEASE-READY | historical React snapshot is validation only, not integrated E2E"
   if [[ -f "$SOURCE_ROOT/_frontend_lab_snapshot/frontend/package.json" ]] &&
      [[ "$(git -C "$SOURCE_ROOT/_frontend_lab_snapshot" rev-parse HEAD)" == "$FRONTEND_SNAPSHOT_SHA" ]]; then
     check "Separate React lab snapshot at $FRONTEND_SNAPSHOT_SHA" docker run --rm \
