@@ -50,7 +50,7 @@ production-safe source of detections and cannot be deployed to customer hosts.
 
 Ingested `Event` records include `received_at` (server-stamped UTC receipt
 instant), `time_origin` (`sender_reported_unverified` or `server_received`),
-and optional `source_record_id` (up to 256 bytes, no CR/LF/NUL). The existing
+and optional `source_record_id` (up to 256 bytes, no control characters, DEL or Unicode replacement character). The existing
 `time` field is a sender-provided observation time when supplied; otherwise
 it falls back to receipt time. Incoming `received_at` and `time_origin`
 values are overwritten server-side. The server-generated `id` is an ingest
