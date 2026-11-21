@@ -76,6 +76,9 @@ type Event struct {
 	RegistryTarget    string    `json:"registry_target,omitempty"`
 	RegistryNewName   string    `json:"registry_new_name,omitempty"`
 	RegistryOperation string    `json:"registry_operation,omitempty"`
+	// WMI permanent-subscription identity only; do not retain query or command bodies.
+	WMIFilterName     string    `json:"wmi_filter_name,omitempty"`
+	WMIConsumerName   string    `json:"wmi_consumer_name,omitempty"`
 	Detail            string    `json:"detail,omitempty"`
 }
 type Snapshot struct {
@@ -344,6 +347,7 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.GrantedAccess) > 10 ||
 		len(e.RegistryTarget) > 1024 || len(e.RegistryNewName) > 1024 ||
 		len(e.RegistryOperation) > 32 ||
+		len(e.WMIFilterName) > 256 || len(e.WMIConsumerName) > 256 ||
 		e.SysmonEventID < 0 || e.SysmonEventID > 255 ||
 		e.DestinationPort < 0 || e.DestinationPort > 65535 {
 		return Event{}, errors.New("invalid event fields")
@@ -404,6 +408,16 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		case "create_key", "delete_key", "create_value", "delete_value", "set_value", "rename_key", "rename_value":
 		default:
 			return Event{}, errors.New("unsupported registry operation")
+		}
+	}
+	// WMI object names can identify an execution mechanism. Keep only bounded
+	// identity strings and reject control/formatting injection. Do not log full
+	// WQL queries, consumer command templates or ScriptText in this contract.
+	for _, name := range []string{e.WMIFilterName, e.WMIConsumerName} {
+		if strings.TrimSpace(name) != name || strings.IndexFunc(name, func(r rune) bool {
+			return r < 0x20 || r == 0x7f || r == 0xfffd
+		}) >= 0 {
+			return Event{}, errors.New("invalid WMI subscription name")
 		}
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always
