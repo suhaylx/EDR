@@ -55,7 +55,7 @@ false discrepancies. Existing M127 acceptance was corrected.
 ## Day 2 — policy intention vs reported acknowledgments
 
 **Implementation:** `policy-readonly.ts` decodes bounded policy
-metadata and assignment IDs from **GET** only; checks policy revision,
+metadata and assignment IDs from **GET** only through the backend metadata-only policy route (raw XML never delivered to the browser); checks policy revision,
 date, digest and duplicate IDs; intentionally **does not retain or
 display raw Sysmon XML**, even though the Go GET policy object includes it.
 It computes actual server precedence agent > group > default and
