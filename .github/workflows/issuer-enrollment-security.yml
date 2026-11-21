@@ -1,0 +1,30 @@
+name: issuer-enrollment-security
+on:
+  pull_request:
+    paths:
+      - "backend/internal/edr/issuer_enrollment_*.go"
+      - "backend/internal/edr/agent_certificate_validation.go"
+      - "backend/internal/edr/agent_identity.go"
+      - "backend/internal/edr/agent_enrollment_postgres.go"
+      - "backend/go.mod"
+      - "backend/go.sum"
+      - ".github/workflows/issuer-enrollment-security.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  issuer-go-race:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+      - name: Race-enabled issuer enrollment and full backend tests
+        working-directory: backend
+        run: go test -race -count=1 ./...
+      - name: Verify Go static analysis
+        working-directory: backend
+        run: go vet ./...
