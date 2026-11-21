@@ -36,6 +36,9 @@ BEGIN
     RAISE EXCEPTION 'valid renewal rejected'; END IF;
   IF (SELECT lease_expires_at FROM edr_scan_jobs WHERE job_id=claimed.job_id)
        <= before_expiry THEN RAISE EXCEPTION 'expiry not extended'; END IF;
+  IF (SELECT lease_expires_at FROM edr_scan_jobs WHERE job_id=claimed.job_id)
+       > transaction_timestamp()+interval '31 seconds' THEN
+    RAISE EXCEPTION 'renewal accumulates unbounded time'; END IF;
   UPDATE edr_agents SET revoked_at=now() WHERE tenant_id='renewA' AND agent_id='device';
   IF edr_renew_scan_job_lease('renewA','device',claimed.job_id,'worker1',
     '88888888-8888-4888-8888-888888888888',30) THEN
