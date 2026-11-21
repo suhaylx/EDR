@@ -409,7 +409,7 @@ func validateSysmonSourceFields(e Event) error {
 
 // Keep API-accepted text within the stricter React and Go-served SOC display
 // contracts. One oversized value must not make the full telemetry view fail.
-// Benign tabs/newlines are allowed in descriptive text, never C0/C1 controls.
+// Benign tabs/newlines are allowed in descriptive text, never ASCII C0 or DEL controls.
 func validDisplayText(value string) bool {
 	return strings.IndexFunc(value, func(r rune) bool {
 		return (r < 0x20 && r != '\t' && r != '\n' && r != '\r') ||
