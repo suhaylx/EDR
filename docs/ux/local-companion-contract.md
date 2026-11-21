@@ -1,6 +1,6 @@
 # TuranSec local companion UI — proposed read-only v1 contract
 
-**Status:** design/TypeScript decoding prototype only (Agent 5). No native tray, window, Unix socket, Windows named pipe, backend transport, or installed endpoint companion has been implemented in this PR. This is a **single TuranSec managed endpoint product** with a separate crash-isolated UI process; Rust remains the policy/scan authority. ClamAV and Sysmon facilities may operate as separate supervised processes or services.
+**Status:** read-only browser status-window UI prototype and TypeScript decoding contract (Agent 5). No native tray, native app window, Unix socket, Windows named pipe, backend transport, or installed endpoint companion has been implemented in this PR. This is a **single TuranSec managed endpoint product** with a separate crash-isolated UI process; Rust remains the policy/scan authority. ClamAV and Sysmon facilities may operate as separate supervised processes or services.
 
 ## Screen model and native UX
 
@@ -45,3 +45,27 @@ Windows and Linux are valid values for `platform`. The proposed parser rejects u
 - **Agent 2:** approve/revise transport and field semantics before connecting the UI. **Agent 1:** approve component health provenance and response authorization. **PM:** maintain draft review gates and coordinate dependency PRs.
 
 Design principles follow clarity, hierarchy, feedback, accessibility, privacy, and adaptive native behavior from Apple HIG without copying vendor visuals/assets or overriding Windows/Linux conventions.
+
+## Implemented browser status-window prototype
+
+A separate Vite page `frontend/local-companion.html` is now built from
+`frontend/src/local-companion-main.tsx` and renders
+`frontend/src/LocalCompanionView.tsx` with responsive,
+system dark/light and forced-colors-aware styling. The entry deliberately
+passes `null` rather than invented status data. No lab Go token, endpoint
+command, network polling or IPC is used. All component evidence displays
+Unknown while disconnected, and no privileged actions are presented.
+
+`localCompanionRows` clears prior component status on disconnect, staleness
+and future timestamps. The proposed Linux telemetry row never claims Sysmon
+coverage. Scan queued, leased, completed, failed, expired and unknown states
+remain lifecycle labels with **no verified malware verdict**; policy revision
+is a reported acknowledgement, not enforced policy proof.
+
+For independent QA: open the page via the local Vite dev server, inspect
+keyboard focus/reading order, NVDA/Orca, browser 200% zoom, light/dark mode,
+forced colors, long text, reduced motion, and verify no interactive endpoint
+commands. The visible default disconnected state is the **only actual runtime
+state wired by this page**; other states are covered by pure TypeScript tests
+until Agent 2 supplies authenticated IPC. Browser/AT/manual platform testing
+has not been performed by Agent 5.
