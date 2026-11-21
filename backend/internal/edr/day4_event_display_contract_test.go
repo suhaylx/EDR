@@ -34,6 +34,16 @@ func TestDay4EventDisplayLimitsMatchFrontend(t *testing.T) {
         {"file-control-character-denied",false,func(e *Event){e.FilePath="/var/tmp/\x01hidden"}},
         {"type-control-character-denied",false,func(e *Event){e.Type="process_observed\x1b"}},
         {"source-control-character-denied",false,func(e *Event){e.Source="procfs\x01"}},
+        {"image-bidi-override-denied",false,func(e *Event){e.Image="/tmp/benign\u202eexe.txt"}},
+        {"file-path-isolate-denied",false,func(e *Event){e.FilePath="/tmp/\u2066suspicious"}},
+        {"detail-directional-mark-denied",false,func(e *Event){e.Detail="notice\u200fhidden"}},
+        {"process-guid-bidi-denied",false,func(e *Event){e.ProcessGUID="guid\u202e"}},
+        {"parent-guid-bidi-denied",false,func(e *Event){e.ParentProcessGUID="guid\u2067"}},
+        {"hash-bidi-denied",false,func(e *Event){e.Hash="sha\u202e"}},
+        {"source-field-bidi-denied",false,func(e *Event){e.Platform="windows";e.Source="sysmon";e.Type="network_connect";e.SourceEventID=3;e.SourceFields=map[string]string{"destination_ip":"127.0.0.1\u202e"}}},
+        {"boot-id-bidi-denied",false,func(e *Event){e.BootID="boot\u2069"}},
+        {"source-record-id-bidi-denied",false,func(e *Event){e.SourceRecordID="procfs\u200e"}},
+
     }
     for _,tc:=range cases {
         t.Run(tc.name,func(t *testing.T){
