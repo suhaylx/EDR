@@ -1,6 +1,8 @@
-name: release-candidate-files
+name: release-candidate-files-65702cbc
 
 on:
+  push:
+    branches: [release-build/65702cbc-rc2]
   workflow_dispatch:
     inputs:
       version:
@@ -20,8 +22,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EDR_CANDIDATE_SHA: ${{ github.sha }}
-  RELEASE_VERSION: ${{ inputs.version }}
+  EDR_CANDIDATE_SHA: 65702cbc1cde6750304d9e438bb27bc0537c2d45
+  RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-rc.2' }}
 
 jobs:
   package:
@@ -72,16 +74,49 @@ jobs:
           python scripts/release/package-candidate.py build \
             --candidate-sha "$EDR_CANDIDATE_SHA" --target "$PACKAGE_TARGET" \
             --output "$RUNNER_TEMP/candidate-packages" --stage-only
+      - name: Verify every packaged file and native binary source identity
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, subprocess, tarfile, tempfile, zipfile
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "candidate-packages"
+          manifests = list(root.glob("*.manifest.json"))
+          assert len(manifests) == 1
+          manifest = json.loads(manifests[0].read_text())
+          expected = os.environ["EDR_CANDIDATE_SHA"]
+          assert manifest["source_sha"] == expected
+          assert manifest["target"] == os.environ["PACKAGE_TARGET"]
+          archive = root / manifest["archive"]["name"]
+          assert archive.stat().st_size == manifest["archive"]["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["archive"]["sha256"]
+          with tempfile.TemporaryDirectory(prefix="edr-package-smoke-") as temporary:
+              stage = pathlib.Path(temporary)
+              if archive.suffix == ".zip":
+                  with zipfile.ZipFile(archive) as bundle:
+                      bundle.extractall(stage)
+              else:
+                  with tarfile.open(archive) as bundle:
+                      bundle.extractall(stage, filter="data")
+              for entry in manifest["files"]:
+                  path = stage / entry["path"]
+                  assert path.is_file() and not path.is_symlink()
+                  assert path.stat().st_size == entry["size"]
+                  assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+              suffix = ".exe" if os.name == "nt" else ""
+              for name in ("edrd", "turansec-edr-agent"):
+                  identity = subprocess.check_output([str(stage / "bin" / (name + suffix)), "--version"], text=True).strip()
+                  assert expected in identity
+                  print(identity)
+          print(json.dumps({"result": "all-files-and-native-source-identities-verified", "candidate_sha": expected, "target": manifest["target"], "files": len(manifest["files"]), "archive": manifest["archive"], "host_acceptance": "not-established", "deployment_authorization": "not-granted"}, sort_keys=True))
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: unsigned-package-${{ matrix.target }}-${{ github.sha }}
+          name: unsigned-package-${{ matrix.target }}-${{ env.EDR_CANDIDATE_SHA }}
           path: ${{ runner.temp }}/candidate-packages/
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: package-checks-${{ matrix.target }}-${{ github.sha }}
+          name: package-checks-${{ matrix.target }}-${{ env.EDR_CANDIDATE_SHA }}
           path: .quality-evidence/
           include-hidden-files: true
           if-no-files-found: error
@@ -101,7 +136,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          pattern: unsigned-package-*-${{ github.sha }}
+          pattern: unsigned-package-*-${{ env.EDR_CANDIDATE_SHA }}
           merge-multiple: true
           path: ${{ runner.temp }}/release-files
       - name: Verify both native archives and prepare checksums
@@ -114,12 +149,12 @@ jobs:
             --require-target linux-x86_64 --require-target windows-x86_64
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: reviewable-release-files-${{ github.sha }}
+          name: reviewable-release-files-${{ env.EDR_CANDIDATE_SHA }}
           path: ${{ runner.temp }}/release-files/
           if-no-files-found: error
           retention-days: 14
-      - name: Create explicitly requested draft prerelease
-        if: inputs.create_draft_release
+      - name: Create unsigned draft prerelease for review
+        if: github.event_name == 'push' || inputs.create_draft_release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
