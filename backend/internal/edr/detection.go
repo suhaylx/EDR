@@ -54,6 +54,9 @@ type Detection struct {
 	WMIConsumerName string    `json:"wmi_consumer_name,omitempty"`
 	TamperEventID string      `json:"tamper_event_id,omitempty"`
 	TamperType string         `json:"tamper_type,omitempty"`
+	StreamEventID string       `json:"stream_event_id,omitempty"`
+	StreamPath string          `json:"stream_path,omitempty"`
+	StreamName string          `json:"stream_name,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
