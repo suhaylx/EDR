@@ -299,6 +299,7 @@ function App() {
                 onInspectSource={selection => setSourceSelection(selection)}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
             : <SysmonCoverage events={events}
+                onInspectSource={selection => setSourceSelection(selection)}
                 onInvestigate={seed => {setInvestigationSeed(seed);setView('investigations');}}/>
           : <section className="panel"><p className="empty">Connect and refresh to inspect retained Sysmon and Linux source events. No telemetry means visibility is unknown, not safe.</p></section>)
         : view === 'alerts' ?
