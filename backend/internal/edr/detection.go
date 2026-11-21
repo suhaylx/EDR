@@ -72,7 +72,7 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 	created := make(map[string][]Event)
 	for _, event := range events {
 		if event.Platform != "windows" || event.Type != "file_create" || event.DeviceID == "" || event.FilePath == "" ||
-			event.ID == "" || event.Time.IsZero() {
+			event.ID == "" || strings.TrimSpace(event.ID) != event.ID || event.Time.IsZero() {
 			continue
 		}
 		key := event.DeviceID + "|" + windowsPath(event.FilePath)
