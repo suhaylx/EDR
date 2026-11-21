@@ -4,6 +4,7 @@ on:
     paths:
       - "backend/migrations/**"
       - "scripts/test-scan-job-queue.sh"
+      - "scripts/test-scan-job-lease-renewal.sh"
       - ".github/workflows/postgres-scan-job-queue.yml"
   workflow_dispatch:
 permissions:
@@ -35,4 +36,6 @@ jobs:
       - name: Test durable scan-job queue
         env:
           EDR_TEST_DATABASE_URL: postgresql://edr_queue_ci:disposable-ci-only@127.0.0.1:5432/edr_queue_test?sslmode=disable
-        run: bash scripts/test-scan-job-queue.sh
+        run: |
+          bash scripts/test-scan-job-queue.sh
+          bash scripts/test-scan-job-lease-renewal.sh
