@@ -284,10 +284,7 @@ function App() {
         <button type="button" aria-current={view === 'policies' ? 'page' : undefined} onClick={() => setView('policies')}>Policy evidence</button>
         <button type="button" aria-current={view === 'endpoints' ? 'page' : undefined} onClick={() => setView('endpoints')}>Endpoints</button>
         <button type="button" aria-current={view === 'alerts' ? 'page' : undefined} onClick={() => setView('alerts')}>Security alerts</button>
-        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);
-    setScanSelection(null);
-    setPolicies([]);
-    setAssignments([]);setView('telemetry');}}>Sysmon & telemetry</button>
+        <button type="button" aria-current={view === 'telemetry' ? 'page' : undefined} onClick={() => {setSourceSelection(null);setScanSelection(null);setView('telemetry');}}>Sysmon & telemetry</button>
         <button type="button" aria-current={view === 'scans' ? 'page' : undefined} onClick={() => setView('scans')}>Scan history</button>
         <button type="button" aria-current={view === 'investigations' ? 'page' : undefined} onClick={() => setView('investigations')}>Investigation evidence</button>
       </nav>
