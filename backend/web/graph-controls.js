@@ -5,13 +5,27 @@
     const q = String(query || '').trim().toLocaleLowerCase();
     return String(text || '').toLocaleLowerCase().includes(q);
   }
+  // A source link must reveal an item hidden by the local evidence filter
+  // before moving keyboard/screen-reader focus to that retained record.
+  function focusEvidence(target, input, update) {
+    if (!target || !input || typeof update !== 'function') return false;
+    if (target.hidden) {
+      input.value = '';
+      update();
+    }
+    if (target.hidden) return false;
+    target.tabIndex = -1; // Programmatic focus without adding every record to the tab order.
+    if (typeof target.focus === 'function') target.focus();
+    if (typeof target.scrollIntoView === 'function') target.scrollIntoView({block: 'nearest'});
+    return true;
+  }
   function attach(container) {
     if (!container || typeof container.querySelector !== 'function') return false;
     const tree = container.querySelector('.process-tree');
     const timeline = container.querySelector('.evidence-timeline');
     if (!tree && !timeline) return false;
     const doc = container.ownerDocument;
-    if (tree) {
+    if (tree && !tree.hasAttribute('data-graph-ux-bound')) {
       // Native details/summary provides Enter/Space operation and screen-reader state.
       for (const li of Array.from(tree.querySelectorAll('li')).reverse()) {
         const node = li.querySelector(':scope > .process-node');
@@ -41,8 +55,9 @@
       none.addEventListener('click', () => tree.querySelectorAll('details.process-branch').forEach(d => { d.open = false; }));
       controls.append(all, none);
       tree.parentNode.insertBefore(controls, tree);
+      tree.setAttribute('data-graph-ux-bound', 'true');
     }
-    if (timeline) {
+    if (timeline && !timeline.hasAttribute('data-graph-ux-bound')) {
       const items = Array.from(timeline.querySelectorAll(':scope > li'));
       timeline.id = 'graph-evidence-timeline';
       const searchWrap = doc.createElement('div');
@@ -82,14 +97,20 @@
           link.textContent = 'Inspect retained source ' + (matched.getAttribute('data-source-id') || 'event');
           // Link sits outside details summary to avoid activation conflicts.
           const li = process.closest('li');
-          if (li) li.appendChild(link);
+          if (li) {
+            li.appendChild(link);
+            link.addEventListener('click', event => {
+              if (focusEvidence(matched, input, update)) event.preventDefault();
+            });
+          }
         }
       }
       update();
+      timeline.setAttribute('data-graph-ux-bound', 'true');
     }
     return true;
   }
-  const exported = Object.freeze({ attach, matchesEvidence });
+  const exported = Object.freeze({ attach, matchesEvidence, focusEvidence });
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   if (root) root.TuranGraphUX = exported;
 })(typeof globalThis === 'undefined' ? null : globalThis);
