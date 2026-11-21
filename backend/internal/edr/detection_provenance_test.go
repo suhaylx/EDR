@@ -21,6 +21,8 @@ func TestDLLLoadMissingProvenanceDoesNotAlert(t *testing.T) {
 		mutate func(*Event)
 	}{
 		{"missing-id", func(e *Event) { e.ID = "" }},
+		{"leading-space-id", func(e *Event) { e.ID = " " + e.ID }},
+		{"trailing-space-id", func(e *Event) { e.ID += " " }},
 		{"missing-timestamp", func(e *Event) { e.Time = time.Time{} }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
