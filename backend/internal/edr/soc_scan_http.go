@@ -40,6 +40,10 @@ func SOCScanHandler(q PostgresScanJobQueue)http.Handler{
   if !ok {http.Error(w,"unauthorized",401);return}
   tenant,valid:=socTenantRoute(r.URL)
   if !valid||tenant!=p.TenantID {http.Error(w,"forbidden",403);return}
+  if r.Method==http.MethodGet {
+   SOCScanReadHandler(q).ServeHTTP(w,r)
+   return
+  }
   if r.URL.RawQuery!="" {http.Error(w,"invalid query",400);return}
   prefix:="/soc/v1/tenants/"+p.TenantID+"/"
   operation:=strings.TrimPrefix(r.URL.Path,prefix)
