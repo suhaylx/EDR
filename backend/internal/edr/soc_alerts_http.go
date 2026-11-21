@@ -24,6 +24,14 @@ func SOCAlertHandler(q PostgresScanJobQueue)http.Handler{
    if err!=nil{socRespondError(w,err);return}
    socReplyJSON(w,200,counts);return
   }
+  if op=="my-alerts"&&r.Method==http.MethodGet {
+   limit,offset,ok:=socReadQuery(r.URL.Query())
+   if !ok {http.Error(w,"invalid pagination",400);return}
+   items,err:=q.MySOCAlerts(r.Context(),p,limit,offset)
+   if err!=nil{socRespondError(w,err);return}
+   socReplyJSON(w,200,map[string]any{"items":items,"limit":limit,"offset":offset})
+   return
+  }
   if op=="alerts"&&r.Method==http.MethodGet {
    limit,offset,ok:=socReadQuery(r.URL.Query(),"state")
    if !ok{http.Error(w,"invalid pagination",400);return}
@@ -33,8 +41,13 @@ func SOCAlertHandler(q PostgresScanJobQueue)http.Handler{
    return
   }
   if !strings.HasPrefix(op,"alerts/"){http.NotFound(w,r);return}
-  if r.URL.RawQuery!=""{http.Error(w,"invalid query",400);return}
   segments:=strings.Split(strings.TrimPrefix(op,"alerts/"),"/")
+  // The activity feed allows bounded limit/offset; all other alert
+  // detail and mutation endpoints reject query-string overrides.
+  isActivity:=len(segments)==2&&segments[1]=="activity"&&r.Method==http.MethodGet
+  if r.URL.RawQuery!=""&&!isActivity {
+   http.Error(w,"invalid query",400);return
+  }
   if len(segments)<1||!validUUID(segments[0]){
    http.Error(w,"invalid alert ID",400);return
   }
@@ -45,11 +58,36 @@ func SOCAlertHandler(q PostgresScanJobQueue)http.Handler{
    if item==nil{http.NotFound(w,r);return}
    socReplyJSON(w,200,item);return
   }
+  if isActivity{
+   limit,offset,ok:=socReadQuery(r.URL.Query())
+   if !ok{http.Error(w,"invalid pagination",400);return}
+   events,err:=q.ListSOCAlertActivity(r.Context(),p,id,limit,offset)
+   if err!=nil{socRespondError(w,err);return}
+   socReplyJSON(w,200,map[string]any{"items":events,"limit":limit,"offset":offset})
+   return
+  }
   if len(segments)!=2||r.Method!=http.MethodPost {
    http.Error(w,"not found or method not allowed",405);return
   }
   if p.Role!="scanner"{http.Error(w,"forbidden",403);return}
   action:=segments[1]
+  if action=="notes"{
+   var payload struct{Note string `json:"note"`}
+   if !socDecode(w,r,&payload){return}
+   activityID,err:=q.AddSOCAlertNote(r.Context(),p,id,payload.Note)
+   if err!=nil{socRespondError(w,err);return}
+   socReplyJSON(w,http.StatusCreated,map[string]string{"activity_id":activityID})
+   return
+  }
+  if action=="assign"{
+   var payload struct{OperatorID string `json:"operator_id"`}
+   if !socDecode(w,r,&payload){return}
+   saved,err:=q.AssignSOCAlert(r.Context(),p,id,payload.OperatorID)
+   if err!=nil{socRespondError(w,err);return}
+   if !saved{http.Error(w,"assignment rejected or unchanged",409);return}
+   w.WriteHeader(http.StatusNoContent)
+   return
+  }
   if action!="ack"&&action!="resolve"&&action!="reopen"{
    http.NotFound(w,r);return
   }
