@@ -3,6 +3,7 @@ package edr
 import (
  "encoding/json"
  "errors"
+ "io"
  "net/http"
  "strings"
 )
