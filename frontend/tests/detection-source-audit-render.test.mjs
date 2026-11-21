@@ -29,7 +29,7 @@ const audit=(ds,es)=>renderToStaticMarkup(createElement(DetectionSourceAudit,{
   onInspectSource:()=>{},onInvestigate:()=>{},
 }));
 test('audit controls are labeled, table described and result count announced',()=>{
-  const html=audit([d('a')],[e('go-a')]);
+  const html=audit([d('a',{evidence_source_event_id:7})],[e('go-a')]);
   for(const field of ['audit-state','audit-severity','audit-host','audit-query','audit-sort','audit-page-size'])
     assert.match(html,new RegExp('for="'+field+'"'));
   assert.match(html,/<caption>/);
@@ -56,7 +56,7 @@ test('misleading FileCreate source and GUID conflicts remain visible to analyst'
   assert.match(html,/warning\(s\)/);
 });
 test('audited source uses React text escaping, not arbitrary HTML insertion',()=>{
-  const html=audit([d('a',{rule_id:'<script>alert(1)</script>'})],
+  const html=audit([d('a',{rule_id:'<script>alert(1)</script>',evidence_source_event_id:7})],
     [e('go-a')]);
   assert.match(html,/&lt;script/);
   assert.doesNotMatch(html,/<script\b/i);
