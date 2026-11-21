@@ -246,3 +246,23 @@
 @media(max-width:700px){.snapshot-review-columns{grid-template-columns:1fr}}
 @media(max-width:540px){.snapshot-review-metrics,.snapshot-review-columns .snapshot-review-metrics,.snapshot-review-filters{grid-template-columns:1fr}}
 @media(forced-colors:active){.snapshot-review-columns>section,.snapshot-review-metrics>div,.snapshot-limits,.snapshot-sysmon{border-color:CanvasText}}
+
+/* Backend-aligned three-day sprint: policy evidence and scan job lifecycle. */
+.policy-evidence-summary,.scan-lifecycle-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.policy-evidence-summary>div,.scan-lifecycle-metrics>div{min-width:0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.policy-evidence-summary dt,.scan-lifecycle-metrics dt{font-size:.83rem;color:var(--muted);line-height:1.5}
+.policy-evidence-summary dd,.scan-lifecycle-metrics dd{margin:8px 0 0;font-size:1.5rem;font-weight:750;font-variant-numeric:tabular-nums}
+.policy-evidence-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:16px 0}
+.policy-evidence-controls .field{display:grid;gap:8px;min-width:0}
+.policy-evidence-controls input{min-width:0;max-width:100%}
+.policy-evidence-controls select{background:var(--panel);color:var(--ink);width:100%;min-height:44px;min-width:0;border:1px solid var(--border);border-radius:9px;padding:10px}
+.policy-evidence-controls select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.policy-evidence-table,.scan-lifecycle-table{min-width:1000px}
+.scan-lifecycle{margin-top:24px}
+.scan-lifecycle-toggle{display:flex;align-items:center;gap:10px;max-width:650px;padding:12px 0;cursor:pointer}
+.scan-lifecycle-toggle input{width:20px;height:20px;min-height:20px;flex-shrink:0}
+.scan-lifecycle-table ul{padding-left:18px;margin:0}
+.scan-lifecycle-table li{margin:7px 0;overflow-wrap:anywhere}
+@media(max-width:900px){.policy-evidence-summary,.scan-lifecycle-metrics,.policy-evidence-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.policy-evidence-summary,.scan-lifecycle-metrics,.policy-evidence-controls{grid-template-columns:1fr}}
+@media(forced-colors:active){.policy-evidence-summary>div,.scan-lifecycle-metrics>div{border-color:CanvasText}}
