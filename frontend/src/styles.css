@@ -72,3 +72,20 @@
 .scan-history-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 .scan-history-filters input{max-width:100%}
 @media(max-width:760px){.scan-history-filters{grid-template-columns:1fr}}
+
+/* Observed alert triage: no fabricated incident state or response actions. */
+.alert-triage-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.alert-triage-summary>div{min-width:0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.alert-triage-summary dt{font-size:.86rem;color:var(--muted);line-height:1.45}
+.alert-triage-summary dd{font-size:1.55rem;font-weight:750;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.alert-triage-filters{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,1.2fr) minmax(220px,1.6fr);gap:14px;margin:16px 0 12px}
+.alert-triage-filters .field{display:grid;gap:8px;min-width:0}
+.alert-triage-filters select{width:100%;min-height:44px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:10px}
+.alert-triage-filters input{max-width:100%}
+.alert-triage-filters select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.alert-clear{margin:10px 0}
+@media(max-width:940px){.alert-triage-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .alert-triage-filters .field:last-child{grid-column:1/-1}}
+@media(max-width:640px){.alert-triage-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .alert-triage-filters{grid-template-columns:1fr}.alert-triage-filters .field:last-child{grid-column:auto}}
+@media(forced-colors:active){.alert-triage-summary>div,.alert-triage-filters select{border-color:CanvasText}}
