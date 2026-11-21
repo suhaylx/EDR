@@ -16,7 +16,7 @@ import (
 // agent CA pool, and a connected PostgreSQL database with least-privilege roles.
 // Never multiplex this handler with the lab dashboard or bearer-token API.
 func NewAgentMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,agentCAs *x509.CertPool)(*http.Server,error){
-    if db==nil||agentCAs==nil||len(serverCert.Certificate)==0{
+    if db==nil||agentCAs==nil||len(agentCAs.Subjects())==0||len(serverCert.Certificate)==0||serverCert.PrivateKey==nil{
         return nil,errors.New("agent mTLS requires database, trusted client CA, and server certificate")
     }
     host,_,err:=net.SplitHostPort(addr)
@@ -34,6 +34,7 @@ func NewAgentMTLSServer(addr string,db *sql.DB,serverCert tls.Certificate,agentC
         TLSConfig:&tls.Config{
             MinVersion:tls.VersionTLS13,
             ClientAuth:tls.RequireAndVerifyClientCert,
+            SessionTicketsDisabled:true,
             ClientCAs:agentCAs,
             Certificates:[]tls.Certificate{serverCert},
         },
