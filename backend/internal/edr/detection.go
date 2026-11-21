@@ -37,6 +37,20 @@ func windowsPath(s string) string {
 
 // The initial rule deliberately limits scope to likely user-writable folders.
 // These are heuristic signals only; legitimate installers may also match.
+// validSHA256Digest accepts only a complete hexadecimal SHA-256 digest.
+// Hashes are still sender-reported and unauthenticated in this prototype.
+func validSHA256Digest(hash string) bool {
+	if len(hash) != 64 {
+		return false
+	}
+	for _, c := range hash {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
 func suspiciousDLLPath(path string) bool {
 	p := windowsPath(path)
 	if !strings.HasSuffix(p, ".dll") {
@@ -107,7 +121,7 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 			}
 			// A missing hash cannot establish that a prior path occupant is
 			// the module actually loaded. Keep the load alert unlinked.
-			if event.Hash == "" || prev.Hash == "" || !strings.EqualFold(event.Hash, prev.Hash) {
+			if !validSHA256Digest(event.Hash) || !validSHA256Digest(prev.Hash) || !strings.EqualFold(event.Hash, prev.Hash) {
 				continue
 			}
 			nearest = prev.Time
