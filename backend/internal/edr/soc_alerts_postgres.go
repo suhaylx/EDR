@@ -88,8 +88,8 @@ func(q PostgresScanJobQueue) ChangeSOCAlert(ctx context.Context,p SOCOperatorPri
  if p.Role!="scanner"||!validQueueIdentity(p.TenantID,p.OperatorID){
   return false,ErrSOCForbidden
  }
- if !validUUID(alertID)||!strings.Contains("|ack|resolve|reopen|","|"+action+"|")||
-  len(note)>1024||strings.ContainsAny(note,"\x00\r\n\t")||
+ if !validUUID(alertID)||!validSOCAlertAction(action)||
+  len(note)>1024||containsUnsafeSOCText(note)||
   (action=="resolve"&&strings.TrimSpace(note)=="")||
   (action!="resolve"&&note!=""){
   return false,ErrInvalidScanQueueRequest
@@ -109,4 +109,11 @@ func(q PostgresScanJobQueue) SOCAlertStats(ctx context.Context,p SOCOperatorPrin
   &counts.Open,&counts.Acknowledged,&counts.Resolved)
  if err!=nil{return nil,ErrScanQueueUnavailable}
  return &counts,nil
+}
+
+func validSOCAlertAction(action string)bool{
+ switch action{
+ case "ack","resolve","reopen":return true
+ default:return false
+ }
 }
