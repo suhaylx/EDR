@@ -10,6 +10,14 @@ const isText = (value: unknown): value is string => typeof value === 'string';
 const optionalText = (value: unknown): boolean => value === undefined || value === null || isText(value);
 const required = ['id', 'agent_id', 'status'] as const;
 const optional = ['verdict', 'scan_type', 'created_at', 'expires_at', 'lease_until', 'completed_at', 'engine', 'engine_version', 'database_version', 'threat_name', 'detail'] as const;
+// Wire allowlist for the metadata-only analyst endpoint. Reject additions
+// before projecting: future server fields require an explicit privacy review.
+const reviewWireFields = new Set([
+  'id','agent_id','status','scan_type','verdict',
+  'created_at','expires_at','lease_until','completed_at',
+  'engine','engine_version','database_version','signature_reported',
+]);
+
 const maxLength: Record<string,number> = {
   id: 160, agent_id: 96, status: 40, verdict: 64,
   scan_type: 32, created_at: 64, expires_at: 64, lease_until: 64, completed_at: 64, engine: 128,
@@ -18,7 +26,7 @@ const maxLength: Record<string,number> = {
 const safeField = (name: string, value: unknown): boolean => {
   const limit = maxLength[name];
   return typeof value === 'string' && limit !== undefined && value.length <= limit &&
-    !/[\x00-\x1f\x7f]/.test(value);
+    !/[\x00-\x1f\x7f\ufffd\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/.test(value);
 };
 
 export type LabScanJob = ScanJob & { scan_type?: string; created_at?: string; expires_at?: string; lease_until?: string; completed_at?: string };
@@ -51,7 +59,7 @@ export function decodeScanJobs(value: unknown): LabScanJob[] {
     for(const name of ['created_at','expires_at','lease_until','completed_at'] as const){
       const stamp=item[name];
       if(typeof stamp==='string'&&stamp!=='' &&
-        (!/^\d{4}-\d\d-\d\dT/.test(stamp)||!Number.isFinite(Date.parse(stamp)))) {
+        (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(stamp)||!Number.isFinite(Date.parse(stamp)))) {
         throw new Error('Invalid lab scan job UTC timestamp at record ' + (index + 1));
       }
     }
@@ -89,6 +97,10 @@ export function decodeLabScanReviewJobs(value:unknown):LabScanJob[] {
     for(const field of ['request_id','path','lease_id','threat_name','detail']){
       if(Object.hasOwn(entry,field))
         throw new Error('Unexpected private scan field in review response at record '+(i+1));
+    }
+    for(const field of Object.keys(entry)){
+      if(!reviewWireFields.has(field))
+        throw new Error('Unexpected scan metadata field at record '+(i+1)+'.');
     }
   }
   return decodeScanJobs(value);
