@@ -82,13 +82,23 @@ DECLARE changed integer;
 BEGIN
     IF p_tenant_id IS NULL OR p_agent_id IS NULL OR p_job_id IS NULL
        OR p_lease_token IS NULL OR p_success IS NULL THEN RETURN false; END IF;
-    UPDATE public.edr_scan_jobs
+    -- A lease alone cannot authorize completion after revocation/disablement.
+    -- Lock the current principal and tenant for the duration of the update,
+    -- serializing this authorization check with administrative revocations.
+    PERFORM 1 FROM public.edr_tenants AS t
+    JOIN public.edr_agents AS a ON a.tenant_id=t.tenant_id
+    WHERE t.tenant_id=p_tenant_id AND a.agent_id=p_agent_id
+      AND t.disabled_at IS NULL AND a.revoked_at IS NULL
+    FOR SHARE OF t,a;
+    IF NOT FOUND THEN RETURN false; END IF;
+
+    UPDATE public.edr_scan_jobs AS j
     SET state=CASE WHEN p_success THEN 'succeeded' ELSE 'failed' END,
         lease_owner=NULL,lease_token=NULL,lease_expires_at=NULL,
         updated_at=transaction_timestamp()
-    WHERE tenant_id=p_tenant_id AND agent_id=p_agent_id AND job_id=p_job_id
-      AND state='leased' AND lease_token=p_lease_token
-      AND lease_expires_at > transaction_timestamp();
+    WHERE j.tenant_id=p_tenant_id AND j.agent_id=p_agent_id AND j.job_id=p_job_id
+      AND j.state='leased' AND j.lease_token=p_lease_token
+      AND j.lease_expires_at > transaction_timestamp();
     GET DIAGNOSTICS changed = ROW_COUNT;
     RETURN changed=1;
 END;
