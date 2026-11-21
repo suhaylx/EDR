@@ -1,0 +1,53 @@
+# Original TuranSec rule. This is a documented laboratory heuristic, not Sigma.
+id: TURAN-WIN-PROC-DNS-NET-001
+version: 1
+platform: windows
+status: lab_prototype
+name: User-writable executable with observed DNS-to-network chain
+source: sysmon
+required_events:
+  - event_id: 1
+    type: process_create
+    required: [device_id, boot_id, process_guid, image, observed_at, source_record_id]
+  - event_id: 22
+    type: dns_query
+    required: [device_id, boot_id, process_guid, dns_query, dns_answers, observed_at, source_record_id]
+  - event_id: 3
+    type: network_connect
+    required: [device_id, boot_id, process_guid, destination_ip, destination_port, observed_at, source_record_id]
+join:
+  same_device: true
+  same_reported_boot: true
+  same_process_guid: true
+  dns_answer_equals_network_destination_ip: true
+  process_to_dns_minutes_max: 5
+  dns_to_connection_minutes_max: 2
+  process_to_connection_minutes_max: 6
+filters:
+  process_image_suffix: .exe
+  process_image_contains_any:
+    - '\appdata\'
+    - '\downloads\'
+    - '\temp\'
+    - '\programdata\'
+  remote_destination: global_unicast_non_private
+  connection_port_nonzero: true
+output:
+  category: process_dns_network_correlation
+  severity: medium
+  confidence: low
+  action: alert_only
+  maximum_alerts: one_per_reported_process_and_boot
+evidence:
+  id_type: server_ingest_receipt
+  origin: sender_reported_unverified
+  note: DNS does not demonstrate connection; independent EID3 required
+false_positives:
+  - legitimate installers and updaters often download components
+  - DNS answers and connections do not prove application-layer intent
+  - private enterprise DNS and proxy routes may be excluded by heuristic
+  - sender reported event IDs and boot markers are not authenticated
+safety:
+  no_automatic_quarantine: true
+  no_malware_confirmation: true
+  no_signed_source_claim: true
