@@ -96,6 +96,11 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 		key := event.DeviceID + "|" + windowsPath(event.FilePath)
 		var nearest time.Time
 		for _, prev := range created[key] {
+			// Never correlate file evidence across missing or different boot scopes.
+			// BootID is sender-reported in this lab and is not proof of origin.
+			if event.BootID == "" || prev.BootID == "" || event.BootID != prev.BootID {
+				continue
+			}
 			delta := event.Time.Sub(prev.Time)
 			if delta < 0 || delta > 24*time.Hour || !prev.Time.After(nearest) {
 				continue
