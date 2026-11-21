@@ -35,3 +35,27 @@ configure PostgreSQL drivers, grant database permissions, install certificates,
 or deploy. Operators must never use the development bearer token as a
 replacement for their own mTLS identity. Independent security and QA review
 required before exposing any listener.
+
+## SOC read-only scan history (BE-131–135)
+
+Authenticated `viewer` and `scanner` roles can now read tenant-scoped
+data on the **operator mTLS** listener:
+
+- `GET /soc/v1/tenants/{tenant}/scan-jobs?state=pending&limit=25&offset=0`
+  returns job history with state, agent, target, attempt count and timestamps.
+- `GET /soc/v1/tenants/{tenant}/scan-jobs/{uuid}`
+  returns one job's current status.
+- `GET /soc/v1/tenants/{tenant}/scan-results?agent_id=win01&verdict=malicious&limit=25&offset=0`
+  returns completed scan evidence, optionally filtered by agent and verdict.
+- `GET /soc/v1/tenants/{tenant}/scan-results/{uuid}`
+  returns durable ClamAV verdict detail for one job.
+- `GET /soc/v1/tenants/{tenant}/scan-stats`
+  returns counts by job state plus the malicious-verdict count.
+
+Listings are limited to 100 records per request and an offset of 10,000.
+Responses never select lease tokens or lease owner capabilities, are marked
+`Cache-Control: no-store`, and enforce tenant ownership in each database
+query. These APIs are for operator mTLS clients only; they are not mounted
+in the shared development-token dashboard. Offset pagination is suitable for
+the initial lab; snapshot/keyset pagination for high-volume production
+remains a performance improvement.
