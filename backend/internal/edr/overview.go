@@ -146,7 +146,7 @@ func BuildSOCOverview(data Snapshot, scans []ScanJob, now time.Time, days int) S
 			result.Endpoints[j].Events++
 		}
 	}
-	all := DetectSuspiciousDLLLoads(data.Events)
+	all := allAgentOneDetections(data.Events)
 	severity := map[string]int{"critical": 0, "high": 0, "medium": 0, "low": 0, "informational": 0}
 	type hit struct {
 		severity string
