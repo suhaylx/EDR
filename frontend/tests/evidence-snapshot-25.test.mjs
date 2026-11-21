@@ -161,7 +161,7 @@ test('M142 the three event classes partition in-window reports without invented 
   assert.deepEqual([s.returned.windowsSysmonEventsInWindow,s.returned.linuxEventsInWindow,
     s.returned.otherEventsInWindow],[1,1,1]);
 });
-test('M143 event receipt newer than overview is flagged and excluded, not called lost',()=>{
+test('M143 future receipt is flagged separately from Go sender-time window membership',()=>{
   const s=review([],[event('future',{received_at:'2026-11-21T13:00:00Z'})]);
   assert.equal(s.returned.eventsAfterOverview,1);
   assert.equal(s.returned.eventsInWindow,1);
