@@ -122,6 +122,11 @@ func DetectSuspiciousDLLLoads(events []Event) []Detection {
 			if event.BootID == "" || prev.BootID == "" || event.BootID != prev.BootID {
 				continue
 			}
+			// When both observations declare process identity, disagreement
+			// means the create event cannot safely enrich this load.
+			if event.ProcessGUID != "" && prev.ProcessGUID != "" && event.ProcessGUID != prev.ProcessGUID {
+				continue
+			}
 			delta := event.Time.Sub(prev.Time)
 			if delta < 0 || delta > 24*time.Hour || !prev.Time.After(nearest) {
 				continue
