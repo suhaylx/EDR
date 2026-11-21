@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {decodeOperatorEndpoint,decodeOperatorInventoryPage,decodeOperatorEndpointStats,interpretOperatorInventoryHTTP,operatorHealthLabel} from '../.test-dist/soc-operator-endpoints.js';
+const endpoint={agent_id:'win-01',platform:'windows',health:'online',agent_version:'0.1',clamav_version:'1.5',signature_version:'reported',scan_ready:true,last_seen:'2026-11-21T17:40:00Z',heartbeat_count:7};
+test('actual Go inventory envelope is accepted',()=>{const x=decodeOperatorInventoryPage({items:[endpoint],limit:25,offset:0});assert.equal(x.items[0].health,'online');});
+test('401 403 503 never retain sensitive body',()=>{for(const [code,state] of [[401,'unauthorized'],[403,'forbidden'],[503,'unavailable']])assert.deepEqual(interpretOperatorInventoryHTTP(code,{secret:'x'}),{state});});
+test('empty 200 is empty, not proof of protection',()=>{assert.equal(interpretOperatorInventoryHTTP(200,{items:[],limit:25,offset:0}).page.items.length,0);});
+test('invalid response clears records',()=>{assert.deepEqual(interpretOperatorInventoryHTTP(200,{items:null,limit:25,offset:0}),{state:'invalid_response'});});
+test('stale unseen revoked labels remain distinct',()=>{for(const health of ['stale','revoked'])assert.match(operatorHealthLabel(decodeOperatorEndpoint({...endpoint,health})),/stale|revoked/i);assert.match(operatorHealthLabel(decodeOperatorEndpoint({...endpoint,health:'unseen',last_seen:null,heartbeat_count:0})),/No server-received heartbeat/);});
+test('scan_ready never implies protection',()=>{assert.match(operatorHealthLabel(decodeOperatorEndpoint(endpoint)),/NOT verified protection/);});
+test('unknown status and invalid reported fields fail closed',()=>{assert.throws(()=>decodeOperatorEndpoint({...endpoint,health:'protected'}));assert.throws(()=>decodeOperatorEndpoint({...endpoint,scan_ready:'yes'}));});
+test('inconsistent heartbeat fails closed',()=>{assert.throws(()=>decodeOperatorEndpoint({...endpoint,health:'unseen'}));assert.throws(()=>decodeOperatorEndpoint({...endpoint,last_seen:null}));});
+test('control chars, duplicate IDs and malformed timestamps fail closed',()=>{assert.throws(()=>decodeOperatorEndpoint({...endpoint,agent_id:'bad\nname'}));assert.throws(()=>decodeOperatorEndpoint({...endpoint,last_seen:'2026-11-21'}));assert.throws(()=>decodeOperatorInventoryPage({items:[endpoint,endpoint],limit:25,offset:0}));});
+test('page bounds and extra secret fields',()=>{assert.throws(()=>decodeOperatorInventoryPage({items:[endpoint],limit:101,offset:0}));assert.equal('lease_id' in decodeOperatorEndpoint({...endpoint,lease_id:'secret'}),false);});
+test('fleet counts reconcile',()=>{const x={total:2,windows:1,linux:1,online:1,degraded:0,stale:0,unseen:1,revoked:0};assert.deepEqual(decodeOperatorEndpointStats(x),x);assert.throws(()=>decodeOperatorEndpointStats({...x,revoked:1}));});
