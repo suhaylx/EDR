@@ -105,11 +105,11 @@ test('Day 5 timing hint preserves uncertainty about queue delay versus clock dri
 });
 
 test('PM cross-layer regression: bidi and replacement characters are refused in analyst telemetry',()=>{
-  for (const control of ['\\u202e','\\u2066','\\u2069','\\u200f','\\u061c','\\ufffd']) {
+  for (const control of ['\u202e','\u2066','\u2069','\u200f','\u061c','\ufffd']) {
     for (const field of ['image','file_path','detail','process_guid','source_record_id','type']) {
       assert.throws(()=>decodeLabTelemetry([event({[field]:'safe'+control+'name'})]),/Invalid lab telemetry/);
     }
     assert.throws(()=>decodeLabTelemetry([event({source_fields:{image_loaded:'safe'+control+'name'}})]),/Invalid/);
   }
-  assert.equal(decodeLabTelemetry([event({detail:'line one\\nline two'})])[0].detail,'line one\\nline two');
+  assert.equal(decodeLabTelemetry([event({detail:'line one\nline two'})])[0].detail,'line one\nline two');
 });
