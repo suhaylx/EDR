@@ -1,8 +1,0 @@
-{
-  "origin": "https://127.0.0.1:9444",
-  "server_ca_file": "/etc/turansec/health/server-ca.pem",
-  "operator_cert_file": "/etc/turansec/health/viewer.pem",
-  "operator_key_file": "/etc/turansec/health/viewer.key",
-  "expected_tenant_id": "ENROLLED_TENANT",
-  "expected_operator_id": "ENROLLED_HEALTH_VIEWER"
-}

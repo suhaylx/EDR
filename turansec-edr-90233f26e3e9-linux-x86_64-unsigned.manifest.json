@@ -1,0 +1,208 @@
+{
+  "archive": {
+    "name": "turansec-edr-90233f26e3e9-linux-x86_64-unsigned.tar.gz",
+    "sha256": "f70c3fc435b2d2e7dc96346bed14ac6546335824b2d1a7b45598acfe051e3fcc",
+    "size": 10741228
+  },
+  "deployment_authorization": "separate-approval-required",
+  "files": [
+    {
+      "path": "INSTALLATION.md",
+      "sha256": "29d44276f20c43dcfbfe460d47b311baa6fd48a9bd5c0f702da0dd1a668f6148",
+      "size": 443
+    },
+    {
+      "path": "backend/bootstrap/runtime_privileges.sql",
+      "sha256": "3e58c07c30cf17f7961eaf64b52393c57553ed2e95ed7b3d6695c844932ce3d0",
+      "size": 18370
+    },
+    {
+      "path": "backend/migrations/0001_agent_enrollment.up.sql",
+      "sha256": "1f41b93470724bd99a7b0bef961aa1779c890a826546b8a7dea6facb4f881243",
+      "size": 3126
+    },
+    {
+      "path": "backend/migrations/0002_enrollment_audit_guard.up.sql",
+      "sha256": "2a501a07825b2bb84a5574d2c6ce47409b9f29de08ee6682b4bfb7c47d974a8c",
+      "size": 2889
+    },
+    {
+      "path": "backend/migrations/0003_certificate_rotation.up.sql",
+      "sha256": "385bb6fc13ecaf6fad834e8124ed795ac827bbe5f2194bc04548ad79572996ad",
+      "size": 3095
+    },
+    {
+      "path": "backend/migrations/0004_enrollment_challenges.up.sql",
+      "sha256": "079aaaf0714f1d8a350c81a03503f18558c8ba9e4a9c923d24e315ffa4bf603d",
+      "size": 2440
+    },
+    {
+      "path": "backend/migrations/0005_scan_job_queue.up.sql",
+      "sha256": "b0a4782c96d4af91bf8aad59b345668e4fdd55ba229c4caaed9993fe7c252048",
+      "size": 7817
+    },
+    {
+      "path": "backend/migrations/0006_atomic_agent_enrollment.up.sql",
+      "sha256": "b6069adf86041dfb76d6157a7b4803957dff1198957af96674d0d00af8df5d1e",
+      "size": 2788
+    },
+    {
+      "path": "backend/migrations/0007_scan_job_lease_renewal.up.sql",
+      "sha256": "f2d2ac0ec072f6729bdbefbc2662e654190e36a8d4e21c8f2d4f76e055cf1629",
+      "size": 2334
+    },
+    {
+      "path": "backend/migrations/0008_scan_job_results.up.sql",
+      "sha256": "9324168f269d0a087a23898b63291b1812c0bbc5c7f35f6a5223c5fe24e359fe",
+      "size": 4996
+    },
+    {
+      "path": "backend/migrations/0009_agent_heartbeats.up.sql",
+      "sha256": "b6188d3c1d48d0ab8011ccefcd75bf77fb03c553ca264a4432f111ae7efff3c5",
+      "size": 2967
+    },
+    {
+      "path": "backend/migrations/0010_soc_operator_scan_jobs.up.sql",
+      "sha256": "023fc0bf4d743b6934d8b91513e11e73a215ddaaecf2c9704ddfeb912677c87b",
+      "size": 3678
+    },
+    {
+      "path": "backend/migrations/0011_soc_malware_alerts.up.sql",
+      "sha256": "c8ba20e8d0938a4255526ec154e51db170dea4ea16c2e3f2c8f7cd406e5b7ca6",
+      "size": 4042
+    },
+    {
+      "path": "backend/migrations/0012_soc_alert_activity.up.sql",
+      "sha256": "ea150cdde7ee4855830ee93956a023bc02383e1a7ea6de27c219ec923afbf0ab",
+      "size": 8072
+    },
+    {
+      "path": "backend/migrations/0013_scan_lease_wallclock.up.sql",
+      "sha256": "3268d2b9721c7a3cc805688c8f284202ca81cdceb52e477b965633e4aaf84534",
+      "size": 15753
+    },
+    {
+      "path": "bin/edrd",
+      "sha256": "7f075b5831176727aa5fc1a0e59d22c45577473386677f5200b1f70caef5a426",
+      "size": 17161180
+    },
+    {
+      "path": "bin/turansec-edr-agent",
+      "sha256": "eaba1688ea26d11208883778671f98f75d2b511ae878b084418ea902708897a1",
+      "size": 5385072
+    },
+    {
+      "path": "config/agent.example.json",
+      "sha256": "3d330f9602eaa5ff1d3d4fb41914c00ba067e2dd84b95845149230c6642a3db5",
+      "size": 413
+    },
+    {
+      "path": "config/edrd.example.json",
+      "sha256": "2abd2a064d00b41ff5720f5bc71bc81591c1aba7de4a6457504d2d12f6954e58",
+      "size": 421
+    },
+    {
+      "path": "config/service-health.example.json",
+      "sha256": "bc0270b634c2247643dfe59beb623305906cd0fcade174b9bb0a0eb78f7ba664",
+      "size": 311
+    },
+    {
+      "path": "docs/HOST_ACCEPTANCE.md",
+      "sha256": "041a325805178e1b5cc9c15f1b7913a463b5da23d91388f12650b578556862fa",
+      "size": 7550
+    },
+    {
+      "path": "docs/INSTALLATION.md",
+      "sha256": "534bb572fbe325db9d543b7e1c4ef5fe6d4b9ba0a3d60e270b14536533fd9c21",
+      "size": 18047
+    },
+    {
+      "path": "docs/LINUX_SERVICE_INSTALLATION.md",
+      "sha256": "dfdaf3a2b693a182f46429ff0d2381c5873817c54b6d62055fb7c0de6bb45b5e",
+      "size": 15271
+    },
+    {
+      "path": "docs/backend/RUNTIME_DATABASE_ROLES.md",
+      "sha256": "21d57cd35d0e9424c6d558543c5535615e2c5ec4f76a89f40e2716fc7d9c3497",
+      "size": 10749
+    },
+    {
+      "path": "docs/release/BUILD_RELEASE_FILES.md",
+      "sha256": "f6f378a5f9cbde089e49abd386288b357f45ae92d1806f927f10d3bccc6f91df",
+      "size": 4024
+    },
+    {
+      "path": "packaging/linux/turansec-agent.service.in",
+      "sha256": "e8a3b439072e83684194d9480eaa1f36308a26a241f577e65a9de1be9e595902",
+      "size": 1272
+    },
+    {
+      "path": "packaging/linux/turansec-agent.timer.in",
+      "sha256": "436387c7634b410e568f03f585f75e7c9b84d09847fb9b82b3a28ab9187b8fd3",
+      "size": 228
+    },
+    {
+      "path": "packaging/linux/turansec-edrd.service.in",
+      "sha256": "e50a558ecac20f1a66588a1fa6eafbff5b9bb4aa178e6a6fd831d9578f70fca9",
+      "size": 1161
+    },
+    {
+      "path": "scripts/collect-host-acceptance.py",
+      "sha256": "494ed304259f8fb44d1c030ba37bfbeca2638877be6bc7e64ed896287f9aa258",
+      "size": 14341
+    },
+    {
+      "path": "scripts/collect-sysmon-acceptance.ps1",
+      "sha256": "91ebb5d40a179c314f9301cb17f9bc9313f8c31735c2b4a8a8af97d3ca2e56a1",
+      "size": 4510
+    },
+    {
+      "path": "scripts/release/linux_service.py",
+      "sha256": "fb73a14c68f0c6baaa00845823662b623a4233b5e7ec8a7eb4ba54138fa5e206",
+      "size": 37426
+    },
+    {
+      "path": "scripts/release/package-candidate.py",
+      "sha256": "b158b0cf3fe8902c2cbe4182e130a7975beb325d2ad4e5b5f89bcd4284ed4332",
+      "size": 14169
+    },
+    {
+      "path": "scripts/release/prepare-release.py",
+      "sha256": "9bdecb315f0347f56434231252119746c6d214d65da74c32f37734b197a7d5ff",
+      "size": 6377
+    },
+    {
+      "path": "scripts/release/release_switch.py",
+      "sha256": "d51674254af1bf6036430221bc5ef718211cd83307354d026008d2a5ff7c13fc",
+      "size": 4604
+    },
+    {
+      "path": "scripts/release/systemd_launcher.py",
+      "sha256": "f809230e5b9008ed55a984534e6f21bdb160466276fc4ff6763e8f7179f8daa9",
+      "size": 9437
+    },
+    {
+      "path": "web/assets/index-Cm6a_oOk.css",
+      "sha256": "4f4466274d6da93057c12abb330f013563daff274376c3788d5fd8a5d4419d4a",
+      "size": 27132
+    },
+    {
+      "path": "web/assets/index-I4DYQGEH.js",
+      "sha256": "0fa976d9266cc69fdefb4628e4587e345598a52e8d2498414b144812605d1f56",
+      "size": 434120
+    },
+    {
+      "path": "web/index.html",
+      "sha256": "eeb06beac25b9534680275d174347d0c602ed5156b435af52bc7bd0329228a71",
+      "size": 485
+    }
+  ],
+  "host_acceptance": "separate-evidence-required",
+  "kind": "portable-engineering-candidate",
+  "schema": 1,
+  "signature_scheme": "detached-openssl-sha256",
+  "source_sha": "90233f26e3e93b2d777cf1e07ca6f2fd479f5b82",
+  "target": "linux-x86_64",
+  "windows_authenticode": "not-established",
+  "windows_publisher_thumbprint": null
+}

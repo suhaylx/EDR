@@ -1,8 +1,0 @@
-<!-- Lab-only placeholder; Linux event/filter support must be checked against installed Sysmon version. -->
-<Sysmon schemaversion="4.90">
-  <EventFiltering>
-    <RuleGroup name="Linux process execution" groupRelation="or">
-      <ProcessCreate onmatch="exclude"/>
-    </RuleGroup>
-  </EventFiltering>
-</Sysmon>
