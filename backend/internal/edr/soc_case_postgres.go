@@ -56,7 +56,7 @@ func(q PostgresScanJobQueue) AddSOCAlertNote(ctx context.Context,p SOCOperatorPr
  alertID,note string)(string,error){
  if !validSOCWriter(p){return "",ErrSOCForbidden}
  if !validUUID(alertID)||len(note)>2048||strings.TrimSpace(note)==""||
-  strings.ContainsAny(note,"\x00\r\n\t"){
+  containsUnsafeSOCText(note){
   return "",ErrInvalidScanQueueRequest
  }
  if q.DB==nil{return "",ErrScanQueueUnavailable}
