@@ -85,3 +85,7 @@ presented as validated evidence by the SOC UI.
 No mTLS device identity, durable storage, event signatures, Sysmon collector,
 reliable de-duplication across reboots, signer verification or real ClamAV
 scanning yet. QA must execute Windows/Linux fixtures before broadening rollout.
+
+### Boot-scoped evidence correlation (lab)
+
+Events may carry an optional `boot_id` (maximum 128 bytes). This is a sender-reported, **unauthenticated** boot/session marker, not an attested Windows boot identity. The DLL-load heuristic emits a low-confidence signal on an eligible ImageLoad even without this marker, but only attaches earlier file-create evidence when **both** events provide the **same nonempty** `boot_id` as well as matching device, path, time window and compatible hashes. Missing or different boot markers must not create a file-to-load linkage. This prevents some cross-boot false correlations, but does **not** authenticate a device, prevent spoofing, or provide durable replay protection.
