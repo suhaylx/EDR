@@ -4,6 +4,7 @@ import (
  "context"
  "crypto/tls"
  "crypto/x509"
+ "database/sql"
  "errors"
  "testing"
  "time"
@@ -27,7 +28,7 @@ func TestQASOCOperatorAuthRejectsMalformedVerifiedChainWithoutPanic(t *testing.T
   {PeerCertificates:[]*x509.Certificate{leaf},VerifiedChains:[][]*x509.Certificate{{nil}}},
  }
  for i,state:=range cases{
-  _,err:=verifySOCOperator(context.Background(),state,nil,time.Now().UTC())
+  _,err:=verifySOCOperator(context.Background(),state,&sql.DB{},time.Now().UTC())
   if !errors.Is(err,errSOCNotAuthorized){
    t.Errorf("malformed TLS case %d: got %v want deny",i,err)
   }
