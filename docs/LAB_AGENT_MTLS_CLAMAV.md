@@ -89,3 +89,28 @@ the same enrolled TLS identity. `--scan-once-mtls` now reports liveness before
 requesting a job; it never falls back to a shared development bearer token.
 The heartbeat does not deploy a recurring background service, offline retry
 queue, Sysmon collection, or endpoint protection.
+
+## Agent operational commands (BE-141–145)
+
+These subcommands are **opt-in isolated lab operations**, not a persistent
+auto-updating endpoint service. Every remote command uses the enrolled
+per-device TLS 1.3 client identity with the operator-provisioned trust root.
+
+- `--agent-status-mtls` queries the server's latest heartbeat snapshot
+  for the authenticated device and prints platform, readiness and
+  heartbeat count without exposing lease tokens or credential contents.
+- `--heartbeat-mtls` sends one authenticated liveness report.
+- `--clamav-health` pings the local clamd Unix socket (Linux) or
+  loopback-only TCP `127.0.0.1:3310` (Windows), exits nonzero if
+  the scanner is unavailable; PONG is **not** a signature-freshness test.
+- `--scan-once-mtls` processes one job, and records a durable result.
+- `--scan-batch-mtls 5` processes up to five jobs sequentially, using
+  one mTLS connection pool and local scan root. The batch stops immediately
+  when the queue returns 204/no job, or fails on a lease heartbeat,
+  transport or result-persistence error. At most 20 jobs per invocation;
+  a 250 ms delay separates jobs to prevent tight loops.
+
+These operations never run ClamAV against an unbounded directory,
+quarantine/delete a sample, or create a Windows/Linux service. A scheduled
+daemon, automatic offline retry queue, signed policy enforcement and
+production-safe path sandbox remain separate release work.
