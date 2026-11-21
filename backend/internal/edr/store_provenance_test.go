@@ -155,3 +155,25 @@ func TestIngestOverwritesClientSuppliedIDAndReceiptProvenance(t *testing.T) {
 		t.Fatal("lab prototype must not silently suppress repeated source records")
 	}
 }
+
+func TestIngestRejectsMalformedBootSessionIDs(t *testing.T) {
+	for _, bootID := range []string{
+		strings.Repeat("b", 129), "boot\nforged", "boot\tforged",
+		"boot\x1bforged", "boot\x7fforged", "boot\ufffdforged",
+	} {
+		store := NewStore()
+		if _, err := store.CheckIn(Agent{ID: "win-01", Platform: "windows"}); err != nil {
+			t.Fatal(err)
+		}
+		_, err := store.Ingest(Event{
+			DeviceID: "win-01", Platform: "windows", Type: "module_load",
+			BootID: bootID,
+		})
+		if err == nil {
+			t.Fatalf("accepted invalid boot id %q", bootID)
+		}
+		if got := len(store.Snapshot().Events); got != 0 {
+			t.Fatalf("invalid boot id was retained: %d", got)
+		}
+	}
+}
