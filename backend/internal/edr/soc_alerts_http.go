@@ -1,7 +1,6 @@
 package edr
 
 import (
- "io"
  "net/http"
  "strings"
 )
@@ -96,10 +95,7 @@ func SOCAlertHandler(q PostgresScanJobQueue)http.Handler{
    if !socDecode(w,r,&payload){return}
    note=payload.Note
   }else{
-   r.Body=http.MaxBytesReader(w,r.Body,1)
-   var buffer [1]byte
-   n,e:=r.Body.Read(buffer[:])
-   if n!=0||(e!=nil&&e!=io.EOF){http.Error(w,"invalid payload",400);return}
+   if !requestBodyIsEmpty(w,r){http.Error(w,"invalid payload",400);return}
   }
   saved,err:=q.ChangeSOCAlert(r.Context(),p,id,action,note)
   if err!=nil{socRespondError(w,err);return}
