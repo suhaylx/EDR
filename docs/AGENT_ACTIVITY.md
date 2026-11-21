@@ -1,0 +1,36 @@
+# TuranSec EDR — evidence-based engineering activity board
+
+**Baseline checked:** 2026-11-21, 16:55 Asia/Tashkent (11:55 UTC). **Sprint:** 21–28 November 2026, hourly checkpoints. **Repository:** private [suhaylx/EDR](https://github.com/suhaylx/EDR). **PM ticket:** [#6](https://github.com/suhaylx/EDR/issues/6). **Status:** work orders issued; no claim of continuously running independent developers.
+
+## Verified project baseline (not individual-role attribution)
+
+- [PR #5](https://github.com/suhaylx/EDR/pull/5) is open. Head at last check: `31629c64e5f1f9515bb7e0d8e41b74a3585af223` on `feat/scan-control-plane-20261121`. It includes a lab-only Go API/dashboard, Rust ClamAV protocol module, security rules/specifications, QA matrix and Sysmon policy templates.
+- [GitHub Actions run 44901249720](https://github.com/suhaylx/EDR/actions/runs/44901249720) **completed successfully** for the PR head at check. Go and Rust jobs in CI are development checks; **real agent-to-server mTLS, PostgreSQL persistence, live ClamAV EICAR, Windows/Linux Sysmon collectors and any deployment are unverified**.
+- The presence of a shared PR or enabled automation does not prove a given role independently developed code. Every row below must be re-evaluated at its next checkpoint. Missing per-role evidence is reported honestly.
+- Last verified code authorization: owner allows meaningful tested feature-branch commits and PRs without repeated confirmation only **through 28 November 2026**. No direct `main` pushes, unattended merges, live deployments or cosmetic hourly commits.
+
+## Five-role accountability at sprint opening
+
+| Role | Issue & concrete task | Due / next checkpoint (Asia/Tashkent) | Expected artifact and acceptance evidence | Verified role output at opening | Current status and PM follow-up |
+| --- | --- | --- | --- | --- | --- |
+| Agent 1 — Security Functionality | [SEC-FUNC-01 / #1](https://github.com/suhaylx/EDR/issues/1): security behavior of ClamAV and DLL event correlation; command identity threat controls | 21 Nov 17:10 | `docs/security/security-functionality-spec.md` + `docs/security/agent-enrollment-threat-model.md`, original `rules/windows/dll-sideloading.yaml`; documented Event 11 != Event 7, false positives, CLAMAV error/timeout and signed command replay; review fixture expectations, no proprietary rule copying | Related artifacts exist in aggregate PR #5; **no separate Agent 1 output verified for this sprint** | **IN PROGRESS (not yet due)**; require PR-specific diff/review and SEC-FUNC-01 test cases at 17:10 |
+| Agent 2 — Backend/Deployment | [BE-001 / #2](https://github.com/suhaylx/EDR/issues/2): authenticated device identity and fail-closed enrollment API; maintain one Rust agent contract | 21 Nov 17:20 | `backend/internal/edr/` Go auth API + isolated tests, versioned tenant/device schema proposal, explicit dev-only mode; run `cd backend && go test -count=1 ./...` and `go vet ./...`; wrong-tenant, expired/revoked cert, replay must reject before release | Go scan API and Rust protocol module in aggregate PR #5; **no production mTLS implementation or independent Agent 2 delivery verified** | **IN PROGRESS (not yet due)**; isolate a safe reviewable incremental patch, never claim production enrollment |
+| Agent 3 — QA | [QA-001 / #3](https://github.com/suhaylx/EDR/issues/3): negative auth, scan job state and worker fault test coverage | 21 Nov 17:30 | `docs/qa/p0-test-matrix.md` and executable tests (Go `-race` when supported; `cargo test` for Rust); record observed pass/fail/not-run, especially wrong-tenant/replay, offline persistence, EICAR, Windows/Linux Sysmon | CI successful on shared PR #5; **physical Windows/Linux lab tests not run or evidenced** | **IN PROGRESS (not yet due)**; label unsupported endpoint cases NOT RUN and block release |
+| Agent 5 — Frontend/UX | [UX-001 / #4](https://github.com/suhaylx/EDR/issues/4): trustworthy SOC and local endpoint protection state | 21 Nov 17:40 | `docs/ux/design-system.md`, React/TypeScript interface/spec for scan states, ClamAV/Sysmon health, error/offline state; keyboard/focus/contrast checklist and API response contracts; never imply queued scan = completed scan | Plain-JS lab dashboard exists in aggregate PR #5; **React/TS and local UI not implemented or evidenced** | **IN PROGRESS (not yet due)**; provide UI contract and accessibility test evidence |
+| Agent 4 — PM | [PM-001 / #6](https://github.com/suhaylx/EDR/issues/6): verified five-row board, exact work orders, P0/P1/P2 priorities, blocker escalation | 21 Nov 18:00 | This `docs/AGENT_ACTIVITY.md`, updated `docs/PRIORITY_BACKLOG.md` and `docs/DAILY_REPORT_TEMPLATE.md` on reviewable PM branch; commit SHA, PR and CI review | Verified baseline from GitHub and task plan drafted; **commit/PR status to be filled after the write** | **IN PROGRESS**, PM to check repository write and PR; no false code/deployment claim |
+
+**After a deadline:** `EVIDENCED` means a role-specific deliverable exists and its acceptance check has been verified; `IN PROGRESS` means due time not missed but not yet validated; `BLOCKED` means dependency named; `NO VERIFIED ACTIVITY` means due time passed with no attributable output (not proof of idleness); `PM OVERDUE` means PM failed to publish and reconcile its own evidence board. A failed test means **not done** even if a commit exists.
+
+## Top three prioritized engineering workstreams
+
+1. **P0 — trustworthy control plane:** Agent 1 SEC-001 defines tenant/device, anti-replay and signed command invariants; Agent 2 BE-001 implements scoped auth/enrollment and persistence contract; Agent 3 QA-001 must show negative tests including wrong-tenant/expired/revoked/replay. Dependency: approved threat model and lab PKI. **Release blocked** until validated.
+2. **P1 — trustworthy endpoint detection:** Agent 1 SEC-FUNC-01 owns ClamAV verdict/scan safety rules and DLL FileCreate versus ImageLoad distinction; Agent 2 integrates Rust and Go with bounded workers and separate status, one enrolled agent; Agent 3 adds EICAR-only and malformed-input fault tests. Dependency: isolated test hosts and real scanner. **Not production ready**.
+3. **P2 — safe enterprise UX/deployment design:** Agent 5 UX-001 produces original accessible React/TS SOC and local UI contracts; Agent 2 designs managed signed installation/canary/rollback (no deployment); Agent 3 documents fail-safe and accessibility release gates. Dependency: verified backend APIs and OS lab. **Design-only at this stage**.
+
+## PM hourly reconciliation procedure
+
+1. Read latest GitHub commits on the actual PR branches, open issues, review comments and CI. Only use verifiable SHA, build/test log, file/diff and target service evidence.
+2. Update each row's status, last artifact + timestamp, pass/fail/not-run, blocker and exact next action. Include PM's own proof of update.
+3. Escalate missing evidence after checkpoints rather than claiming someone is absent; assign another concrete independent task if blocked by VM/PKI access.
+4. Never treat a security design, a CI-only green check, an open PR or planned deployment as a shipped EDR capability. Do not auto-merge or write to `main`.
+5. Each hourly checkpoint should seek a meaningful, tested, reviewable contribution. If none is feasible, document **NO VERIFIED CODE PUSH** and a blocker; no fake hourly commits.
