@@ -48,7 +48,8 @@ for name, sql in queries.items():
     # Substitute the known QA-only fixture literals into the real compiled
     # query, avoiding a duplicated synthetic SQL projection.
     q = re.sub(r"\$([1-5])", lambda m: args[name][int(m.group(1)) - 1], sql)
-    print("CREATE TEMP VIEW qa_inventory_" + name + " AS " + q + ";")
+    columns = "(total,windows,linux,online,degraded,stale,unseen,revoked)" if name == "summary" else ""
+    print("CREATE TEMP VIEW qa_inventory_" + name + columns + " AS " + q + ";")
 print("""DO $qa$
 BEGIN
   IF (SELECT count(*) FROM qa_inventory_list) <> 1 OR
