@@ -42,6 +42,11 @@ func TestIntegratedAgentListenerFailClosed(t *testing.T) {
     }
     noKey:=serverCert
     noKey.PrivateKey=nil
+    _,otherCert,_:=createTestAgentCertificate(t,now,
+        []string{"spiffe://turansec.local/tenants/lab/agents/other"},
+        []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth})
+    wrongKey:=serverCert
+    wrongKey.PrivateKey=otherCert.PrivateKey
     incomplete:=[]struct{
         name string
         db *sql.DB
@@ -52,6 +57,7 @@ func TestIntegratedAgentListenerFailClosed(t *testing.T) {
         {"nil-ca",db,serverCert,nil},
         {"empty-ca",db,serverCert,x509.NewCertPool()},
         {"no-key",db,noKey,trusted},
+        {"wrong-server-key",db,wrongKey,trusted},
         {"no-cert",db,tls.Certificate{},trusted},
     }
     for _,tc:=range incomplete{
