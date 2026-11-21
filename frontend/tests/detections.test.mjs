@@ -40,3 +40,23 @@ test('invalid authorization and request failures have distinct errors',async()=>
  await assert.rejects(fetchLabDetections('z'.repeat(16),undefined,deny),/HTTP 401/);
  await assert.rejects(fetchLabDetections('z'.repeat(16),undefined,async()=>({ok:false,status:503})),/HTTP 503/);
 });
+
+test('supports Agent 1 behavior detections without invented DLL event or process links',()=>{
+ const v=decodeLabDetections([row({
+   rule_id:'TURAN-WIN-LSASS-ACCESS-001',
+   category:'sensitive_process_access',
+   process_guid:'',process_image:'',module_path:'',load_event_id:'',
+   evidence_event_id:'sysmon-actual-event-17',evidence_source_event_id:10,
+   target_object:'C:\\Windows\\System32\\lsass.exe',
+ })]);
+ assert.equal(v[0].evidence_event_id,'sysmon-actual-event-17');
+ assert.equal(v[0].evidence_source_event_id,10);
+ assert.equal(v[0].process_guid,'');
+ assert.equal(v[0].load_event_id,'');
+ assert.throws(()=>decodeLabDetections([row({
+   load_event_id:'',evidence_event_id:'',evidence_source_event_id:10,
+ })]),/source/);
+ assert.throws(()=>decodeLabDetections([row({
+   evidence_event_id:'sysmon-actual-event-17',evidence_source_event_id:31,
+ })]),/Sysmon ID/);
+});
