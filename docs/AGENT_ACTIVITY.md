@@ -170,3 +170,18 @@ Full milestone board: [next 25](SPRINT_NEXT_25_MILESTONES_20261121.md). Shared P
 | **4 PM / PM-001 P0** | This board/backlog/manual, issue orders #1–4, exact-head CI and report #6; **23:50** | [PM draft PR #7](https://github.com/suhaylx/EDR/pull/7) commits/readback to be checked | **PENDING verification**; canonical Page tool unavailable (PAGE SYNC BLOCKED) |
 
 **Role-specific acceptance for new PR #129: 0/4 approvals verified**; prior role-labeled code activity is real GitHub source, not proof 4 autonomous workers executed. All five engineering automations were enabled at first check. **RELEASE NO-GO**; no main merge, no remote installation or credential reuse.
+
+
+## Accelerated three-day delivery pass (all on 21 November 2026, Asia/Tashkent)
+
+**Evidence report:** [ACCELERATED_3_DAY_SPRINT_20261121.md](ACCELERATED_3_DAY_SPRINT_20261121.md), code [draft PR #142](https://github.com/suhaylx/EDR/pull/142) head `d2ed639e62dfd0d1a2bc268e9be045e86e5f255b`. **Sprint workstreams Day 1 / Day 2 / Day 3 are compressed into Nov 21; original calendar Days 2–3 (Nov 22–23) are not claimed elapsed.** CI on PR #142 failed to allocate a runner (empty steps, missing logs) on initial and retried runs; **exact-head code acceptance NOT VERIFIED**. Parent PR #136 9/9 CI SUCCESS, isolated #129 2/2 CI SUCCESS. No independent InfoSec/QA approval or real authorized host tests.
+
+| Owner, task, target | Role-owned deliverable / testable output | Evidence and actual status | Corrective gate |
+| --- | --- | --- | --- |
+| **Agent 1 InfoSec, SEC-FUNC-02/04 P0, 23:10** | Review `backend/internal/edr/agent_http.go` spoofed-header strip + `agent_mtls_server.go` CA/key, cert revocation; original Sysmon EID7/11/29 source-safe rules | #126 prior 3/3 CI PASS; #142 new formal InfoSec review **NOT VERIFIED** | Explicit line-specific PR review, safe original rule fixture replay; no production approval |
+| **Agent 2 Backend/Deployment, BE-001/AG-001 P0, 23:20** | Runnable `backend/cmd/agentserver/main.go` with approved pinned PostgreSQL driver, TLS1.3, tenant-bound heartbeat/scan lease/result, one Rust agent | #136 9/9 PASS. #142 shared PM-coordinated Go code and test; exact-head CI BLOCKED, runnable daemon and live DB/host **NOT RUN** | Driver/hash provenance, actual `go build`, Go race/vet, PG migration and real mTLS handshake |
+| **Agent 3 QA, QA-001 P0, 23:30** | Independent PR #142 test, negative certificate/tenant/revocation/DB and actual ClamAV EICAR/Sysmon Win2022/Ubuntu `docs/qa/p0-test-matrix.md` | New simulated mTLS+fake SQL test committed. GitHub runs 44933982956 and 44933983003 **FAIL with no runner steps/logs**; independent QA and OS hosts **NOT RUN** | Repair CI runner, exact-head tests, PASS/FAIL/NOT RUN and formal review |
+| **Agent 5 Frontend/UX, UX-001 P1, 23:40** | Original React SOC heartbeat/scan state, truthful UNKNOWN, queued != scanned, 401/403/503, accessible keyboard/ARIA and safe local companion | Prior #131 3/3 CI SUCCESS; current #142 tenant-auth API/UI and manual browser a11y **NOT RUN** | Role-owned screenshots/build, Agent 2 API and Agent 3 QA approval |
+| **Agent 4 PM, PM-001 P0, 23:50** | This sprint evidence, reviewer orders, release gate and chronological dates; canonical Page blocked | GitHub report/backlog/board saves **EVIDENCED once read back** | Verify SHA and real approvals, keep release NO-GO |
+
+**Independent new PR #142 approvals: 0/4 verified.** Five role schedules enabled at last check; this is not continuous worker execution evidence. **RELEASE NO-GO**; no main merge or host installation.
