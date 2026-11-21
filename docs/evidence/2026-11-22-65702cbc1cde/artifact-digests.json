@@ -1,0 +1,70 @@
+{
+  "source_sha": "65702cbc1cde6750304d9e438bb27bc0537c2d45",
+  "run_id": 44951109428,
+  "run_attempt": 1,
+  "artifacts": [
+    {
+      "id": 14726025336,
+      "name": "candidate-backend-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 1104,
+      "digest": "sha256:c485c38b30254e942b9139839dc11a57e4c491eae831fb067a9ac4796e89ca7e",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14726025336/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14726025336"
+    },
+    {
+      "id": 14726020469,
+      "name": "candidate-rust-ubuntu-latest-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 5540,
+      "digest": "sha256:e32a9c8a94942ebeae9967c9c8ccd33f1b81f7273d6bedcacc09a0f0dcd4369c",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14726020469/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14726020469"
+    },
+    {
+      "id": 14726005363,
+      "name": "candidate-release-tools-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 3274,
+      "digest": "sha256:69c7c1d5665419becd57605d8c8490326219d959c37b26480998adec1b939dd3",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14726005363/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14726005363"
+    },
+    {
+      "id": 14725995535,
+      "name": "candidate-frontend-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 6062927,
+      "digest": "sha256:f7873843eea6aedacb9ce75fc420db3a62dd246027076b27a55c98d1ab13e95c",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14725995535/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14725995535"
+    },
+    {
+      "id": 14725960721,
+      "name": "candidate-postgres-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 5220,
+      "digest": "sha256:2b47c92fcdcd12298762509b5b5ce6c63f445fe01c55f734839adeee82f84491",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14725960721/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14725960721"
+    },
+    {
+      "id": 14725761581,
+      "name": "candidate-integration-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 5234,
+      "digest": "sha256:e77d1fae96deecfdf49074118217994471d3f9889e0c4aad91030394bce87e15",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14725761581/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14725761581"
+    },
+    {
+      "id": 14725602878,
+      "name": "candidate-rust-windows-latest-65702cbc1cde6750304d9e438bb27bc0537c2d45",
+      "size_in_bytes": 5067,
+      "digest": "sha256:5d7e49df9f9e57d5ed5433f3f857b57dca84f0a0dcf667273eea3387700639f6",
+      "expired": false,
+      "archive_download_url": "https://api.github.com/repos/suhaylx/EDR/actions/artifacts/14725602878/zip",
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44951109428/artifacts/14725602878"
+    }
+  ]
+}
