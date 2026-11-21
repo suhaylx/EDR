@@ -48,6 +48,66 @@ BEGIN
   IF (SELECT state FROM edr_scan_jobs WHERE tenant_id='tenantB') <> 'pending' THEN
     RAISE EXCEPTION 'expired job not requeued'; END IF;
 END $$;
+-- QA P0: isolate replay fixture on a dedicated agent so the existing
+-- expired-job recovery assertion remains deterministic.
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantA','qa-replay','linux'),('tenantA','qa-other','linux');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES ('55555555-5555-4555-8555-555555555555','tenantA','qa-replay','/replay');
+DO $replay$
+DECLARE
+  job uuid := '55555555-5555-4555-8555-555555555555';
+  first_token uuid := '11111111-aaaa-4111-8111-111111111111';
+  next_token uuid := '22222222-bbbb-4222-8222-222222222222';
+  leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-1',first_token,30);
+  IF leased.job_id IS DISTINCT FROM job THEN
+    RAISE EXCEPTION 'initial replay fixture claim failed'; END IF;
+  UPDATE edr_scan_jobs SET lease_expires_at=transaction_timestamp()-interval '1 second'
+    WHERE job_id=job;
+  IF edr_complete_scan_job('tenantA','qa-other',job,first_token,true) THEN
+    RAISE EXCEPTION 'same-tenant wrong-agent completion accepted'; END IF;
+  IF edr_complete_scan_job('tenantA','qa-replay',job,first_token,true) THEN
+    RAISE EXCEPTION 'expired lease completion accepted'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'leased' THEN
+    RAISE EXCEPTION 'expired completion mutated job'; END IF;
+  IF edr_recover_expired_scan_jobs(10) <> 1 THEN
+    RAISE EXCEPTION 'replay fixture recovery failed'; END IF;
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-2',next_token,30);
+  IF leased.job_id IS DISTINCT FROM job OR leased.attempt_count <> 2 THEN
+    RAISE EXCEPTION 'recovered lease not issued'; END IF;
+  IF edr_complete_scan_job('tenantA','qa-replay',job,first_token,true) THEN
+    RAISE EXCEPTION 'stale token replay accepted'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'leased' THEN
+    RAISE EXCEPTION 'replay mutated active lease'; END IF;
+  IF NOT edr_complete_scan_job('tenantA','qa-replay',job,next_token,false) THEN
+    RAISE EXCEPTION 'valid recovered completion rejected'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'failed' THEN
+    RAISE EXCEPTION 'failed result state not persisted'; END IF;
+END $replay$;
+-- Exhausted retry budget must fail the job rather than requeue forever.
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root,max_attempts)
+VALUES ('66666666-6666-4666-8666-666666666666','tenantA','qa-replay','/exhausted',1);
+DO $exhausted$
+DECLARE
+  job uuid := '66666666-6666-4666-8666-666666666666';
+  leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantA','qa-replay','worker-3',
+    '33333333-cccc-4333-8333-333333333333',30);
+  IF leased.job_id IS DISTINCT FROM job OR leased.attempt_count <> 1 THEN
+    RAISE EXCEPTION 'retry-budget fixture claim failed'; END IF;
+  UPDATE edr_scan_jobs SET lease_expires_at=transaction_timestamp()-interval '1 second'
+    WHERE job_id=job;
+  IF edr_recover_expired_scan_jobs(10) <> 1 THEN
+    RAISE EXCEPTION 'exhausted job not recovered'; END IF;
+  IF (SELECT state FROM edr_scan_jobs WHERE job_id=job) <> 'failed' THEN
+    RAISE EXCEPTION 'exhausted job requeued'; END IF;
+  IF EXISTS(SELECT 1 FROM edr_claim_scan_job('tenantA','qa-replay','worker-4',
+    '44444444-dddd-4444-8444-444444444444',30)) THEN
+    RAISE EXCEPTION 'exhausted job claimed again'; END IF;
+END $exhausted$;
 UPDATE edr_tenants SET disabled_at=now() WHERE tenant_id='tenantB';
 DO $$
 BEGIN
@@ -55,6 +115,34 @@ BEGIN
     'dddddddd-dddd-4ddd-8ddd-dddddddddddd',30)) THEN
     RAISE EXCEPTION 'disabled tenant received a job'; END IF;
 END $$;
+
+-- Invalid inputs must fail closed without consuming or modifying jobs.
+DO $invalid_parameters$
+BEGIN
+  IF edr_complete_scan_job(NULL,'win01',
+    '11111111-1111-4111-8111-111111111111',
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true) THEN
+    RAISE EXCEPTION 'NULL tenant completion accepted'; END IF;
+  IF edr_complete_scan_job('tenantA','win01',
+    '11111111-1111-4111-8111-111111111111',NULL,true) THEN
+    RAISE EXCEPTION 'NULL token completion accepted'; END IF;
+  BEGIN
+    PERFORM edr_claim_scan_job('tenantA','win01','qa',
+      '77777777-7777-4777-8777-777777777777',4);
+    RAISE EXCEPTION 'too-short lease accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM edr_recover_expired_scan_jobs(0);
+    RAISE EXCEPTION 'zero recovery limit accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+  BEGIN
+    PERFORM edr_recover_expired_scan_jobs(1001);
+    RAISE EXCEPTION 'oversized recovery limit accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL;
+  END;
+END $invalid_parameters$;
 
 -- A live lease is not valid evidence of current authorization. Revoke or
 -- disable the principal *after* claiming, and ensure completion is refused.
@@ -95,4 +183,106 @@ BEGIN
 END $disable_tenant$;
 ROLLBACK;
 SQL
+# Multi-session regression: one committed job must never be issued to two
+# simultaneous claimers. Use a FIFO rendezvous instead of timing sleeps.
+# Existing SQL cases above ROLLBACK; this independent fixture commits so two
+# separate psql sessions can observe it.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO edr_tenants(tenant_id,display_name) VALUES ('tenantqa','QA concurrent claims');
+INSERT INTO edr_agents(tenant_id,agent_id,platform)
+VALUES ('tenantqa','race-agent','linux');
+INSERT INTO edr_scan_jobs(job_id,tenant_id,agent_id,scan_root)
+VALUES ('88888888-8888-4888-8888-888888888888','tenantqa','race-agent','/qa-race');
+SQL
+
+qa_tmp="$(mktemp -d)"
+export QA_RELEASE_FIFO="$qa_tmp/release"
+export QA_CLAIM_READY_FILE="$qa_tmp/claim-ready"
+mkfifo "$QA_RELEASE_FIFO"
+claim_pid=''
+qa_cleanup() {
+  if [[ -n "$claim_pid" ]] && kill -0 "$claim_pid" 2>/dev/null; then
+    kill "$claim_pid" 2>/dev/null || true
+    wait "$claim_pid" 2>/dev/null || true
+  fi
+  rm -rf "$qa_tmp"
+}
+trap qa_cleanup EXIT
+
+# Worker 1 owns the row lock until the parent explicitly releases the FIFO.
+# Both statements run in the same uncommitted transaction.
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 >"$qa_tmp/worker1.log" 2>&1 <<'SQL' &
+BEGIN;
+DO $first_claim$
+DECLARE leased record;
+BEGIN
+  SELECT * INTO leased FROM edr_claim_scan_job('tenantqa','race-agent',
+    'worker-1','99999999-9999-4999-8999-999999999999',30);
+  IF leased.job_id IS DISTINCT FROM '88888888-8888-4888-8888-888888888888'::uuid
+    OR leased.attempt_count <> 1 THEN
+    RAISE EXCEPTION 'first concurrent claim failed'; END IF;
+END $first_claim$;
+\! touch "$QA_CLAIM_READY_FILE"
+\! timeout 25 sh -c 'IFS= read -r response < "$QA_RELEASE_FIFO"'
+COMMIT;
+SQL
+claim_pid=$!
+
+# Wait for a positive signal, not an arbitrary sleep. Fail if worker 1 exits.
+for ((i=0; i<100; i++)); do
+  if [[ -f "$QA_CLAIM_READY_FILE" ]]; then break; fi
+  if ! kill -0 "$claim_pid" 2>/dev/null; then
+    cat "$qa_tmp/worker1.log"
+    echo 'First concurrency worker exited before acquiring lease' >&2
+    exit 1
+  fi
+  sleep 0.1
+done
+if [[ ! -f "$QA_CLAIM_READY_FILE" ]]; then
+  cat "$qa_tmp/worker1.log"
+  echo 'Timed out waiting for first concurrency worker' >&2
+  exit 1
+fi
+
+# Worker 2 must SKIP LOCKED and return immediately with zero rows.
+timeout 10 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $second_claim$
+BEGIN
+  IF EXISTS (SELECT 1 FROM edr_claim_scan_job('tenantqa','race-agent',
+      'worker-2','aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1',30)) THEN
+    RAISE EXCEPTION 'concurrent worker double-claimed locked job'; END IF;
+END $second_claim$;
+SQL
+
+# Allow worker 1 to commit; then verify the row was issued only once.
+printf 'release\n' | timeout 10 tee "$QA_RELEASE_FIFO" >/dev/null
+wait "$claim_pid"
+claim_pid=''
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $verify_claim$
+DECLARE j record;
+BEGIN
+  SELECT state,lease_owner,lease_token,attempt_count
+    INTO j FROM edr_scan_jobs
+    WHERE job_id='88888888-8888-4888-8888-888888888888';
+  IF j.state IS DISTINCT FROM 'leased'
+    OR j.lease_owner IS DISTINCT FROM 'worker-1'
+    OR j.lease_token IS DISTINCT FROM '99999999-9999-4999-8999-999999999999'::uuid
+    OR j.attempt_count IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION 'concurrent claims corrupted committed lease'; END IF;
+  IF EXISTS (SELECT 1 FROM edr_claim_scan_job('tenantqa','race-agent',
+      'worker-2','bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2',30)) THEN
+    RAISE EXCEPTION 'second claim accepted after worker 1 commit'; END IF;
+  IF NOT edr_complete_scan_job('tenantqa','race-agent',
+      '88888888-8888-4888-8888-888888888888',
+      '99999999-9999-4999-8999-999999999999',true) THEN
+    RAISE EXCEPTION 'valid first claim cannot complete'; END IF;
+END $verify_claim$;
+DELETE FROM edr_scan_jobs WHERE tenant_id='tenantqa';
+DELETE FROM edr_agents WHERE tenant_id='tenantqa';
+DELETE FROM edr_tenants WHERE tenant_id='tenantqa';
+SQL
+trap - EXIT
+rm -rf "$qa_tmp"
+
 echo "Durable scan-job queue integration passed"
