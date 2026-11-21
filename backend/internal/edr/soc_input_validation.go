@@ -1,6 +1,8 @@
 package edr
 
 import (
+ "io"
+ "net/http"
  "strings"
  "unicode"
 )
@@ -15,4 +17,13 @@ func containsUnsafeSOCText(value string) bool {
    (r>=0x2066 && r<=0x2069) || // bidi isolates
    r==0x200E || r==0x200F // left/right marks
  })>=0
+}
+
+// requestBodyIsEmpty uses a bounded complete read, not a single Read call.
+// io.Reader may legitimately return (0,nil) before later yielding data;
+// accepting that as EOF would let a client hide a request payload.
+func requestBodyIsEmpty(w http.ResponseWriter,r *http.Request)bool{
+ r.Body=http.MaxBytesReader(w,r.Body,1)
+ body,err:=io.ReadAll(r.Body)
+ return err==nil&&len(body)==0
 }
