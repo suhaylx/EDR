@@ -252,6 +252,25 @@ mod tests {
             assert!(windows_scan_target_allowed(path), "rejected {path:?}");
         }
     }
+    #[cfg(windows)]
+    #[test]
+    fn windows_lease_validation_enforces_target_policy() {
+        for target in [
+            r"C:\Lab\file.dll:payload",
+            r"C:\Lab\CON.log",
+            r"C:\Lab\..\private.txt",
+            r"\\server\share\file.txt",
+            r"C:\Lab\trailing.",
+        ] {
+            let mut job = lease();
+            job.path = target.into();
+            assert!(validate_lease(&job, "lab01").is_err(), "accepted {target:?}");
+        }
+        let mut job = lease();
+        job.path = r"C:\Lab\sample.txt".into();
+        assert!(validate_lease(&job, "lab01").is_ok(),
+            "valid local Windows lease target was rejected");
+    }
     #[test]
     fn rejects_malformed_cross_agent_lease() {
         let mut job = lease();
