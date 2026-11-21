@@ -63,6 +63,8 @@ test('Day2 reported errors are not misrepresented as enforced policy',()=>{
  const rows=reviewPolicyEvidence(base([e('x',{applied_policy_id:'p1',applied_revision:1,last_policy_error:'failed'})]),
  decodePolicyMetadata([p('p1')]),decodePolicyAssignments([a('agent','x','p1')]));
  assert.equal(rows[0].status,'error_reported');
+ assert.equal(rows[0].errorReported,true);
+ assert.equal(JSON.stringify(rows[0]).includes('failed'),false);
 });
 test('Day2 policy GET sends bearer token, no cookies, no writes, no caching',async()=>{
  const calls=[],fetcher=async(url,options)=>{calls.push({url,options});
