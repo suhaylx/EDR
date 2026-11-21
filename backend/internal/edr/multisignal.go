@@ -151,6 +151,7 @@ func DetectSuspiciousProcessDNSNetwork(events []Event) []Detection {
 
 // Combine provisional lab signals. Do not use for automated quarantine.
 func DetectAllLabSignals(events []Event) []Detection {
-	return append(DetectSuspiciousDLLLoads(events),
-		DetectSuspiciousProcessDNSNetwork(events)...)
+	all := DetectSuspiciousDLLLoads(events)
+	all = append(all, DetectSuspiciousProcessDNSNetwork(events)...)
+	return append(all, DetectProcessAccessRemoteThread(events)...)
 }
