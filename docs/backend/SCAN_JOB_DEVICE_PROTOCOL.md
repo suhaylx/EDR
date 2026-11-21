@@ -62,3 +62,29 @@ Agent 1 InfoSec and Agent 3 QA sign-off are mandatory before release.
 - [ ] Scan result schema is durable and distinguishes malicious, clean-by-signature, error and unscanned.
 - [ ] Signed packaging, rollback, audit trails and resource limits are approved before canary.
 - [ ] No merge, production listener or endpoint rollout without explicit approvals.
+
+## BE-111–115 durable verdict integrity (draft)
+
+Migration `0008_scan_job_results.up.sql` requires:
+- A composite foreign key `(job_id, tenant_id, agent_id)` to prevent
+  a direct SQL result row from claiming a different tenant or device.
+- Append-only scan results: application-level UPDATE/DELETE are rejected by a
+  database trigger. A database superuser can still bypass database triggers;
+  this is not a cryptographic audit log.
+- Non-control-character signature/detail fields with strict field lengths.
+- Atomic consumed lease + result insertion; same job cannot be completed twice.
+
+The authenticated `POST .../scan-jobs/complete-result` request uses:
+`{"job_id":"UUID","lease_token":"UUID","verdict":"malicious","threat_name":"Name","detail":""}`.
+Valid verdicts: `clean_by_signature`, `malicious`, `error`, `unscanned`.
+A `malicious` verdict requires a nonempty signature; all other outcomes
+require an empty signature. A successful scan (`succeeded` job state) is
+**not** a benign verdict—`malicious` also means the scan ran to completion.
+The older boolean-only `complete` endpoint is retained for older lab
+protocol consumers but does **not** constitute a durable malware result and
+must not be used for endpoint detection evidence.
+
+The disposable PostgreSQL chain workflow now tests malicious and clean
+completion, scanner failures, missing scans, cross-tenant isolation, replay,
+expired leases, revocation and immutability. No signed evidence or operator
+alert generation is implemented in this change.

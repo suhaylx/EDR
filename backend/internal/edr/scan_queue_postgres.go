@@ -6,6 +6,7 @@ import (
     "errors"
     "fmt"
     "strings"
+    "unicode"
 )
 
 // PostgresScanJobQueue is a durable storage adapter. It does NOT authenticate
@@ -90,7 +91,8 @@ func validScanResult(verdict,threat,detail string)bool{
         return false
     }
     return len(threat)<=256 && len(detail)<=1024 &&
-        !strings.ContainsRune(threat,0) && !strings.ContainsRune(detail,0)
+        strings.IndexFunc(threat,unicode.IsControl)==-1 &&
+        strings.IndexFunc(detail,unicode.IsControl)==-1
 }
 
 // CompleteWithResult consumes the authenticated, nonexpired lease and stores
