@@ -13,7 +13,7 @@ inputs:
   intended_windows_source_event_id: 7
   required: [id, device_id, process_guid, image, file_path, time]
   source_integrity: unauthenticated_lab_sender
-  missing_source_event_id: fail_open_for_alert_only_no_production_admission
+  source_event_id_status: sender_reported_unverified_in_lab
 match:
   extension: .dll
   case_insensitive_normalized_path_contains_any:
@@ -26,7 +26,7 @@ correlate_optional:
   normalized_type: file_create
   intended_windows_source_event_id: 11
   same_device_id: true
-  same_canonical_path_string: true
+  same_lowercased_separator_normalized_path_string: true
   same_nonempty_reported_boot_id: true
   incompatible_reported_process_guids_refuse_link: true
   both_sha256_values_must_be_complete_hex_and_equal: true
