@@ -277,7 +277,7 @@ function App() {
             <button type="button" className="secondary" onClick={disconnect} disabled={!token && status === 'disconnected'}>Disconnect / clear</button>
           </div>
         </form>
-        <p role="status" aria-live="polite" className="feedback">{status === 'disconnected' ? 'Disconnected — no fleet status inferred.' : status === 'loading' ? 'Requesting retained scan jobs…' : status === 'error' ? 'Connection failed: ' + error : 'Showing retained lab evidence for ' + days + ' UTC day(s) and ' + jobs.length + ' reported scan job(s); fetched at ' + (loadedAt?.toLocaleTimeString() || 'unknown') + ' (local clock).'}</p>
+        <p role="status" aria-live="polite" className="feedback">{status === 'disconnected' ? 'Disconnected — no fleet status inferred.' : status === 'loading' ? 'Requesting six read-only lab evidence sources…' : status === 'error' ? 'Connection failed: ' + error : 'Showing retained lab evidence for ' + days + ' UTC day(s) and ' + jobs.length + ' reported scan job(s); fetched at ' + (loadedAt?.toLocaleTimeString() || 'unknown') + ' (local clock).'}</p>
       </section>
       <nav className="section-tabs" aria-label="SOC lab views">
         <button type="button" aria-current={view === 'overview' ? 'page' : undefined} onClick={() => setView('overview')}>SOC overview</button>
