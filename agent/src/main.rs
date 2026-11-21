@@ -17,6 +17,13 @@ use std::time::{Duration, Instant};
 fn main() {
     let args:Vec<String>=std::env::args().collect();
     if args.len()>1 {
+        if args.len()==2 && args[1]=="--heartbeat-mtls" {
+            if let Err(e)=scan_runner::heartbeat_once() {
+                eprintln!("agent_mtls_heartbeat_failed={:?}",e.kind());
+                std::process::exit(2);
+            }
+            return;
+        }
         if args.len()==2 && args[1]=="--scan-once-mtls" {
             if let Err(e)=scan_runner::run_once() {
                 eprintln!("agent_mtls_scan_failed={:?}",e.kind());
@@ -24,7 +31,7 @@ fn main() {
             }
             return;
         }
-        eprintln!("unsupported agent arguments; supported lab mode: --scan-once-mtls");
+        eprintln!("unsupported agent arguments; supported lab modes: --scan-once-mtls, --heartbeat-mtls");
         std::process::exit(2);
     }
     println!("TuranSec EDR agent LAB scaffold -- no endpoint protection active");
