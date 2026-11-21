@@ -136,7 +136,7 @@ test('M122 source free text and clipboard content are never copied into audit se
  const clipboard=source('go-a',{source_event_id:24,detail:'DO_NOT_COPY_SECRET',
   process_guid:'',image:'',file_path:'',source_fields:{}});
  const r=audit([detection('a',{evidence_source_event_id:24,process_guid:''})],
-  [clipboard]);
+  [clipboard])[0];
  assert.equal(r.primaryState,'reported_type_agrees');
  assert.ok(!JSON.stringify(r).includes('DO_NOT_COPY_SECRET'));
  assert.equal(query([r],{state:'all',query:'DO_NOT_COPY_SECRET'}).length,0);
