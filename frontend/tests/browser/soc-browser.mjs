@@ -25,6 +25,7 @@ let labDenied = false;
 let delayedFinished = Promise.resolve();
 let delayedReceived = () => undefined;
 const observedSOC = [];
+const observedBrowserSOC = [];
 const observedLab = [];
 const now = '2026-11-21T18:00:00Z';
 const session = { tenant_id: 'fixture-tenant', operator_id: 'fixture-viewer', role: 'viewer', server_time: now };
@@ -74,7 +75,13 @@ async function handler(request, response, secure) {
   response.setHeader('X-Frame-Options', 'DENY');
   response.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
   if (url.pathname.startsWith('/soc/v1/')) {
-    observedSOC.push({ path: url.pathname, method: request.method, authorizedTLS: Boolean(request.socket.authorized), bearerPresent: Boolean(request.headers.authorization), sameOrigin: request.headers.origin === 'https://' + request.headers.host, fetchSite: request.headers['sec-fetch-site'] });
+    const observation = { path: url.pathname, method: request.method, mode,
+      authorizedTLS: Boolean(request.socket.authorized), bearerPresent: Boolean(request.headers.authorization),
+      sameOrigin: request.headers.origin === 'https://' + request.headers.host, fetchSite: request.headers['sec-fetch-site'],
+      responseStatus: null, closedBeforeFinish: null, acknowledgementCommitted: false };
+    observedSOC.push(observation);
+    response.once('finish', () => { observation.responseStatus = response.statusCode; });
+    response.once('close', () => { observation.closedBeforeFinish = !response.writableFinished; });
     if (!secure || !request.socket.authorized) return sendJSON(response, { error: 'denied' }, 401);
     if (mode === 'deny' || mode === 'forbidden' || mode === 'unavailable') return sendJSON(response, { error: 'DO-NOT-RENDER-FIXTURE-ERROR' }, mode === 'deny' ? 401 : mode === 'forbidden' ? 403 : 503);
     if (request.method === 'POST') {
@@ -87,6 +94,7 @@ async function handler(request, response, secure) {
       if (url.pathname === base + `alerts/${alertID}/ack`) {
         if (alertState !== 'open') return sendJSON(response, { error: 'state conflict' }, 409);
         alertState = 'acknowledged'; caseFields.acknowledged_by = session.operator_id;
+        observation.acknowledgementCommitted = true;
         if (mode === 'ack-drop') { request.socket.destroy(); return; }
       } else if (url.pathname === base + `alerts/${alertID}/notes`) {
         if (!body?.note || Buffer.byteLength(body.note) > 2048) return sendJSON(response, { error: 'bad note' }, 400);
@@ -140,9 +148,42 @@ async function check(name, action) {
   catch (error) { report.cases.push({ name, status: 'fail', milliseconds: Date.now() - start, error: String(error) }); throw error; }
 }
 async function waitText(page, text) { await page.getByText(text, { exact: false }).first().waitFor({ state: 'visible' }); }
+function incompleteCheckEvidence(check) {
+  const allowed = ['fgColor', 'bgColor', 'contrastRatio', 'expectedContrastRatio', 'fontSize', 'fontWeight', 'messageKey'];
+  const data = Object.fromEntries(allowed.filter(key => check.data && Object.hasOwn(check.data, key))
+    .map(key => [key, check.data[key]]));
+  return { id: check.id, impact: check.impact, message: check.message, data };
+}
+async function incompleteNodeEvidence(page, node) {
+  let computed = { unavailable: 'Selector requires frame or shadow-root traversal' };
+  if (node.target.length === 1 && typeof node.target[0] === 'string') {
+    computed = await page.locator(node.target[0]).first().evaluate(element => {
+      const describe = item => {
+        const style = getComputedStyle(item);
+        const rect = item.getBoundingClientRect();
+        return { tag: item.tagName.toLowerCase(), id: item.id, className: item.getAttribute('class') ?? '',
+          color: style.color, backgroundColor: style.backgroundColor, opacity: style.opacity,
+          fontSize: style.fontSize, fontWeight: style.fontWeight, visibility: style.visibility,
+          display: style.display, overflowX: style.overflowX, overflowY: style.overflowY,
+          x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      };
+      const ancestors = [];
+      for (let parent = element.parentElement; parent && ancestors.length < 6; parent = parent.parentElement) ancestors.push(describe(parent));
+      // Computed presentation only; never collect innerHTML, text or input values.
+      return { element: describe(element), ancestors };
+    }, undefined, { timeout: 1000 }).catch(() => ({ unavailable: 'Unable to measure selector' }));
+  }
+  return { target: node.target, impact: node.impact, failureSummary: node.failureSummary,
+    any: node.any.map(incompleteCheckEvidence), all: node.all.map(incompleteCheckEvidence),
+    none: node.none.map(incompleteCheckEvidence), computed };
+}
 async function accessibility(page, name) {
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
-  report.accessibility.push({ name, violations: result.violations, incomplete: result.incomplete.map(x => ({ id: x.id, impact: x.impact, description: x.description })) });
+  const incomplete = await Promise.all(result.incomplete.map(async rule => ({ id: rule.id, impact: rule.impact,
+    description: rule.description, help: rule.help,
+    nodes: await Promise.all(rule.nodes.map(node => incompleteNodeEvidence(page, node))) })));
+  report.accessibility.push({ name, status: result.violations.length ? 'violations' : incomplete.length ? 'needs-review' : 'no-violations-or-incomplete',
+    violations: result.violations, incomplete });
   assert.deepEqual(result.violations.map(x => ({ id: x.id, impact: x.impact, nodes: x.nodes.map(n => n.target) })), [], name + ' accessibility violations');
 }
 async function recordViewportLayout(page, name) {
@@ -190,7 +231,24 @@ try {
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 }, clientCertificates: [{ origin, certPath: join(fixtureDir, 'client.crt'), keyPath: join(fixtureDir, 'client.key') }] });
   const page = await context.newPage();
   const errors = [];
+  report.browserErrors = errors;
   page.on('pageerror', error => errors.push(error.message));
+  const browserRequests = new WeakMap();
+  page.on('request', request => {
+    const path = new URL(request.url()).pathname;
+    if (!path.startsWith('/soc/v1/')) return;
+    const observation = { method: request.method(), path, responseStatus: null, failure: null };
+    browserRequests.set(request, observation);
+    observedBrowserSOC.push(observation);
+  });
+  page.on('response', response => {
+    const observation = browserRequests.get(response.request());
+    if (observation) observation.responseStatus = response.status();
+  });
+  page.on('requestfailed', request => {
+    const observation = browserRequests.get(request);
+    if (observation) observation.failure = request.failure()?.errorText ?? 'unknown';
+  });
   await check('keyboard reaches skip link and Connect; browser certificate reads the SOC fixture', async () => {
     await page.goto(origin);
     await page.keyboard.press('Tab');
@@ -336,8 +394,23 @@ try {
     await page.getByRole('button', { name: 'Refresh SOC records', exact: true }).click();
     await waitText(page, 'Loaded records for tenant');
     const before = observedSOC.filter(x => x.method === 'POST').length;
+    const serverStart = observedSOC.length;
+    const browserStart = observedBrowserSOC.length;
     await page.getByRole('button', { name: 'Acknowledge alert ' + alertID }).first().click();
-    await waitText(page, 'The operation outcome is unknown');
+    try {
+      await waitText(page, 'The operation outcome is unknown');
+    } finally {
+      // Passive diagnostics preserve the original assertion and response-drop behavior.
+      const status = await page.locator('[aria-labelledby="soc-connection-title"] [role="status"]').innerText({ timeout: 1000 }).catch(() => 'Connection status unavailable');
+      const diagnostics = { fixtureAlertState: alertState, connectionStatus: status.slice(0, 1600),
+        serverRequests: observedSOC.slice(serverStart), browserRequests: observedBrowserSOC.slice(browserStart) };
+      report.interruptedAcknowledgement = diagnostics;
+      await page.screenshot({ path: join(resultsDir, 'operator-interrupted-acknowledgement.png'), fullPage: true }).catch(error => { diagnostics.screenshotError = error.name; });
+      await writeFile(join(resultsDir, 'operator-interrupted-acknowledgement.json'), JSON.stringify(diagnostics, null, 2) + '\n');
+      console.log('Interrupted acknowledgement diagnostics: ' + JSON.stringify({ fixtureAlertState: diagnostics.fixtureAlertState,
+        connectionStatus: diagnostics.connectionStatus, serverPosts: diagnostics.serverRequests.filter(x => x.method === 'POST'),
+        browserPosts: diagnostics.browserRequests.filter(x => x.method === 'POST') }));
+    }
     assert.equal(await page.locator('table').count(), 0);
     assert.equal(observedSOC.filter(x => x.method === 'POST').length, before + 1);
     mode = 'ready';
@@ -393,6 +466,8 @@ try {
   await rm(fixtureDir, { recursive: true, force: true });
   process.umask(originalMask);
   report.finished_at = new Date().toISOString();
+  // Only paths, methods, status/failure codes and booleans; no bodies, tokens or keys.
+  report.transport = { socServer: observedSOC, socBrowser: observedBrowserSOC, labRequests: observedLab };
   await writeFile(join(resultsDir, 'soc-browser-report.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(`Browser contract checks: ${report.cases.filter(x => x.status === 'pass').length}/${report.cases.length}; status=${report.status}; browser=${report.browser}`);
 }
