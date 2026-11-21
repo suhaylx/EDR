@@ -216,6 +216,9 @@ test('M150 exact inventory filtering, deterministic sorting and paging never mut
   assert.deepEqual(filterSnapshotEndpoints(s.endpointRows,{
     ...DEFAULT_SNAPSHOT_FILTERS,sort:'heartbeat',
   }).map(x=>x.id),['linux-B','WIN-A']);
+  const variants=[{...s.endpointRows[0],id:'WIN-A'},{...s.endpointRows[0],id:'win-a'}];
+  assert.deepEqual(filterSnapshotEndpoints(variants,DEFAULT_SNAPSHOT_FILTERS).map(x=>x.id),
+    filterSnapshotEndpoints([...variants].reverse(),DEFAULT_SNAPSHOT_FILTERS).map(x=>x.id));
   const rows=Array.from({length:61},(_,i)=>({
     id:'host-'+String(i).padStart(3,'0'),platform:'windows',heartbeat:'online',
     detectionsInWindow:0,eventsInWindow:0,scanJobsReturned:0,observedSysmonTypes:0,
