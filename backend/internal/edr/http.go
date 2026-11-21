@@ -75,6 +75,10 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			reply(w, 201, saved)
+		case r.URL.Path == "/api/policy-metadata" && r.Method == "GET":
+			// Lab analyst frontend never needs the raw Sysmon XML document.
+			// Keep the old /api/policies contract for existing lab clients.
+			reply(w, 200, policyCatalogMetadata(s.Store.Snapshot().Policies))
 		case r.URL.Path == "/api/policies" && r.Method == "GET":
 			reply(w, 200, s.Store.Snapshot().Policies)
 		case r.URL.Path == "/api/policies" && r.Method == "POST":
