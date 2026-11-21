@@ -51,21 +51,26 @@ with GitHub's git blob hashes:
   `5d25c1ab76e4d1b5a9602d98f9fbb4cf09b15200`
 - `frontend/tests/scan-state.test.mjs`:
   `a299f29e12d73576a396e65c38ff04f30ec4f730`
+- `frontend/src/lab-api.ts`:
+  `53b7abce08a53538381271af63ccd7d52c176f75`
+- `frontend/tests/lab-api.test.mjs`:
+  `d75b19ef02b0b01674e9c2c533e1430e8702720e`
 
 Commands:
 
 ```sh
-tsc src/scan-state.ts --module Node16 --moduleResolution Node16 --target es2022 --strict --skipLibCheck --outDir .test-dist
-node --test tests/scan-state.test.mjs
+tsc src/scan-state.ts src/lab-api.ts --module Node16 --moduleResolution Node16 --target es2022 --strict --skipLibCheck --outDir .test-dist
+node --test tests/scan-state.test.mjs tests/lab-api.test.mjs
 ```
 
-**Result: 12 tests passed, 0 failed; strict TS compilation passed.**
-The five new test cases include multiple missing/unknown modes,
+**Result: 17 tests passed, 0 failed; strict TS compilation passed.**
+The five new scan-display test cases include multiple missing/unknown modes,
 quick/full contradictions, malicious-without-signature, name privacy,
-and scanner error/unscanned precedence.
+and scanner error/unscanned precedence. Five existing scan-API decoder tests
+also passed, including the corrected lifecycle-field expectation, strict
+metadata-only GET and invalid bearer response handling.
 
-**Not verified:** Full React build, all frontend tests including the
-updated `lab-api.test.mjs`, actual browser/manual screen-reader QA,
+**Not verified:** Full React build, all frontend tests beyond the two isolated targeted suites, actual browser/manual screen-reader QA,
 complete Go/Rust/Windows/Linux backend suite, signed endpoint scan
 provenance. GitHub Actions has suffered zero-step runner allocation
 failures (DevOps #153), so an exact-head CI status must be checked
