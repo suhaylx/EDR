@@ -218,3 +218,32 @@ func TestDLLAlertFingerprintIsUnambiguousWithDelimiters(t *testing.T) {
 		t.Fatalf("distinct tuples collapsed into one alert: %+v", got)
 	}
 }
+
+func TestDLLCreateEvidenceRejectsConflictingProcessIdentity(t *testing.T) {
+	load := provenanceLoad()
+	for _, tc := range []struct {
+		name string
+		createProcess string
+		loadProcess string
+		wantLink bool
+	}{
+		{"matching", "{one}", "{one}", true},
+		{"different", "{other}", "{one}", false},
+		{"missing-create-process", "", "{one}", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			l := load
+			l.ProcessGUID = tc.loadProcess
+			create := Event{ID: "create-1", Platform: "windows", DeviceID: l.DeviceID,
+				Type: "file_create", FilePath: l.FilePath, BootID: l.BootID,
+				ProcessGUID: tc.createProcess, Hash: l.Hash, Time: l.Time.Add(-time.Minute)}
+			got := DetectSuspiciousDLLLoads([]Event{create, l})
+			if len(got) != 1 {
+				t.Fatalf("module load must still alert: %+v", got)
+			}
+			if linked := got[0].FileCreateEventID != ""; linked != tc.wantLink {
+				t.Fatalf("unexpected process-identity evidence link: %+v", got[0])
+			}
+		})
+	}
+}
