@@ -105,3 +105,53 @@ func TestIngestBoundsUntrustedTelemetryFields(t *testing.T) {
 		})
 	}
 }
+
+func TestIngestRejectsFutureEventTimestampWithoutRetention(t *testing.T) {
+	store := NewStore()
+	if _, err := store.CheckIn(Agent{ID: "win-01", Platform: "windows"}); err != nil {
+		t.Fatal(err)
+	}
+	event := Event{
+		DeviceID: "win-01", Platform: "windows", Type: "module_load",
+		Time: time.Now().UTC().Add(10 * time.Minute),
+	}
+	if _, err := store.Ingest(event); err == nil {
+		t.Fatal("accepted event with timestamp far in the future")
+	}
+	if got := len(store.Snapshot().Events); got != 0 {
+		t.Fatalf("future-dated event was retained: %d", got)
+	}
+}
+
+func TestIngestOverwritesClientSuppliedIDAndReceiptProvenance(t *testing.T) {
+	store := NewStore()
+	if _, err := store.CheckIn(Agent{ID: "win-01", Platform: "windows"}); err != nil {
+		t.Fatal(err)
+	}
+	sender := Event{
+		ID: "forged-ingest-id", DeviceID: "win-01", Platform: "windows",
+		Type: "module_load", SourceRecordID: "42",
+		ReceivedAt: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		TimeOrigin: "trusted",
+	}
+	first, err := store.Ingest(sender)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := store.Ingest(sender)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.ID == sender.ID || second.ID == sender.ID || first.ID == second.ID {
+		t.Fatalf("client forged or reused ingest ID: %q %q", first.ID, second.ID)
+	}
+	for _, e := range []Event{first, second} {
+		if e.TimeOrigin != "server_received" || !e.ReceivedAt.Equal(e.Time) ||
+			e.ReceivedAt.Year() == 2000 {
+			t.Fatalf("client-controlled provenance accepted: %+v", e)
+		}
+	}
+	if len(store.Snapshot().Events) != 2 {
+		t.Fatal("lab prototype must not silently suppress repeated source records")
+	}
+}
