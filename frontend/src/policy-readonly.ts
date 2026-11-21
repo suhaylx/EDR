@@ -81,7 +81,7 @@ export type PolicyReviewState='unassigned'|'unknown_policy'|'platform_mismatch'|
 export type PolicyReviewRow=Readonly<{endpointID:string;platform:string;group:string;heartbeat:string;
  desiredID:string;desiredRevision:number;desiredName:string;
  assignmentLevel:'agent'|'group'|'default'|'none';
- appliedID:string;appliedRevision:number;error:string;status:PolicyReviewState}>;
+ appliedID:string;appliedRevision:number;errorReported:boolean;status:PolicyReviewState}>;
 export function desiredPolicyForEndpoint(e:EndpointActivity,assignments:readonly PolicyAssignment[]){
  for(const type of ['agent','group','default'] as const){
   const target=type==='agent'?e.id:type==='group'?e.group:'*';
@@ -106,6 +106,6 @@ export function reviewPolicyEvidence(overview:LabSOCOverview,
   return {endpointID:e.id,platform:e.platform,group:e.group,heartbeat:e.status,
     desiredID:assigned?.policy_id||'',desiredRevision:desired?.revision||0,
     desiredName:desired?.name||'',assignmentLevel:assigned?.target_type||'none',
-    appliedID:e.applied_policy_id,appliedRevision:e.applied_revision,error:e.last_policy_error,status:state};
+    appliedID:e.applied_policy_id,appliedRevision:e.applied_revision,errorReported:!!e.last_policy_error,status:state};
  });
 }
