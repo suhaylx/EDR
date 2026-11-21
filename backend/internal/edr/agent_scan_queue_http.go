@@ -2,6 +2,7 @@ package edr
 
 import (
     "encoding/json"
+    "io"
     "net/http"
     "strings"
 )
@@ -51,7 +52,7 @@ func AgentScanQueueHandler(queue PostgresScanJobQueue) http.Handler {
                 http.Error(w,"invalid payload",http.StatusBadRequest);return
             }
             var extra json.RawMessage
-            if err:=decoder.Decode(&extra);err==nil{
+            if err:=decoder.Decode(&extra);err!=io.EOF{
                 http.Error(w,"multiple payloads",http.StatusBadRequest);return
             }
             if !validUUID(payload.JobID)||!validUUID(payload.LeaseToken){
