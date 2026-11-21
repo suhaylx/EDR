@@ -1,0 +1,32 @@
+Observed actual runtime certificate authorization lock wait.
+ pg_sleep 
+----------
+ 
+(1 row)
+
+ expired_before_authorization_released 
+---------------------------------------
+ t
+(1 row)
+
+ authorized 
+------------
+ t
+(1 row)
+
+ elapsed_after_authorization 
+-----------------------------
+ 00:00:01.001135
+(1 row)
+
+ expired_completion_accepted 
+-----------------------------
+ f
+(1 row)
+
+ persisted_after_expired_lease 
+-------------------------------
+                             0
+(1 row)
+
+PASS: expired lease result denied with no persisted result or lease mutation.

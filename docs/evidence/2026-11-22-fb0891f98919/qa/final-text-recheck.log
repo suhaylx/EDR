@@ -1,0 +1,6 @@
+=== RUN   TestQAFrontendRejectsPersistableHeartbeatText
+--- PASS: TestQAFrontendRejectsPersistableHeartbeatText (0.00s)
+=== RUN   TestQAFrontendRejectsBOMOnlyMaliciousSignature
+--- PASS: TestQAFrontendRejectsBOMOnlyMaliciousSignature (0.00s)
+PASS
+ok  	github.com/turansec/edr/backend/internal/edr	1.014s

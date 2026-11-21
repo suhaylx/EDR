@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "rust",
+  "started_at": "2026-11-21T19:58:02.229370+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Rust toolchain",
+      "argv": [
+        "rustc",
+        "--version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:02.245324+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:02.458302+00:00"
+    },
+    {
+      "label": "Cargo toolchain",
+      "argv": [
+        "cargo",
+        "--version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:02.458736+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:02.522478+00:00"
+    },
+    {
+      "label": "Rust build",
+      "argv": [
+        "cargo",
+        "build",
+        "--locked",
+        "--all-targets"
+      ],
+      "cwd": "agent",
+      "started_at": "2026-11-21T19:58:02.522712+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:02.882448+00:00"
+    },
+    {
+      "label": "Rust native tests",
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--all-targets"
+      ],
+      "cwd": "agent",
+      "started_at": "2026-11-21T19:58:02.882741+00:00",
+      "exit_code": 101,
+      "finished_at": "2026-11-21T19:58:03.015951+00:00"
+    }
+  ],
+  "result": "failed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "error": "Required check failed: Rust native tests",
+  "finished_at": "2026-11-21T19:58:03.016335+00:00"
+}

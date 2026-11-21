@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "reviewer": "fresh independent QA agent; not original Agent3 owner",
+  "reviewed_at": "2026-11-21T20:00:08.101185+00:00",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "tree": "5782837acca162c28d9ceb3dbcca5b7570db2684",
+  "pr_url": "https://github.com/suhaylx/EDR/pull/180",
+  "engineering_verdict": "APPROVE within the explicitly reviewed source and local engineering-test scope",
+  "full_acceptance_verdict": "NOT APPROVED",
+  "release_verdict": "NO-GO",
+  "source_clean": true,
+  "source_changed_by_reviewer": false,
+  "independent_execution": {
+    "published_sha_backend_build_test_race_vet": "PASS",
+    "published_sha_reviewer_startup_cases": 6,
+    "published_sha_reviewer_display_cases": 2,
+    "published_sha_release_primitive_tests": 12,
+    "published_sha_host_evidence_tool_tests": 8,
+    "identical_tree_postgres_runtime_denials": 35,
+    "identical_tree_postgres_registry_denials": 17,
+    "identical_tree_certificate_schedules": 7,
+    "identical_tree_lease_schedules": 8,
+    "identical_tree_0013_double_upgrade": "PASS"
+  },
+  "sql_source_attribution": "SQL suite was independently executed on local commit99872c8ff16966e007555962c1f824e831a4e20e before publication; canonical GitHub commit has identical complete tree5782837acca162c28d9ceb3dbcca5b7570db2684. Root separately reran the full SQL ledger on the published SHA; QA inspected that passed ledger.",
+  "unwaived_gates": [
+    "Exact-head GitHub candidate-ci run44943696845 failed; all8jobs returned failure with no steps recorded",
+    "Rust native Linux gate failed:59passed,1Unix-socket EPERM failure,0ignored; native Windows execution not established",
+    "Frontend326unit/contract tests/typecheck/buildpassed; actual browser/accessibility execution remains blocked and fullfrontendgatefailed",
+    "Actual Windows Server2022 and approved Ubuntu deployment-host acceptance including real ClamAV/EICAR and Sysmon evidence not established",
+    "Original Agent1 and Agent3 owner signoff and all original sprint acceptance not established by this fresh review",
+    "Trusted organizational package signing and native signed Windows installer/service evidence not established",
+    "Installed-service and database-restore rollback on approved hosts not established",
+    "Named deployment-owner authorization for exact signed package,targets,window,canary and rollback not obtained"
+  ],
+  "evidence": [
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/prepublication-privilege-recheck.log",
+      "sha256": "a3ae39132a9776d8611bc53660fac94404576a274f5d68813c69a4c37945838a",
+      "bytes": 3574,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-startup-recheck.log",
+      "sha256": "5d77ccaa241265d9fafbde92874e52e28743add79d249bd1a1778dfd2c74b9eb",
+      "bytes": 908,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-text-recheck.log",
+      "sha256": "7257e2f407393f23b8e76bba88261537995d3bb6ed04748c88a6216367bffc2f",
+      "bytes": 304,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-reviewer-test-results.json",
+      "sha256": "c90721ec26dbbfcbdcb4d607ba3f6118e4da0bab9c8a900cbf60ba73b5875d69",
+      "bytes": 124,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-github-readback.json",
+      "sha256": "b90091b2a068268a510fefb353dcb37f6473dbf071e2640671935f2cbbb964e1",
+      "bytes": 9284,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-source-manifest.json",
+      "sha256": "d8f5484b3aaf1beb8569621aeda62578003f7c07d545ed0929f898b924342b79",
+      "bytes": 60506,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-candidate/.quality-evidence/backend-linux.json",
+      "sha256": "d8c41c03381b358a5cfa37a8fe954735f9c608b45e7693db9b3f9906f00dd440",
+      "bytes": 1899,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-candidate/.quality-evidence/backend-linux.log",
+      "sha256": "a4c494e97c0727b12c6490c378ace24795a7e6f496737ad50cdc667ea1e4e2d5",
+      "bytes": 553,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-candidate/.quality-evidence/release-tools-linux.json",
+      "sha256": "4389e64aa9453207c63996e7826dd12194804bc8f527d97180ee3f9fa13ac729",
+      "bytes": 1307,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/qa-work/final-candidate/.quality-evidence/release-tools-linux.log",
+      "sha256": "83bc5a56a8f12ae29395da4e82aa4d45af15b180e42b7a58f745294fd4126176",
+      "bytes": 3333,
+      "attribution": "independent QA execution or readback"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integrated-candidate.json",
+      "sha256": "743c3633134001c1f3273a7ecc14512e8f3a434e376a8e6f69ccbb4f1d1ef1ad",
+      "bytes": 1842,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integration-linux.json",
+      "sha256": "944ccdd0ee56be0ae4139a2658c5dbbef628fd4be9d64f20a337beb5483bddd8",
+      "bytes": 1989,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integration-linux.log",
+      "sha256": "d751eb50bb34ea24168ab02774f56e0ddccbd258244aa09f49a3edfcfd1fa64a",
+      "bytes": 7214,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-linux.json",
+      "sha256": "63e485b2e32478968ee3dc8391b0319eeb1f2aa3fa9c801458177c19c1a7a445",
+      "bytes": 820,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-linux.log",
+      "sha256": "bb251b09d4fd3fe66fcf1af34120ec0d16cf7dfc0a583c53b0ef01e82f004927",
+      "bytes": 10980,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-seed-linux.json",
+      "sha256": "8bc623fd1e96564df0c4d730667f184749730e33b4b8cdbccaac6d8ee8a35608",
+      "bytes": 825,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-verify-linux.json",
+      "sha256": "abbb468486982e5627c4102fb68b3f31941bbb0b6a2a9c270e21ce62a24be4d8",
+      "bytes": 831,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-verify-linux.log",
+      "sha256": "803dea332a94fd340902247b9d8546452119e8bfd18f3338ae9fe03d0ba7c56c",
+      "bytes": 420,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-start-before.txt",
+      "sha256": "9ae9fb8c5b124c535a231d479e02eb920ba92cd56751c694ab653eb7a480b967",
+      "bytes": 29,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/postgres-start-after.txt",
+      "sha256": "8898ce9d8eadb9bc2d7c92b222fd74def447d9179558b71102d41311d7e6716c",
+      "bytes": 30,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/frontend-linux.json",
+      "sha256": "9507b5993f36a781159e8a6b2e2c0c5010e5547e5c91cd6d2bc737b049638301",
+      "bytes": 2303,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/frontend-linux.log",
+      "sha256": "f4e827269d5da1fe488a78bea2ddbc768bed51484b64638e594014ccb7a70c49",
+      "bytes": 29821,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/rust-linux.json",
+      "sha256": "680bd9c6b71bad688d5bb5b12febf5212b8bb597ad14b4cff91ac5a478f5f316",
+      "bytes": 1693,
+      "attribution": "root execution; independently reviewed by QA"
+    },
+    {
+      "path": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/rust-linux.log",
+      "sha256": "5930614343b586f0f40989e505dd8b3b3bb7c26308ba3ba5c2ea4a27432feed2",
+      "bytes": 9129,
+      "attribution": "root execution; independently reviewed by QA"
+    }
+  ],
+  "no_merge_deploy_or_production_readiness_claim": true
+}

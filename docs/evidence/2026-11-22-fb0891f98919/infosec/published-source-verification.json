@@ -1,0 +1,125 @@
+{
+  "observed_at_utc": "2026-11-21 19:58:12 UTC",
+  "github_commit": "fb0891f98919fd0a166ff10427088f195d208225",
+  "github_commit_url": "https://github.com/suhaylx/EDR/commit/fb0891f98919fd0a166ff10427088f195d208225",
+  "pull_request_url": "https://github.com/suhaylx/EDR/pull/180",
+  "pull_request_head_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "pull_request_draft": true,
+  "local_tested_commit": "99872c8ff16966e007555962c1f824e831a4e20e",
+  "local_tree": "5782837acca162c28d9ceb3dbcca5b7570db2684",
+  "github_tree": "5782837acca162c28d9ceb3dbcca5b7570db2684",
+  "github_tree_truncated": false,
+  "identical_tree": true,
+  "reviewed_blob_count": 18,
+  "all_reviewed_blobs_match": true,
+  "files": [
+    {
+      "path": "backend/cmd/edrd/main.go",
+      "sha256": "18d8e57b2209fcde2506e9d18d438eb12764185bac047a188fda9e75aa82a906",
+      "git_blob_sha": "1dfa07e48281728c57cf27e5394cb23f022d8b82",
+      "remote_git_blob_sha": "1dfa07e48281728c57cf27e5394cb23f022d8b82"
+    },
+    {
+      "path": "backend/internal/edr/certificate_transaction.go",
+      "sha256": "68915f8f01892aea7766527c20e24c19bc0ae7bc701a07a61cc6b6df261f85d8",
+      "git_blob_sha": "b61819c5210a11e6974143139658d68db9f5c1b7",
+      "remote_git_blob_sha": "b61819c5210a11e6974143139658d68db9f5c1b7"
+    },
+    {
+      "path": "backend/internal/edr/soc_application.go",
+      "sha256": "1e7eca6abc0de2421bcdebdb5a22f84a3377765080612a1668f623f63ecce602",
+      "git_blob_sha": "3ea02ab3973a6a98903257ed35519bbed429a4ae",
+      "remote_git_blob_sha": "3ea02ab3973a6a98903257ed35519bbed429a4ae"
+    },
+    {
+      "path": "backend/internal/edr/agent_http.go",
+      "sha256": "d1b574c593385c72552b81b9d3395c9b8d855b3bf59a4def99c851cf4b127c9d",
+      "git_blob_sha": "411fd19b6ceba68a43f3fce0e0a5780877dbb7fa",
+      "remote_git_blob_sha": "411fd19b6ceba68a43f3fce0e0a5780877dbb7fa"
+    },
+    {
+      "path": "backend/internal/edr/agent_identity.go",
+      "sha256": "d6e92c32e985b5741b01f76383954e853c2099893c8bc431c1ab8be2e1e060ed",
+      "git_blob_sha": "63cfb964f2b3a157837d6ae29aa91020e73906c2",
+      "remote_git_blob_sha": "63cfb964f2b3a157837d6ae29aa91020e73906c2"
+    },
+    {
+      "path": "backend/internal/edr/agent_mtls_server.go",
+      "sha256": "9efad22320838e4c2cdaebaf4d19f2235262b0e31037eb720a53a77ecc83009d",
+      "git_blob_sha": "3f0a9c7ef201126e75f4f210b32bad53523dd550",
+      "remote_git_blob_sha": "3f0a9c7ef201126e75f4f210b32bad53523dd550"
+    },
+    {
+      "path": "backend/internal/edr/agent_server_keypair.go",
+      "sha256": "b6740159de72b0c1826ebe584b88d59648cabee77c7fb407a4be99f88ba3a921",
+      "git_blob_sha": "0ed3d6491322081dd5f51229e188c9afba799787",
+      "remote_git_blob_sha": "0ed3d6491322081dd5f51229e188c9afba799787"
+    },
+    {
+      "path": "backend/internal/edr/soc_operator_mtls.go",
+      "sha256": "c6bcdd3b1f5e287fb3f3ae32eccea395bed55c951c7e42b148dad564e2930f02",
+      "git_blob_sha": "d7937e3b7e24ab6e3a85cf7da0e0185b8384047e",
+      "remote_git_blob_sha": "d7937e3b7e24ab6e3a85cf7da0e0185b8384047e"
+    },
+    {
+      "path": "backend/internal/edr/scan_queue_postgres.go",
+      "sha256": "22c52791d593424d010f0b8a7ac4a7d4bff9957034128a829efc11241c1126e2",
+      "git_blob_sha": "08373bcf7194ec4117c46d26193fdb816bfe8a35",
+      "remote_git_blob_sha": "08373bcf7194ec4117c46d26193fdb816bfe8a35"
+    },
+    {
+      "path": "backend/bootstrap/runtime_privileges.sql",
+      "sha256": "3e58c07c30cf17f7961eaf64b52393c57553ed2e95ed7b3d6695c844932ce3d0",
+      "git_blob_sha": "0503d1d8659700103c896895202de966ba85594c",
+      "remote_git_blob_sha": "0503d1d8659700103c896895202de966ba85594c"
+    },
+    {
+      "path": "backend/migrations/0005_scan_job_queue.up.sql",
+      "sha256": "b0a4782c96d4af91bf8aad59b345668e4fdd55ba229c4caaed9993fe7c252048",
+      "git_blob_sha": "de4c92889a15697fa6ea6a740637af0f6b36cc1b",
+      "remote_git_blob_sha": "de4c92889a15697fa6ea6a740637af0f6b36cc1b"
+    },
+    {
+      "path": "backend/migrations/0007_scan_job_lease_renewal.up.sql",
+      "sha256": "f2d2ac0ec072f6729bdbefbc2662e654190e36a8d4e21c8f2d4f76e055cf1629",
+      "git_blob_sha": "63586b1e52547ef95d67dbf1a16e5259f0a89eff",
+      "remote_git_blob_sha": "63586b1e52547ef95d67dbf1a16e5259f0a89eff"
+    },
+    {
+      "path": "backend/migrations/0008_scan_job_results.up.sql",
+      "sha256": "9324168f269d0a087a23898b63291b1812c0bbc5c7f35f6a5223c5fe24e359fe",
+      "git_blob_sha": "19ed8bcf518651c87d0c867764db49dc384ff042",
+      "remote_git_blob_sha": "19ed8bcf518651c87d0c867764db49dc384ff042"
+    },
+    {
+      "path": "backend/migrations/0013_scan_lease_wallclock.up.sql",
+      "sha256": "3268d2b9721c7a3cc805688c8f284202ca81cdceb52e477b965633e4aaf84534",
+      "git_blob_sha": "c89d7f7c666c766ed15a8fb24668570badb0b70b",
+      "remote_git_blob_sha": "c89d7f7c666c766ed15a8fb24668570badb0b70b"
+    },
+    {
+      "path": "agent/src/scan_file.rs",
+      "sha256": "f2779d0e072a20cd4143b2f8d1187509bd8226811e2a66d0ea7edf50aeca7f13",
+      "git_blob_sha": "4780af85f5a840b3a94964457e2dadbfe2d84f77",
+      "remote_git_blob_sha": "4780af85f5a840b3a94964457e2dadbfe2d84f77"
+    },
+    {
+      "path": "agent/src/worker.rs",
+      "sha256": "44e9d80d11a2dcdc157a0f439b3f4aa27250cc86f4281ae5b38bd55576cd00d0",
+      "git_blob_sha": "ed29365ef6232aeee7823eaeff46a04e565122f4",
+      "remote_git_blob_sha": "ed29365ef6232aeee7823eaeff46a04e565122f4"
+    },
+    {
+      "path": "scripts/release/package-candidate.py",
+      "sha256": "6973374ed995500c78c7ddbea52ad8eb9055b758b7f2d31477922384fb9311d2",
+      "git_blob_sha": "21375687312509a77788ffb748d51c46b5176070",
+      "remote_git_blob_sha": "21375687312509a77788ffb748d51c46b5176070"
+    },
+    {
+      "path": "docs/INSTALLATION.md",
+      "sha256": "c8979ad29bc6b4c36019538b8fe2a439b0f37af0d5b661b17c22c2dc4326e4dc",
+      "git_blob_sha": "646db12e440bb85b10523d7fa3223c2db4534a8a",
+      "remote_git_blob_sha": "646db12e440bb85b10523d7fa3223c2db4534a8a"
+    }
+  ]
+}

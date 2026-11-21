@@ -1,0 +1,31 @@
+psql (PostgreSQL) 16.16
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_tenants" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_agents" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_agent_certificates" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:147: NOTICE:  column "runtime_lock" of relation "edr_soc_operators" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:355: NOTICE:  role "edr_grant_runtime_94e204c38532" has already been granted membership in role "edr_runtime" by role "agent"
+psql:backend/bootstrap/runtime_privileges.sql:355: NOTICE:  role "edr_grant_registry_94e204c38532" has already been granted membership in role "edr_identity_ro" by role "agent"
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:backend/migrations/0013_scan_lease_wallclock.up.sql:301: NOTICE:  relation "edr_schema_capabilities" already exists, skipping
+psql:backend/migrations/0013_scan_lease_wallclock.up.sql:301: NOTICE:  relation "edr_schema_capabilities" already exists, skipping
+psql:scripts/test-lease-wallclock-upgrade.sql:56: NOTICE:  PASS: 0013 replaces obsolete lease clocks and retains OID/owner/ACL/security mode/settings across two applications
+psql:scripts/test-runtime-privileges-catalog.sql:122: NOTICE:  PASS: exact function allowlist, safe owners/search paths, no PUBLIC mutation execution, least-privilege role catalog
+psql:scripts/test-runtime-privileges.sql:163: NOTICE:  PASS: actual runtime login completed nested lifecycle and 35 forbidden operations were denied
+psql:scripts/test-registry-privileges.sql:54: NOTICE:  PASS: actual readonly registry login resolved both identities and 17 forbidden operations were denied
+PASS: certificate authorization revoke / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization revoke / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization expiry / admin_first (observed lock wait; expected mutation count).
+PASS: renew rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: result rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: legacy rejected lease expired during job lock wait (pre-expiry transaction; no mutation).
+PASS: renew rejected lease expired during certificate lock wait (pre-expiry transaction; no mutation).
+PASS: result rejected lease expired during certificate lock wait (pre-expiry transaction; no mutation).
+PASS: claim used fresh time after authorization wait for full lease duration.
+PASS: renew used fresh time after authorization wait for full lease duration.
+PASS: maintenance used fresh expiry time and skipped the concurrently locked job.
+PASS: live PostgreSQL restricted logins, transactional certificate authorization, lifecycle, exact grants, and denied escalation.

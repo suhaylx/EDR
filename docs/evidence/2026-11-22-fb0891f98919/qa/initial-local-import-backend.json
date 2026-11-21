@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "backend",
+  "started_at": "2026-11-21T19:58:18.228388+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Go toolchain",
+      "argv": [
+        "go",
+        "version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:18.239641+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:18.243542+00:00"
+    },
+    {
+      "label": "Go build",
+      "argv": [
+        "go",
+        "build",
+        "./..."
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T19:58:18.243706+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-11-21T19:58:18.383702+00:00"
+    }
+  ],
+  "result": "failed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "error": "Required check failed: Go build",
+  "finished_at": "2026-11-21T19:58:18.383956+00:00"
+}

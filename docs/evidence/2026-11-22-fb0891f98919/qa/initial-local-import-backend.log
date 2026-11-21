@@ -1,0 +1,11 @@
+Candidate: fb0891f98919fd0a166ff10427088f195d208225
+Started: 2026-11-21T19:58:18.228388+00:00
+
+=== Go toolchain ===
+go version go1.27.4 linux/amd64
+
+=== Go build ===
+error obtaining VCS status: exit status 128
+	Use -buildvcs=false to disable VCS stamping.
+error obtaining VCS status: exit status 128
+	Use -buildvcs=false to disable VCS stamping.

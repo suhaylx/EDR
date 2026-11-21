@@ -1,0 +1,224 @@
+Candidate: fb0891f98919fd0a166ff10427088f195d208225
+Started: 2026-11-21T19:58:42.181571+00:00
+
+=== Build authenticated Go service ===
+
+=== Build one Rust endpoint agent ===
+warning: unused import: `open_lab_scan_target`
+  --> src/worker.rs:10:21
+   |
+10 | use crate::{clamav, open_lab_scan_target, scan_lab_file};
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> src/telemetry.rs:11:5
+   |
+11 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: function `windows_scan_target_allowed` is never used
+  --> src/worker.rs:65:4
+   |
+65 | fn windows_scan_target_allowed(p: &str) -> bool {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `allowed_lab_file` is never used
+   --> src/worker.rs:205:4
+    |
+205 | fn allowed_lab_file(path: &str, root: &Path) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_RESPONSE_BYTES` is never used
+  --> src/telemetry.rs:18:7
+   |
+18 | const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+   |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_OBSERVATIONS` is never used
+  --> src/telemetry.rs:19:7
+   |
+19 | const MAX_OBSERVATIONS: usize = 64;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `SysmonEvent` is never constructed
+  --> src/telemetry.rs:22:8
+   |
+22 | struct SysmonEvent {
+   |        ^^^^^^^^^^^
+
+warning: function `known_sysmon_id` is never used
+  --> src/telemetry.rs:66:4
+   |
+66 | fn known_sysmon_id(id: u32) -> bool { (1..=29).contains(&id) || id == 255 }
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `sysmon_kind` is never used
+  --> src/telemetry.rs:67:4
+   |
+67 | fn sysmon_kind(id: u32) -> &'static str {
+   |    ^^^^^^^^^^^
+
+warning: constant `SAFE_FIELDS` is never used
+  --> src/telemetry.rs:82:7
+   |
+82 | const SAFE_FIELDS: &[&str] = &[
+   |       ^^^^^^^^^^^
+
+warning: function `records_after` is never used
+  --> src/telemetry.rs:88:4
+   |
+88 | fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
+   |    ^^^^^^^^^^^^^
+
+warning: function `event_payload` is never used
+   --> src/telemetry.rs:120:4
+    |
+120 | fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
+    |    ^^^^^^^^^^^^^
+
+warning: function `checkpoint_path` is never used
+   --> src/telemetry.rs:143:4
+    |
+143 | fn checkpoint_path(local_app_data: &Path, agent_id: &str) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `read_checkpoint` is never used
+   --> src/telemetry.rs:152:4
+    |
+152 | fn read_checkpoint(path: &Path) -> io::Result<u64> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `write_checkpoint` is never used
+   --> src/telemetry.rs:162:4
+    |
+162 | fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: `turansec-edr-agent` (bin "turansec-edr-agent") generated 15 warnings (run `cargo fix --bin "turansec-edr-agent" -p turansec-edr-agent` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+
+=== Locked integrated frontend dependencies ===
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+added 26 packages in 712ms
+
+=== Build integrated React UI ===
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> turansec-edr-soc-lab@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.8 building client environment for production...
+transforming...
+✓ 50 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.48 kB │ gzip:   0.31 kB
+dist/assets/index-BuD004uY.css   26.22 kB │ gzip:   4.70 kB
+dist/assets/index-CWADhCfi.js   406.39 kB │ gzip: 112.98 kB
+
+✓ built in 287ms
+
+=== Actual Go/PostgreSQL/Rust/React candidate ===
+   Compiling turansec-edr-agent v0.1.0 (/workspace/scratch/39b05ab721e3/EDR/agent)
+warning: unused import: `open_lab_scan_target`
+  --> src/worker.rs:10:21
+   |
+10 | use crate::{clamav, open_lab_scan_target, scan_lab_file};
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> src/telemetry.rs:11:5
+   |
+11 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: function `windows_scan_target_allowed` is never used
+  --> src/worker.rs:65:4
+   |
+65 | fn windows_scan_target_allowed(p: &str) -> bool {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `allowed_lab_file` is never used
+   --> src/worker.rs:205:4
+    |
+205 | fn allowed_lab_file(path: &str, root: &Path) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_RESPONSE_BYTES` is never used
+  --> src/telemetry.rs:18:7
+   |
+18 | const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+   |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_OBSERVATIONS` is never used
+  --> src/telemetry.rs:19:7
+   |
+19 | const MAX_OBSERVATIONS: usize = 64;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `SysmonEvent` is never constructed
+  --> src/telemetry.rs:22:8
+   |
+22 | struct SysmonEvent {
+   |        ^^^^^^^^^^^
+
+warning: function `known_sysmon_id` is never used
+  --> src/telemetry.rs:66:4
+   |
+66 | fn known_sysmon_id(id: u32) -> bool { (1..=29).contains(&id) || id == 255 }
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `sysmon_kind` is never used
+  --> src/telemetry.rs:67:4
+   |
+67 | fn sysmon_kind(id: u32) -> &'static str {
+   |    ^^^^^^^^^^^
+
+warning: constant `SAFE_FIELDS` is never used
+  --> src/telemetry.rs:82:7
+   |
+82 | const SAFE_FIELDS: &[&str] = &[
+   |       ^^^^^^^^^^^
+
+warning: function `records_after` is never used
+  --> src/telemetry.rs:88:4
+   |
+88 | fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
+   |    ^^^^^^^^^^^^^
+
+warning: function `event_payload` is never used
+   --> src/telemetry.rs:120:4
+    |
+120 | fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
+    |    ^^^^^^^^^^^^^
+
+warning: function `checkpoint_path` is never used
+   --> src/telemetry.rs:143:4
+    |
+143 | fn checkpoint_path(local_app_data: &Path, agent_id: &str) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `read_checkpoint` is never used
+   --> src/telemetry.rs:152:4
+    |
+152 | fn read_checkpoint(path: &Path) -> io::Result<u64> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `write_checkpoint` is never used
+   --> src/telemetry.rs:162:4
+    |
+162 | fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: `turansec-edr-agent` (bin "turansec-edr-agent") generated 15 warnings (run `cargo fix --bin "turansec-edr-agent" -p turansec-edr-agent` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.01s
+{"status": "PASS", "checks_passed": 10, "error": null, "report": "/workspace/scratch/39b05ab721e3/EDR/.quality-evidence/integrated-candidate.json"}

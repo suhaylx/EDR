@@ -1,0 +1,50 @@
+{
+  "collected_utc": "2026-11-21T19:37:07.960511+00:00",
+  "scope": "real standalone ClamAV in isolated Debian13 container; no EDR candidate binary or deploymenthost acceptance",
+  "vendor_package": {
+    "version": "1.5.5",
+    "sha256": "fff17fb1f8917d1ea1308c9736dabe376077458aba000a5dadcce7193a8c538c",
+    "source": "https://www.clamav.net/downloads/production/clamav-1.5.5.linux.x86_64.deb",
+    "pgp_signature": "VALID",
+    "public_key_source": "https://www.clamav.net/downloads",
+    "public_key_fingerprint": "5BADCA2665EF59DCF8A23D8B707F0DB480836771"
+  },
+  "database_daily": {
+    "version": 28190,
+    "signatures": 355845,
+    "embedded_signature": "VALID",
+    "detached_signature": "VALID",
+    "signer": "ClamAV_datafiles_release"
+  },
+  "database_bytecode": {
+    "version": 339,
+    "embedded_signature": "VALID"
+  },
+  "database_main": {
+    "status": "MISSING",
+    "reason": "OfficialCDN429cooldown; no retry or bypass"
+  },
+  "benign_fixture": {
+    "status": "PASS",
+    "actual_clamscan_exit": 0,
+    "verdict": "clean_by_signature; not proof of safety"
+  },
+  "official_eicar_fixture": {
+    "status": "PASS",
+    "actual_clamscan_exit": 1,
+    "verdict": "Eicar-Test-Signature FOUND",
+    "size": 68,
+    "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
+  },
+  "complete_signature_health": "BLOCKED",
+  "actual_Rust_daemon_backend_pipeline": "NOT_RUN",
+  "Ubuntu_deployment_host": "NOT_RUN",
+  "Windows_deployment_host": "NOT_RUN",
+  "production_readiness": "NO-GO",
+  "collector_regressions": {
+    "tests": 8,
+    "status": "PASS",
+    "keys": "ephemeral test fixtures only"
+  },
+  "native_powershell_parser_and_sysmon_execution": "NOT_RUN; no Windows or PowerShell runtime available"
+}

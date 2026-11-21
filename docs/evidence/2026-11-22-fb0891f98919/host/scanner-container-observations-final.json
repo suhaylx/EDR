@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "candidate_sha": "eaa8ecefaffc086c647465eea920be559a4c30a5",
+  "collected_utc": "2026-11-21T19:37:07.928395+00:00",
+  "candidate_identity_verified": false,
+  "phase": "candidate",
+  "host_id_sha256": "b2a292e5ff66f65c6b2e303cd5a78c6721711591edf032a882970871a74a499c",
+  "os": {
+    "system": "Linux",
+    "release": "6.18.57",
+    "version": "#1 SMP Tue Oct 20 21:56:04 UTC 2026",
+    "machine": "x86_64"
+  },
+  "checks": [
+    {
+      "name": "candidate_files",
+      "status": "NOT_RUN",
+      "detail": "Provide manifest and package root"
+    },
+    {
+      "name": "operator_mtls",
+      "status": "NOT_RUN",
+      "detail": "Provide operator origin and protected certificate file paths"
+    },
+    {
+      "name": "scanner_binary",
+      "status": "PASS",
+      "detail": "Real scanner executable identity observed",
+      "version": "ClamAV 1.5.5",
+      "clamscan_sha256": "d5c88da1877829e0d80fe009156deb548ac5ff2658b2b1e999762aac855d5ccf",
+      "sigtool_sha256": "34b2cfe9d0df4017192ac952cccff2048a7193dc8072de2ebebcf1779fe93a63"
+    },
+    {
+      "name": "database_main",
+      "status": "NOT_RUN",
+      "detail": "Required official database missing"
+    },
+    {
+      "name": "database_daily",
+      "status": "PASS",
+      "detail": "Official CVD cryptographic verification",
+      "sha256": "698abcd56b441205bff91ea9579f7583f7d8b63aa5a367ff553825f6a45a26be",
+      "metadata": {
+        "Version": "28190",
+        "Signatures": "355845",
+        "Build time": "21 Nov 2026 06:27 +0000"
+      }
+    },
+    {
+      "name": "database_bytecode",
+      "status": "PASS",
+      "detail": "Official CVD cryptographic verification",
+      "sha256": "6d4aa01f219e988060fc419f495d07f27e0cdf1a2cccc065971da922c76f7ffb",
+      "metadata": {
+        "Version": "339",
+        "Signatures": "80",
+        "Build time": "11 Sep 2025 08:29 -0400"
+      }
+    },
+    {
+      "name": "complete_signature_set",
+      "status": "FAIL",
+      "detail": "main, daily and bytecode must each verify"
+    },
+    {
+      "name": "benign_signature_scan",
+      "status": "PASS",
+      "detail": "Direct scanner fixture result; not Rust/daemon/backend integration",
+      "exit_code": 0,
+      "database_complete": false
+    },
+    {
+      "name": "eicar_signature_scan",
+      "status": "PASS",
+      "detail": "Direct scanner fixture result; not Rust/daemon/backend integration",
+      "exit_code": 1,
+      "database_complete": false
+    },
+    {
+      "name": "service_snapshot",
+      "status": "NOT_RUN",
+      "detail": "No installed service selected"
+    }
+  ],
+  "host_acceptance_complete": false,
+  "deployment_authorization": "not-granted",
+  "required_separate_evidence": [
+    "Exact-head GitHub CI",
+    "Rust-to-daemon-to-backend scan on this host",
+    "Native Sysmon provider/channel/Event7 vs Event11 and authenticated ingestion on Windows",
+    "Worker crash isolation and long-running resource/retention checks",
+    "Actual service and database rollback rehearsal",
+    "Independent InfoSec and QA verdicts",
+    "Deployment authorization"
+  ]
+}

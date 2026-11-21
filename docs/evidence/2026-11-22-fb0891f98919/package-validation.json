@@ -1,0 +1,17 @@
+{
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "result": "unsigned-bundle-content-and-binary-version-verified",
+  "archive": {
+    "name": "turansec-edr-fb0891f98919-linux-x86_64-unsigned.tar.gz",
+    "sha256": "2de710826b3f45861ed36da2fca359835c5c73201000cd715374b1e2e94cd510",
+    "size": 10705773
+  },
+  "file_count": 28,
+  "binaries": {
+    "edrd": "edrd 0.1.0-candidate source=fb0891f98919fd0a166ff10427088f195d208225",
+    "turansec-edr-agent": "turansec-edr-agent 0.1.0 source=fb0891f98919fd0a166ff10427088f195d208225"
+  },
+  "publisher_signature": "not-present",
+  "native_service_installation": "not-run",
+  "deployment_authorization": "not-granted"
+}

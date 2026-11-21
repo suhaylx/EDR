@@ -1,0 +1,15 @@
+=== RUN   TestQARejectsDifferentPostgresClustersWithSameDatabaseName
+--- PASS: TestQARejectsDifferentPostgresClustersWithSameDatabaseName (0.10s)
+=== RUN   TestQARejectsDifferentCACertificatesWithSameSigningKey
+--- PASS: TestQARejectsDifferentCACertificatesWithSameSigningKey (0.00s)
+=== RUN   TestQARejectsUnmigratedDatabaseBeforeServing
+--- PASS: TestQARejectsUnmigratedDatabaseBeforeServing (0.02s)
+=== RUN   TestQAValidMigratedStartupControl
+2026/11/22 00:58:22 edrd started version=development source=uncommitted transport=mTLS database=PostgreSQL status=candidate
+--- PASS: TestQAValidMigratedStartupControl (2.00s)
+=== RUN   TestQARejectsMissingLeaseClockCapability
+--- PASS: TestQARejectsMissingLeaseClockCapability (0.03s)
+=== RUN   TestQARejectsUnsupportedLeaseClockCapability
+--- PASS: TestQARejectsUnsupportedLeaseClockCapability (0.03s)
+PASS
+ok  	github.com/turansec/edr/backend/cmd/edrd	3.199s

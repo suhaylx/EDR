@@ -1,0 +1,19 @@
+Candidate: fb0891f98919fd0a166ff10427088f195d208225
+Started: 2026-11-21T19:58:02.223293+00:00
+
+=== Go toolchain ===
+go version go1.27.4 linux/amd64
+
+=== Go build ===
+
+=== Go tests ===
+ok  	github.com/turansec/edr/backend/cmd/edrd	0.003s
+ok  	github.com/turansec/edr/backend/cmd/server	0.003s
+ok  	github.com/turansec/edr/backend/internal/edr	0.148s
+
+=== Go race tests ===
+ok  	github.com/turansec/edr/backend/cmd/edrd	1.017s
+ok  	github.com/turansec/edr/backend/cmd/server	1.036s
+ok  	github.com/turansec/edr/backend/internal/edr	1.660s
+
+=== Go vet ===

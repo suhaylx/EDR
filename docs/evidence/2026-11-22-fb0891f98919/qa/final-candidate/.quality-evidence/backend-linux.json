@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "backend",
+  "started_at": "2026-11-21T19:58:44.856792+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Go toolchain",
+      "argv": [
+        "go",
+        "version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:44.897522+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:44.912315+00:00"
+    },
+    {
+      "label": "Go build",
+      "argv": [
+        "go",
+        "build",
+        "./..."
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T19:58:44.912515+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:46.243072+00:00"
+    },
+    {
+      "label": "Go tests",
+      "argv": [
+        "go",
+        "test",
+        "-count=1",
+        "./..."
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T19:58:46.243328+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:47.925233+00:00"
+    },
+    {
+      "label": "Go race tests",
+      "argv": [
+        "go",
+        "test",
+        "-race",
+        "-count=1",
+        "./..."
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T19:58:47.925491+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:53.613577+00:00"
+    },
+    {
+      "label": "Go vet",
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "cwd": "backend",
+      "started_at": "2026-11-21T19:58:53.618265+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:53.918539+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T19:58:53.924435+00:00"
+}

@@ -1,0 +1,8 @@
+{
+  "backend/bootstrap/runtime_privileges.sql": "e099d8f814d0caf78b6373ef3060954e6ca55983b08f078ad5a498049065a2e6",
+  "scripts/test-runtime-privileges.sh": "736b3f978455e30f2538f99ba4aa5eb4b1c5af662e729a1c11f765766a1cc291",
+  "scripts/test-runtime-privileges-catalog.sql": "73b086f221dc3b4165bb57210979007dd2a4c10336139c98980aa0a73701c492",
+  "scripts/test-runtime-privileges.sql": "b203ec71a0d79c1875b290cd613a8d55a81a2ced4ce3de399a2faac2b8ba6cdb",
+  "scripts/test-registry-privileges.sql": "636db043dec7e1042293facc5d160f1ce8243beffe1bab822c1b237821177daa",
+  "scripts/test-certificate-authorization-races.sh": "a66a63fd5fd63fab5491d97aa7767384361460feb8ad0f3faaf27c8e8197ba5b"
+}

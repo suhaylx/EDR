@@ -1,0 +1,83 @@
+{
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "run": "https://github.com/suhaylx/EDR/actions/runs/44943696845",
+  "run_id": 44943696845,
+  "attempt": 1,
+  "result": "failed-before-runner-execution",
+  "exact_head_verified": true,
+  "root_cause": "unconfirmed; account-level runner/policy/budget diagnostics unavailable",
+  "jobs": [
+    {
+      "id": 136966245526,
+      "name": "Package verification and rollback primitive",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245526"
+    },
+    {
+      "id": 136966245724,
+      "name": "Rust native windows-latest",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245724"
+    },
+    {
+      "id": 136966245760,
+      "name": "React build, tests and browser accessibility",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245760"
+    },
+    {
+      "id": 136966245776,
+      "name": "Go build, tests, race and vet",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245776"
+    },
+    {
+      "id": 136966245779,
+      "name": "Go, PostgreSQL, Rust and React integrated candidate",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245779"
+    },
+    {
+      "id": 136966245780,
+      "name": "PostgreSQL 16 security, concurrency and actual restart",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245780"
+    },
+    {
+      "id": 136966245791,
+      "name": "Rust native ubuntu-latest",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966245791"
+    },
+    {
+      "id": 136966265649,
+      "name": "Required candidate engineering checks",
+      "conclusion": "failure",
+      "runner_id": 0,
+      "runner_name": "",
+      "steps_executed": 0,
+      "url": "https://github.com/suhaylx/EDR/actions/runs/44943696845/job/136966265649"
+    }
+  ]
+}

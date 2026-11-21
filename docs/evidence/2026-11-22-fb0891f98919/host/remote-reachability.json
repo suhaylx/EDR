@@ -1,0 +1,27 @@
+{
+  "collected_utc": "2026-11-21T19:32:57.167727+00:00",
+  "environment": "isolated Debian 13 container; not either deployment host",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "checks": [
+    {
+      "host_role": "Ubuntu lab",
+      "port": 22,
+      "status": "UNREACHABLE",
+      "errno": 101
+    },
+    {
+      "host_role": "Windows lab",
+      "port": 22,
+      "status": "UNREACHABLE",
+      "errno": 101
+    },
+    {
+      "host_role": "Windows lab",
+      "port": 3389,
+      "status": "UNREACHABLE",
+      "errno": 101
+    }
+  ],
+  "host_acceptance": "NOT RUN",
+  "credential_use": false
+}

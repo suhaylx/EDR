@@ -1,0 +1,6 @@
+=== RUN   TestIndependentTLSLeafExpiryDuringSQLAuthorizationDenied
+    independent_certificate_expiry_test.go:25: expired leaf reached mutation: status=204 next=1 commit=1 rollback=0
+--- FAIL: TestIndependentTLSLeafExpiryDuringSQLAuthorizationDenied (0.04s)
+FAIL
+FAIL	github.com/turansec/edr/backend/internal/edr	0.051s
+FAIL

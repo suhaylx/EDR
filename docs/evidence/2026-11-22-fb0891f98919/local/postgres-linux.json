@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "postgres",
+  "started_at": "2026-11-21T19:58:03.038652+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "PostgreSQL candidate test",
+      "argv": [
+        "bash",
+        "scripts/ci/candidate-postgres.sh",
+        "test"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:03.054227+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:41.424712+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T19:58:41.430554+00:00"
+}

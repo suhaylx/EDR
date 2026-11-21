@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "scope": "candidate-engineering-checks",
+  "component": "release-tools",
+  "started_at": "2026-11-21T19:58:02.232678+00:00",
+  "os": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "candidate_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "workflow_sha": null,
+  "run_url": null,
+  "run_attempt": null,
+  "commands": [
+    {
+      "label": "Signature tamper rejection and filesystem rollback regressions",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/release/test_release_tools.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:02.243790+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:02.857948+00:00"
+    },
+    {
+      "label": "Host evidence attribution and signature regressions",
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/test-host-acceptance.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-11-21T19:58:02.858211+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-11-21T19:58:03.113069+00:00"
+    }
+  ],
+  "result": "passed",
+  "host_acceptance": "not-established-by-this-ledger",
+  "deployment_authorization": "not-granted",
+  "finished_at": "2026-11-21T19:58:03.118782+00:00"
+}

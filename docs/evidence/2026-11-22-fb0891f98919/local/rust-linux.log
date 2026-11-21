@@ -1,0 +1,204 @@
+Candidate: fb0891f98919fd0a166ff10427088f195d208225
+Started: 2026-11-21T19:58:02.229370+00:00
+
+=== Rust toolchain ===
+rustc 1.100.0 (0ef1bc386 2026-11-09)
+
+=== Cargo toolchain ===
+cargo 1.100.0 (3acc79c0c 2026-11-05)
+
+=== Rust build ===
+warning: unused import: `open_lab_scan_target`
+  --> src/worker.rs:10:21
+   |
+10 | use crate::{clamav, open_lab_scan_target, scan_lab_file};
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> src/telemetry.rs:11:5
+   |
+11 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: function `windows_scan_target_allowed` is never used
+  --> src/worker.rs:65:4
+   |
+65 | fn windows_scan_target_allowed(p: &str) -> bool {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `allowed_lab_file` is never used
+   --> src/worker.rs:205:4
+    |
+205 | fn allowed_lab_file(path: &str, root: &Path) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_RESPONSE_BYTES` is never used
+  --> src/telemetry.rs:18:7
+   |
+18 | const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+   |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_OBSERVATIONS` is never used
+  --> src/telemetry.rs:19:7
+   |
+19 | const MAX_OBSERVATIONS: usize = 64;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `SysmonEvent` is never constructed
+  --> src/telemetry.rs:22:8
+   |
+22 | struct SysmonEvent {
+   |        ^^^^^^^^^^^
+
+warning: function `known_sysmon_id` is never used
+  --> src/telemetry.rs:66:4
+   |
+66 | fn known_sysmon_id(id: u32) -> bool { (1..=29).contains(&id) || id == 255 }
+   |    ^^^^^^^^^^^^^^^
+
+warning: function `sysmon_kind` is never used
+  --> src/telemetry.rs:67:4
+   |
+67 | fn sysmon_kind(id: u32) -> &'static str {
+   |    ^^^^^^^^^^^
+
+warning: constant `SAFE_FIELDS` is never used
+  --> src/telemetry.rs:82:7
+   |
+82 | const SAFE_FIELDS: &[&str] = &[
+   |       ^^^^^^^^^^^
+
+warning: function `records_after` is never used
+  --> src/telemetry.rs:88:4
+   |
+88 | fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
+   |    ^^^^^^^^^^^^^
+
+warning: function `event_payload` is never used
+   --> src/telemetry.rs:120:4
+    |
+120 | fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
+    |    ^^^^^^^^^^^^^
+
+warning: function `checkpoint_path` is never used
+   --> src/telemetry.rs:143:4
+    |
+143 | fn checkpoint_path(local_app_data: &Path, agent_id: &str) -> io::Result<PathBuf> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `read_checkpoint` is never used
+   --> src/telemetry.rs:152:4
+    |
+152 | fn read_checkpoint(path: &Path) -> io::Result<u64> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `write_checkpoint` is never used
+   --> src/telemetry.rs:162:4
+    |
+162 | fn write_checkpoint(path: &Path, id: u64) -> io::Result<()> {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: `turansec-edr-agent` (bin "turansec-edr-agent" test) generated 2 warnings (run `cargo fix --bin "turansec-edr-agent" -p turansec-edr-agent --tests` to apply 2 suggestions)
+warning: `turansec-edr-agent` (bin "turansec-edr-agent") generated 15 warnings (2 duplicates)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+
+=== Rust native tests ===
+warning: unused import: `open_lab_scan_target`
+  --> src/worker.rs:10:21
+   |
+10 | use crate::{clamav, open_lab_scan_target, scan_lab_file};
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> src/telemetry.rs:11:5
+   |
+11 | use std::time::Duration;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: `turansec-edr-agent` (bin "turansec-edr-agent" test) generated 2 warnings (run `cargo fix --bin "turansec-edr-agent" -p turansec-edr-agent --tests` to apply 2 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/main.rs (target/debug/build/turansec-edr-agent/b8f81d0ba3217bfd/out/turansec_edr_agent-b8f81d0ba3217bfd)
+
+running 60 tests
+test clamav::tests::be097_rejects_control_characters_in_signature_and_error ... ok
+test clamav::tests::be099_rejects_embedded_nul_or_empty_error ... ok
+test clamav::tests::be096_recognizes_signature_without_reporting_clean ... ok
+test clamav::tests::be098_rejects_oversized_signature ... ok
+test clamav::tests::be100_rejects_oversized_and_truncated_reply ... ok
+test clamav::tests::enforces_input_cap_and_rejects_unexpected_replies ... ok
+test clamav::tests::qa_clamd_error_and_named_test_signature_are_distinct ... ok
+test clamav::tests::qa_clamd_rejects_ten_malformed_verdicts_without_false_clean ... ok
+test clamav::tests::qa_clamd_limits_and_truncated_reply_do_not_produce_clean_verdict ... ok
+test clamav::tests::recognizes_detection_and_error_separately ... ok
+test clamav::tests::streams_nul_framed_payload_and_clean_only_by_signature ... ok
+test linux_telemetry::tests::parses_kernel_start_identity_and_parent_pid ... ok
+test linux_telemetry::tests::captures_actual_process_if_proc_mounted ... ok
+test linux_telemetry::tests::produces_only_snapshot_evidence ... ok
+test scan_file::tests::be081_authorized_file_is_resolved ... ok
+test scan_file::tests::be082_directory_and_relative_paths_are_denied ... ok
+test scan_file::tests::be083_large_sparse_file_is_denied ... ok
+test scan_file::tests::be084_symlink_escape_is_denied ... ok
+test scan_file::tests::be101_parent_directory_segments_are_denied ... ok
+test scan_file::tests::be085_missing_scanner_returns_error_not_clean ... ok
+test scan_file::tests::be102_root_must_not_be_group_or_other_writable ... ok
+test scan_file::tests::be103_unix_open_rejects_symlink_swap ... ok
+test scan_file::tests::be104_lab_root_symlink_is_denied ... ok
+test scan_file::tests::be105_file_inside_root_still_opens ... ok
+test scan_jobs::tests::be071_accepts_exact_contract ... ok
+test scan_jobs::tests::be072_rejects_unknown_fields_and_trailing_json ... ok
+test scan_jobs::tests::be073_rejects_invalid_ids ... ok
+test scan_jobs::tests::be074_rejects_oversized_claim ... ok
+test scan_jobs::tests::be075_rejects_invalid_attempts_and_root ... ok
+test scan_jobs::tests::qa_unsafe_text_rejects_controls_and_bidi ... ok
+test scan_mtls::tests::be076_rejects_plaintext ... ok
+test scan_mtls::tests::be077_rejects_url_credentials_and_query ... ok
+test scan_mtls::tests::be078_rejects_redirectable_path_and_fragment ... ok
+test scan_mtls::tests::be079_accepts_bare_https_origin ... ok
+test scan_mtls::tests::be080_rejects_missing_identity_before_network ... ok
+test scan_mtls::tests::be106_reads_small_regular_pem_file ... ok
+test scan_mtls::tests::be107_rejects_empty_and_oversized_pem ... ok
+test scan_mtls::tests::be108_rejects_symlinked_ca_or_private_key ... ok
+test scan_mtls::tests::be109_requires_owner_only_private_key ... ok
+test scan_mtls::tests::be110_rejects_directory_as_credential ... ok
+test scan_runner::tests::be093_retains_malicious_classification ... ok
+test scan_runner::tests::be094_refuses_invalid_signature_as_valid_detection ... ok
+test scan_runner::tests::be095_scanner_error_cannot_be_clean ... ok
+test scan_runner::tests::be143_batch_count_must_be_bounded ... ok
+test telemetry::tests::actual_dll_load_path_is_preserved ... ok
+test telemetry::tests::checkpoint_roundtrip_does_not_store_token ... ok
+test telemetry::tests::ids_and_tokens_do_not_allow_command_or_path_injection ... ok
+test telemetry::tests::current_boot_marker_is_sender_reported_and_never_invented ... ok
+test telemetry::tests::local_port_enforces_nonzero ... ok
+test telemetry::tests::preserves_real_ids_order_and_creation_only_parent_guid ... ok
+test telemetry::tests::supports_all_defined_ids_but_denies_private_fields ... ok
+test tests::lab_target_does_not_follow_symlink ... ok
+test tests::lab_target_rejects_relative_missing_and_directory_paths ... ok
+test worker::tests::canonical_path_must_stay_inside_root ... ok
+test worker::tests::quick_and_full_never_claim_scanned ... ok
+test worker::tests::rejects_malformed_cross_agent_lease ... ok
+test worker::tests::one_shot_worker_uses_real_instream_protocol_over_local_socket ... FAILED
+test worker::tests::scoped_open_reads_regular_file_only_inside_configured_root ... ok
+test worker::tests::token_safe_ids_and_unicode_are_bounded ... ok
+test worker::tests::windows_scan_wire_target_rejects_streams_and_devices ... ok
+
+failures:
+
+---- worker::tests::one_shot_worker_uses_real_instream_protocol_over_local_socket stdout ----
+
+thread 'worker::tests::one_shot_worker_uses_real_instream_protocol_over_local_socket' (108) panicked at src/worker.rs:388:56:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    worker::tests::one_shot_worker_uses_real_instream_protocol_over_local_socket
+
+test result: FAILED. 59 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--bin turansec-edr-agent`

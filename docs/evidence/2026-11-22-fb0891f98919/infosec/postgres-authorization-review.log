@@ -1,0 +1,19 @@
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:backend/bootstrap/runtime_privileges.sql:128: NOTICE:  column "runtime_lock" of relation "edr_tenants" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:128: NOTICE:  column "runtime_lock" of relation "edr_agents" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:128: NOTICE:  column "runtime_lock" of relation "edr_agent_certificates" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:128: NOTICE:  column "runtime_lock" of relation "edr_soc_operators" already exists, skipping
+psql:backend/bootstrap/runtime_privileges.sql:335: NOTICE:  role "edr_grant_runtime_91fca498fc98" has already been granted membership in role "edr_runtime" by role "agent"
+psql:backend/bootstrap/runtime_privileges.sql:335: NOTICE:  role "edr_grant_registry_91fca498fc98" has already been granted membership in role "edr_identity_ro" by role "agent"
+EDR runtime privileges applied; login authentication remains operator-managed.
+psql:scripts/test-runtime-privileges-catalog.sql:116: NOTICE:  PASS: exact function allowlist, safe owners/search paths, no PUBLIC mutation execution, least-privilege role catalog
+psql:scripts/test-runtime-privileges.sql:160: NOTICE:  PASS: actual runtime login completed nested lifecycle and 32 forbidden operations were denied
+psql:scripts/test-registry-privileges.sql:51: NOTICE:  PASS: actual readonly registry login resolved both identities and 14 forbidden operations were denied
+PASS: certificate authorization revoke / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization revoke / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization rotate / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / auth_first (observed lock wait; expected mutation count).
+PASS: certificate authorization operator_role / admin_first (observed lock wait; expected mutation count).
+PASS: certificate authorization expiry / admin_first (observed lock wait; expected mutation count).
+PASS: live PostgreSQL restricted logins, transactional certificate authorization, lifecycle, exact grants, and denied escalation.

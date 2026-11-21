@@ -1,0 +1,22 @@
+=== RUN   TestIndependentTLSLeafExpiryDuringSQLAuthorizationDenied
+--- PASS: TestIndependentTLSLeafExpiryDuringSQLAuthorizationDenied (0.04s)
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/successful_commit
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/commit_failure_hides_lease
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/denied_certificate_cannot_mutate
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/registry_SQL_error_cannot_mutate
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/handler_error_rolls_back
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/response_overflow_rolls_back
+=== RUN   TestIndependentCertificateTransactionNoUncommittedSuccess/large_request_rejected_before_transaction
+--- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/successful_commit (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/commit_failure_hides_lease (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/denied_certificate_cannot_mutate (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/registry_SQL_error_cannot_mutate (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/handler_error_rolls_back (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/response_overflow_rolls_back (0.00s)
+    --- PASS: TestIndependentCertificateTransactionNoUncommittedSuccess/large_request_rejected_before_transaction (0.00s)
+=== RUN   TestIndependentCertificateTransactionPanicRollsBack
+--- PASS: TestIndependentCertificateTransactionPanicRollsBack (0.00s)
+PASS
+ok  	github.com/turansec/edr/backend/internal/edr	1.056s

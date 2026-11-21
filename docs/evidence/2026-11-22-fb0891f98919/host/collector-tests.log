@@ -1,0 +1,13 @@
+test_actual_crypto_valid_signature_then_tamper_rejected (__main__.EvidenceBoundaryTests.test_actual_crypto_valid_signature_then_tamper_rejected) ... ok
+test_manifest_escape_rejected (__main__.EvidenceBoundaryTests.test_manifest_escape_rejected) ... ok
+test_scanner_refuses_non_eicar_input_before_execution (__main__.EvidenceBoundaryTests.test_scanner_refuses_non_eicar_input_before_execution) ... ok
+test_supplied_trust_root_inside_archive_rejected (__main__.EvidenceBoundaryTests.test_supplied_trust_root_inside_archive_rejected) ... ok
+test_symlink_artifact_rejected (__main__.EvidenceBoundaryTests.test_symlink_artifact_rejected) ... ok
+test_tampered_artifact_rejected (__main__.EvidenceBoundaryTests.test_tampered_artifact_rejected) ... ok
+test_unsigned_hash_match_is_not_publisher_approval (__main__.EvidenceBoundaryTests.test_unsigned_hash_match_is_not_publisher_approval) ... ok
+test_wrong_sha_rejected (__main__.EvidenceBoundaryTests.test_wrong_sha_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.051s
+
+OK

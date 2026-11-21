@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "source_sha": "fb0891f98919fd0a166ff10427088f195d208225",
+  "checks": [
+    {
+      "check": "Migrations and reviewed bootstrap applied to an empty disposable PostgreSQL database",
+      "status": "PASS"
+    },
+    {
+      "check": "Compiled edrd serves separate TLS1.3 listeners with actual registry/runtime logins",
+      "status": "PASS"
+    },
+    {
+      "check": "Built original React SOC assets served on authenticated origin; lab/API fallback denied",
+      "status": "PASS"
+    },
+    {
+      "check": "Missing/wrong CA, TLS1.2, unregistered leaf, cross-tenant and cross-origin requests denied",
+      "status": "PASS"
+    },
+    {
+      "check": "Real Rust mTLS heartbeat persisted and SOC shows degraded/unseen with tenant isolation",
+      "status": "PASS"
+    },
+    {
+      "check": "Malformed/display-poisoning heartbeat denied before PostgreSQL mutation",
+      "status": "PASS"
+    },
+    {
+      "check": "Real Rust claim/renew/error-result lifecycle persisted; absent clamd never reported clean",
+      "status": "PASS"
+    },
+    {
+      "check": "Synthetic result\u2192alert\u2192assignment/note/ack uses constrained DB functions; result replay denied",
+      "status": "PASS"
+    },
+    {
+      "check": "Persisted agent/operator revocation enforced on reused authenticated TLS connections",
+      "status": "PASS"
+    },
+    {
+      "check": "Service shutdown completed and ephemeral PKI/password files removed",
+      "status": "PASS"
+    }
+  ],
+  "error": null,
+  "limits": [
+    "Disposable local execution; not GitHub CI",
+    "React assets verified; browser accessibility not executed",
+    "No native Windows/Linux deployment-host acceptance",
+    "No real ClamAV/EICAR detection; explicit error and synthetic-result fixtures",
+    "No release signature or deployment authorization"
+  ]
+}
