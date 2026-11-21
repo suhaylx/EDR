@@ -72,6 +72,10 @@ type Event struct {
 	GrantedAccess     string    `json:"granted_access,omitempty"`
 	// EID8 new remote thread identifier; nonzero required for this heuristic.
 	RemoteThreadID    uint32    `json:"remote_thread_id,omitempty"`
+	// Normalized registry metadata only; do not ingest sensitive value contents.
+	RegistryTarget    string    `json:"registry_target,omitempty"`
+	RegistryNewName   string    `json:"registry_new_name,omitempty"`
+	RegistryOperation string    `json:"registry_operation,omitempty"`
 	Detail            string    `json:"detail,omitempty"`
 }
 type Snapshot struct {
@@ -338,6 +342,8 @@ func (s *Store) Ingest(e Event) (Event, error) {
 		len(e.DNSQuery) > 253 || len(e.DestinationIP) > 64 || len(e.DNSAnswers) > 16 ||
 		len(e.SourceProcessGUID) > 128 || len(e.TargetProcessGUID) > 128 ||
 		len(e.GrantedAccess) > 10 ||
+		len(e.RegistryTarget) > 1024 || len(e.RegistryNewName) > 1024 ||
+		len(e.RegistryOperation) > 32 ||
 		e.SysmonEventID < 0 || e.SysmonEventID > 255 ||
 		e.DestinationPort < 0 || e.DestinationPort > 65535 {
 		return Event{}, errors.New("invalid event fields")
@@ -384,6 +390,20 @@ func (s *Store) Ingest(e Event) (Event, error) {
 	if e.GrantedAccess != "" {
 		if _, ok := parseProcessAccessMask(e.GrantedAccess); !ok {
 			return Event{}, errors.New("invalid process access mask")
+		}
+	}
+	for _, value := range []string{e.RegistryTarget, e.RegistryNewName} {
+		if strings.TrimSpace(value) != value || strings.IndexFunc(value, func(r rune) bool {
+			return r < 0x20 || r == 0x7f || r == 0xfffd
+		}) >= 0 {
+			return Event{}, errors.New("invalid registry target or name")
+		}
+	}
+	if e.RegistryOperation != "" {
+		switch e.RegistryOperation {
+		case "create_key", "delete_key", "create_value", "delete_value", "set_value", "rename_key", "rename_value":
+		default:
+			return Event{}, errors.New("unsupported registry operation")
 		}
 	}
 	// Time and source IDs sent by a lab client are unverified claims. Always

@@ -1,0 +1,48 @@
+# Original TuranSec Go laboratory detector rule, not copied Sigma content.
+id: TURAN-WIN-REG-AUTORUN-001
+version: 1
+platform: windows
+status: lab_prototype
+name: Writable-folder process set a Win32 Run or RunOnce Registry value
+source: sysmon
+required_observation:
+  event_id: 13
+  type: registry_value_set
+  normalized_operation: set_value
+  required: [device_id, boot_id, process_guid, image, source_record_id, registry_target, time]
+match:
+  process_image: executable_under_potentially_user_writable_directory
+  registry_value:
+    roots: [HKCU, HKLM, HKU]
+    paths: [Software/Microsoft/Windows/CurrentVersion/Run, Software/Microsoft/Windows/CurrentVersion/RunOnce]
+    wow6432node: supported
+    require_named_value: true
+  exclude_path_prefix_substring_matches: true
+optional_enrichment:
+  - event_id: 12
+    type: registry_object
+    normalized_operation: create_key
+    path: exact_autorun_parent_key
+  - event_id: 14
+    type: registry_rename
+    normalized_operation: rename_value
+    new_name: exact_value_path
+  scope: same_device_reported_boot_process
+  prior_observation_within_minutes: 10
+output:
+  category: registry_autorun_value_set
+  severity: medium
+  confidence: low
+  action: alert_only
+  primary_evidence: registry_set_event_id
+  optional_evidence: [registry_create_event_id, registry_rename_event_id]
+mitre_hypothesis: T1547.001
+false_positives:
+  - legitimate user-profile updaters and installers change Run keys
+  - Registry data may be absent or may contain a benign startup executable
+  - a Registry value being set does not prove that it executed
+  - missing EID13 means EID12 or EID14 alone cannot establish a value set
+safety:
+  no_automatic_quarantine: true
+  no_malware_confirmation: true
+  raw_registry_value_data_not_collected_in_this_contract: true

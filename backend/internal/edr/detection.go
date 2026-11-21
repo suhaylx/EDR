@@ -43,6 +43,10 @@ type Detection struct {
 	TargetProcessGUID string    `json:"target_process_guid,omitempty"`
 	GrantedAccess     string    `json:"granted_access,omitempty"`
 	RemoteThreadID    uint32    `json:"remote_thread_id,omitempty"`
+	RegistrySetEventID string   `json:"registry_set_event_id,omitempty"`
+	RegistryCreateEventID string `json:"registry_create_event_id,omitempty"`
+	RegistryRenameEventID string `json:"registry_rename_event_id,omitempty"`
+	RegistryTarget   string    `json:"registry_target,omitempty"`
 	ObservedAt        time.Time `json:"observed_at"`
 	Explanation       string    `json:"explanation"`
 }
