@@ -56,12 +56,15 @@ export type AuditRow = Readonly<{
 
 export function indexRetainedEventSample(events:readonly LabTelemetryEvent[]) {
   const index = new Map<string,Map<string,LabTelemetryEvent>>();
+  const ambiguous = new Map<string,Set<string>>();
   for(const event of events){
     let byID=index.get(event.device_id);
     if(!byID){byID=new Map();index.set(event.device_id,byID);}
-    // The decoder rejects duplicate Go IDs, but a low-level audit must never
-    // use an ambiguous duplicate as positive evidence.
-    if(byID.has(event.id))byID.delete(event.id);
+    let excluded=ambiguous.get(event.device_id);
+    if(!excluded){excluded=new Set();ambiguous.set(event.device_id,excluded);}
+    // Never promote second, third, or later collisions to positive evidence.
+    if(excluded.has(event.id))continue;
+    if(byID.has(event.id)){byID.delete(event.id);excluded.add(event.id);}
     else byID.set(event.id,event);
   }
   return index;
@@ -141,7 +144,10 @@ export function filterAuditRows(rows:readonly AuditRow[],filter:AuditQuery):Audi
   const endpoint=filter.endpoint.trim().toLocaleLowerCase();
   const query=filter.query.trim().toLocaleLowerCase();
   return rows.filter(r=>{
-    if(filter.severity!=='all' && r.severity.toLowerCase()!==filter.severity)return false;
+    const severity=r.severity.toLocaleLowerCase();
+    const knownSeverity=['critical','high','medium','low'].includes(severity);
+    if(filter.severity!=='all' &&
+      (filter.severity==='other'?knownSeverity:severity!==filter.severity))return false;
     if(endpoint && r.deviceID.trim().toLocaleLowerCase()!==endpoint)return false;
     switch(filter.state){
       case 'review':if(r.flags.length===0)return false;break;
