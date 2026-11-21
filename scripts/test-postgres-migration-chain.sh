@@ -137,4 +137,5 @@ psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-agent-heartb
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-scheduling.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-alerts.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-case-audit.sql
+psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-endpoint-inventory.sql
 echo "Full PostgreSQL migration chain (0001..0012) integration passed"
