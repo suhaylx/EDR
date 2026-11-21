@@ -118,6 +118,8 @@ fn records_after(raw: &[u8], checkpoint: u64) -> io::Result<Vec<SysmonEvent>> {
 fn event_payload(agent_id: &str, e: &SysmonEvent) -> serde_json::Value {
     let mut payload=json!({
       "device_id":agent_id,"platform":"windows","source":"sysmon",
+      "source_provider":"Microsoft-Windows-Sysmon",
+      "source_channel":"Microsoft-Windows-Sysmon/Operational",
       "source_event_id":e.event_id,"source_record_id":e.record_id.to_string(),
       "type":sysmon_kind(e.event_id),"time":e.time,
       "detail":format!("Observed Sysmon Operational Event ID {}, EventRecordID={}; sender-reported metadata",e.event_id,e.record_id)
@@ -350,6 +352,8 @@ mod tests {
         assert_eq!((events[2].record_id,events[2].event_id),(14,24));
         let create=event_payload("win-lab-01",&events[0]);
         assert_eq!(create["source_event_id"],1);
+        assert_eq!(create["source_provider"],"Microsoft-Windows-Sysmon");
+        assert_eq!(create["source_channel"],"Microsoft-Windows-Sysmon/Operational");
         assert_eq!(create["source_record_id"],"12");
         assert_eq!(create["parent_process_guid"],"{B}");
         assert_eq!(create["image"],r"C:\Windows\System32\notepad.exe");
