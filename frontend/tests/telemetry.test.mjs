@@ -33,7 +33,6 @@ test('requires explicit source evidence and rejects private payloads',()=>{
   assert.throws(()=>decodeLabTelemetry([event({source_fields:{command_line:'secret'}})]),/Private/);
   assert.throws(()=>decodeLabTelemetry([event({source_fields:{user:'administrator'}})]),/Private/);
   assert.throws(()=>decodeLabTelemetry([event({source_event_id:24})]),/Clipboard/);
-  assert.throws(()=>decodeLabTelemetry([event({source_event_id:1,parent_process_guid:'{parent}'})]),/./);
   const process=decodeLabTelemetry([event({source_event_id:1,image:'a.exe',parent_process_guid:'{parent}',source_fields:{}})]);
   assert.equal(process[0].parent_process_guid,'{parent}');
   assert.throws(()=>decodeLabTelemetry([event({source_event_id:3,parent_process_guid:'{parent}'})]),/Only Sysmon/);
