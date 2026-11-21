@@ -32,11 +32,11 @@ function ProcessLineage({
   })}</ul>;
 }
 
-export function InvestigationView({token}: {token: string}) {
-  const [deviceID,setDeviceID] = useState('');
-  const [seedKind,setSeedKind] = useState<'process'|'detection'>('process');
-  const [processGUID,setProcessGUID] = useState('');
-  const [detectionID,setDetectionID] = useState('');
+export function InvestigationView({token, initialSeed}: {token: string; initialSeed?: InvestigationSeed | null}) {
+  const [deviceID,setDeviceID] = useState(initialSeed?.deviceID || '');
+  const [seedKind,setSeedKind] = useState<'process'|'detection'>(initialSeed?.kind || 'process');
+  const [processGUID,setProcessGUID] = useState(initialSeed?.kind === 'process' ? initialSeed.processGUID : '');
+  const [detectionID,setDetectionID] = useState(initialSeed?.kind === 'detection' ? initialSeed.detectionID : '');
   const [graph,setGraph] = useState<LabInvestigation | null>(null);
   const [filter,setFilter] = useState('');
   const [focusTarget,setFocusTarget] = useState<string | null>(null);
@@ -44,6 +44,21 @@ export function InvestigationView({token}: {token: string}) {
   const [loading,setLoading] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
+  // Seed navigation fills fields only. Analyst explicitly starts the request,
+  // keeping the API read-only and avoiding automatic re-fetch on navigation.
+  useEffect(() => {
+    if (!initialSeed) return;
+    controller.current?.abort();
+    setGraph(null);
+    setError('');
+    setFilter('');
+    setFocusTarget(null);
+    setLoading(false);
+    setDeviceID(initialSeed.deviceID);
+    setSeedKind(initialSeed.kind);
+    setProcessGUID(initialSeed.kind === 'process' ? initialSeed.processGUID : '');
+    setDetectionID(initialSeed.kind === 'detection' ? initialSeed.detectionID : '');
+  }, [initialSeed]);
   useEffect(() => {
     if (!focusTarget) return;
     const element = document.getElementById(focusTarget);
@@ -112,6 +127,7 @@ export function InvestigationView({token}: {token: string}) {
       <h2 id="investigation-title">Retained process evidence investigation</h2>
       <p>Search for one observed process GUID or one detection ID on an endpoint.
         These are shared-token development records, not authenticated endpoint forensic evidence.</p>
+      {initialSeed?.kind === 'detection' && <p className="source-selection">Selected retained detection {initialSeed.detectionID} on endpoint {initialSeed.deviceID}. Review the seed, then build its graph.</p>}
       <form onSubmit={event => void load(event)} className="investigation-form">
         <div className="field"><label htmlFor="investigation-device">Endpoint ID</label>
           <input id="investigation-device" required maxLength={96} value={deviceID}
