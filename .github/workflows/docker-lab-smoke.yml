@@ -88,7 +88,7 @@ jobs:
             "$origin/auth/agent-generate")"
           test "$code" = 503  # no approved 3-in-1 vendor payloads, must fail closed
           # Existing internal mTLS operator service remains authenticated on 9445.
-          curl --fail --show-error --silent --cacert "$ca" \
+          curl --noproxy '*' --fail --show-error --silent --cacert "$ca" \
             --cert .docker-local/operator/viewer.pem \
             --key .docker-local/operator/viewer.key \
             https://127.0.0.1:9445/soc/v1/session > /tmp/internal.session
