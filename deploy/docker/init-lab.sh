@@ -84,7 +84,7 @@ openssl pkcs12 -export -inkey "$root/operator/analyst.key" \
   -in "$root/operator/analyst.pem" -certfile "$root/private/operator-ca.pem" \
   -out "$root/operator/analyst.p12" -passout "file:$root/operator/p12-password.txt" >/dev/null 2>&1
 chmod 600 .env "$root/postgres.env" "$root/runtime/"* "$root/operator/"* "$root/private/"*
-echo "Lab credentials generated. Import .docker-local/operator/analyst.p12 with"
-echo "its password from .docker-local/operator/p12-password.txt into your browser;"
-echo "trust .docker-local/operator/server-ca.pem only for this local lab."
+bash deploy/docker/provision-passwords.sh --fresh
+echo "Open the HTTPS dashboard with admin, analyst or viewer username/password."
+echo "Read credentials at .docker-local/operator/passwords.txt (owner-only)."
 echo "These temporary identities are NOT approved production credentials."

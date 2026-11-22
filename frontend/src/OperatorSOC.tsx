@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { getPasswordSession, PasswordLogin, AdminPackageGenerator, type PasswordSession } from './SOCLogin.js';
 import { operatorHealthLabel } from './soc-operator-endpoints.js';
 import {
   runSOCMutation, SOCMutationRefreshError, mutationReceiptLabel,
-  firstSOCPages, loadSOCCase, loadSOCScanDetail, loadSOCSnapshot, socFailure, socFailureMessages,
+  firstSOCPages, loadSOCCase, loadSOCScanDetail, loadSOCSnapshot, socFailure, socFailureMessages, setSOCCSRF,
   type SOCCaseDetail, type SOCAlert, type SOCFailure, type SOCMutationCommand, type SOCMutationReceipt, type SOCOffsets, type SOCSnapshot,
 } from './soc-api.js';
 import type { SOCPage } from './soc-contract.js';
@@ -54,15 +55,15 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
     <a className="skip-link" href="#soc-content">Skip to SOC records</a>
     <header className="masthead"><div><p className="eyebrow">TuranSec EDR</p><h1>Operator SOC</h1>
       <p>Review endpoint evidence, request path scans and manage detection cases through the authenticated service.</p></div>
-      <span className="lab-indicator">{view.state === 'ready' ? 'Operator certificate accepted' : 'Operator certificate required'}</span>
+      <span className="lab-indicator">{view.state === 'ready' ? 'Authenticated operator' : 'Authentication required'}</span>
     </header>
     <section className="panel" aria-labelledby="soc-connection-title">
       <div className="heading"><h2 id="soc-connection-title">Operator connection</h2><div className="actions">
         <button type="button" onClick={onRefresh} disabled={view.state === 'loading'}>{view.state === 'ready' ? 'Refresh SOC records' : 'Connect to SOC'}</button>
         <button type="button" className="secondary" onClick={onClear} disabled={view.state === 'disconnected'}>Clear displayed records</button>
       </div></div>
-      <p>Your browser uses its installed operator client certificate. The application does not request a token or private key.</p>
-      <p className="minor">Clearing this view removes displayed records. Your browser still manages the certificate; this action does not revoke it or sign out of the TLS connection.</p>
+      <p>The password-enabled Docker gateway uses a secure login session. Legacy internal SOC mTLS stays restricted to the server.</p>
+      <p className="minor">Clearing this view removes displayed records; it does not revoke it or sign out of an installed legacy browser certificate. Use Sign out to end a password session.</p>
       <div role="status" aria-live="polite" aria-atomic="true">
         {view.state === 'disconnected' && <p>No records loaded. Endpoint condition is unknown until the authenticated service returns evidence.</p>}
         {view.state === 'disconnected' && view.interrupted && <p>An operation was interrupted while clearing the view. It may already have been accepted by the server. Reconnect and inspect the current state before acting again. No automatic retry was sent.</p>}
@@ -149,6 +150,9 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
 }
 
 export function OperatorSOC() {
+  const [authMode, setAuthMode] = useState<'checking' | 'password' | 'legacy' | 'error'>('checking');
+  const [auth, setAuth] = useState<PasswordSession | null>(null);
+  const [logoutError, setLogoutError] = useState('');
   const [view, setView] = useState<OperatorViewState>({ state: 'disconnected' });
   const offsets = useRef<SOCOffsets>(firstSOCPages);
   const generation = useRef(0);
@@ -246,9 +250,55 @@ export function OperatorSOC() {
       window.removeEventListener('pageshow', onPageShow);
     };
   }, []);
-  return <OperatorSOCView view={view} onRefresh={() => { void refresh(); }} onClear={clear}
-    onPage={(section, offset) => { void refresh({ ...offsets.current, [section]: offset }); }}
-    onCase={(alertID, offset) => { void readCase(alertID, offset); }}
-    onScan={jobID => { void readScan(jobID); }}
-    onMutation={command => { void mutate(command); }} />;
+  useEffect(() => {
+    let active = true;
+    void getPasswordSession().then(result => {
+      if (!active) return;
+      setAuthMode(result.mode);
+      if (result.session) {
+        setAuth(result.session);
+        setSOCCSRF(result.session.csrf_token);
+        void refresh();
+      }
+    });
+    return () => { active = false; };
+  }, []);
+  const authenticated = (session: PasswordSession) => {
+    setAuth(session);
+    setSOCCSRF(session.csrf_token);
+    setLogoutError('');
+    void refresh();
+  };
+  const signOut = async () => {
+    if (!auth) return;
+    try {
+      const result = await fetch('/auth/logout', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        headers: { 'X-TuranSec-CSRF': auth.csrf_token },
+      });
+      if (result.status !== 204) throw new Error('Logout rejected');
+      clear();
+      setSOCCSRF('');
+      setAuth(null);
+      setLogoutError('');
+    } catch { setLogoutError('Sign out could not be confirmed; session may remain active.'); }
+  };
+  if (authMode === 'checking') return <main className="layout"><p role="status">Checking the secured SOC login…</p></main>;
+  if (authMode === 'error') return <main className="layout"><h1>SOC login unavailable</h1><p>Refresh after checking the login gateway service. No SOC data is displayed.</p></main>;
+  if (authMode === 'password' && !auth) return <PasswordLogin onAuthenticated={authenticated} />;
+  return <>
+    {auth && <div className="layout">
+      <div className="panel">
+        <div className="heading"><strong>Signed in as {auth.username} ({auth.role})</strong>
+          <button type="button" className="secondary" onClick={() => { void signOut(); }}>Sign out</button></div>
+        <p role="alert">{logoutError}</p>
+      </div>
+      {auth.role === 'admin' && <AdminPackageGenerator session={auth} />}
+    </div>}
+    <OperatorSOCView view={view} onRefresh={() => { void refresh(); }} onClear={clear}
+      onPage={(section, offset) => { void refresh({ ...offsets.current, [section]: offset }); }}
+      onCase={(alertID, offset) => { void readCase(alertID, offset); }}
+      onScan={jobID => { void readScan(jobID); }}
+      onMutation={command => { void mutate(command); }} />
+  </>;
 }

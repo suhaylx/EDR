@@ -45,7 +45,7 @@ export class SOCAcknowledgedRefreshError extends SOCMutationRefreshError {
 }
 export const socFailureMessages: Readonly<Record<SOCFailure, string>> = {
   insecure_origin: 'Open the HTTPS operator service to connect. No SOC request was sent over this origin.',
-  unauthorized: 'Operator authorization was denied. All displayed records have been cleared. Check the browser certificate and operator enrollment.',
+  unauthorized: 'Operator authorization was denied. All displayed records have been cleared. Check your username/password and session, then sign in again.',
   forbidden: 'This operator is not authorized for the requested records. All displayed records have been cleared.',
   unavailable: 'The authenticated SOC service is unavailable. No current endpoint or alert state can be established.',
   invalid_response: 'The service returned an unexpected or inconsistent response. All displayed records have been cleared.',
@@ -97,12 +97,14 @@ export function decodeSOCActivity(value: unknown): SOCActivity {
 export const decodeSOCActivities = (value: unknown): SOCPage<SOCActivity> => socPage(value, decodeSOCActivity, a => a.activity_id);
 
 export type SOCReadOptions = Readonly<{ protocol: string; fetcher?: typeof fetch; signal?: AbortSignal; timeoutMs?: number }>;
+let socCSRF = '';
+export function setSOCCSRF(value: string): void { socCSRF = /^[0-9a-f]{64}$/.test(value) ? value : ''; }
 const maxResponseBytes = 512 * 1024;
 
 function requestSOC(path: string, method: 'GET' | 'POST', options: SOCReadOptions, signal: AbortSignal, payload?: object): Promise<Response> {
   return (options.fetcher ?? fetch)(path, {
     method, credentials: 'same-origin', mode: 'same-origin', cache: 'no-store', redirect: 'error',
-    referrerPolicy: 'no-referrer', headers: payload === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+    referrerPolicy: 'no-referrer', headers: { Accept: 'application/json', ...(payload === undefined ? {} : { 'Content-Type': 'application/json' }), ...(socCSRF && method === 'POST' ? { 'X-TuranSec-CSRF': socCSRF } : {}) },
     signal, ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
   });
 }

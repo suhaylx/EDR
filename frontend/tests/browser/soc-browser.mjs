@@ -282,6 +282,9 @@ try {
   });
   await check('keyboard reaches skip link and Connect; browser certificate reads the SOC fixture', async () => {
     await page.goto(origin);
+    // Password gateway discovery is asynchronous. In this legacy mTLS fixture
+    // wait for the authenticated SOC UI before testing its keyboard order.
+    await page.getByRole('link', { name: 'Skip to SOC records' }).waitFor({ state: 'visible' });
     await page.keyboard.press('Tab');
     assert.equal(await page.locator(':focus').textContent(), 'Skip to SOC records');
     await page.keyboard.press('Tab');

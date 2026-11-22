@@ -27,6 +27,36 @@ services:
       retries: 30
     security_opt:
       - no-new-privileges:true
+  login:
+    # Password-only browser gateway. Legacy mTLS SOC runs internally at 9445.
+    image: turansec-edr-lab-dashboard:local
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    entrypoint: ["/usr/local/bin/socgateway","--config","/etc/turansec/gateway.json"]
+    user: "${EDR_HOST_UID:?Run init-lab.sh}:${EDR_HOST_GID:?Run init-lab.sh}"
+    network_mode: host
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+    # A running gateway is not healthy until the mTLS backend serves the SPA.
+    healthcheck:
+      test: ["CMD","curl","--fail","--silent","--show-error","--max-time","3","--cacert","/etc/turansec/server-ca.pem","https://127.0.0.1:9444/"]
+      interval: 3s
+      timeout: 4s
+      retries: 20
+      start_period: 5s
+    volumes:
+      - ./.docker-local/runtime:/etc/turansec:ro
+      - ./.docker-local/payloads:/opt/turansec/payloads:ro
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
   dashboard:
     # Match the owner of the protected bind-mounted configuration without DAC bypass.
     user: "${EDR_HOST_UID:?Run init-lab.sh}:${EDR_HOST_GID:?Run init-lab.sh}"
