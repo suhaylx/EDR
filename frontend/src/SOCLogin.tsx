@@ -45,11 +45,15 @@ export function PasswordLogin({ onAuthenticated }: { onAuthenticated: (session: 
       setError('Cannot reach the secured login service.');
     } finally { setBusy(false); }
   };
-  return <main className="layout">
-    <div className="panel" style={{ maxWidth: 520, margin: '7vh auto' }}>
-      <p className="eyebrow">TURANSEC EDR</p>
+  return <main className="layout soc-auth-shell">
+    <div className="soc-auth-intro"><div className="soc-auth-logo" aria-hidden="true">T</div><p className="eyebrow">TURANSEC / SECURITY OPERATIONS</p>
+      <h2>Security visibility. One workspace.</h2><p>Investigate detections, monitor endpoint health, and coordinate trusted response operations.</p>
+      <div className="soc-auth-footnote">LOCAL LAB · HTTPS PROTECTED</div>
+    </div>
+    <div className="panel soc-auth-card">
+      <p className="eyebrow">OPERATOR ACCESS</p>
       <h1>Sign in to SOC</h1>
-      <p>Local Docker lab. Password login replaces browser client-certificate import; the connection still uses HTTPS.</p>
+      <p>Choose your role and sign in with your local operator password. No client certificate import is needed.</p>
       <form className="form" onSubmit={e => { void login(e); }}>
         <label htmlFor="soc-user">Account</label>
         <select id="soc-user" value={user} onChange={e => setUser(e.target.value as typeof user)}>
