@@ -1,0 +1,11 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--omit=dev",
+    "--json"
+  ],
+  "timeout_seconds": 30,
+  "exit_code": 0,
+  "timed_out": false
+}

@@ -1,7 +1,7 @@
 # Runtime PostgreSQL roles
 
 This candidate separates readonly certificate-registry access from operational
-SQL. Apply schema migrations 0001–0013 first, then the operator-controlled
+SQL. Apply schema migrations 0001–0014 first, then the operator-controlled
 bootstrap in `backend/bootstrap/runtime_privileges.sql`. The service must not
 run migrations or this bootstrap at startup.
 
@@ -146,7 +146,7 @@ without opening a database connection.
 The shell script validates the client loopback TCP endpoint before connecting,
 retains that endpoint for restricted logins, refuses existing EDR schema tables,
 and permits the CI candidate's `edr_ci_candidate` ownership marker. It applies
-schema 0001–0013, creates unique temporary test logins with an ephemeral
+schema 0001–0014, creates unique temporary test logins with an ephemeral
 environment-supplied password, applies bootstrap twice and cleans up those
 logins. Credential provisioning statements are not echoed; logging of that
 fixture credential transaction is suppressed. The script requires an isolated
@@ -180,12 +180,20 @@ with a superficial role label. They check:
   `edr_schema_capabilities` record is read-only for both serving roles; attempts
   to insert, update or delete it are denied.
 
-For databases already at 0012, apply only the versioned 0013 upgrade and then
-reapply this bootstrap in the approved maintenance window. The upgrade replaces
-the five lease functions atomically and records `scan_lease_wallclock` version 1.
-Both bootstrap and service startup require that capability. A modified historical
-migration file alone does not update an existing installation. Retain the approved
-backup and verify compatibility before starting the service.
+For databases already at 0012, apply the versioned 0013 upgrade followed by 0014.
+For databases already at 0013, apply only 0014. Reapply this bootstrap with the
+existing dedicated logins after the required upgrades, with serving processes
+stopped in the approved maintenance window. Migration 0013 replaces the five
+lease functions and records `scan_lease_wallclock` version 1. Migration 0014
+replaces the enrollment/challenge/rotation functions and records
+`enrollment_wallclock` version 1. Both upgrades preserve function ownership,
+grants, security modes and local settings. Bootstrap and service startup require
+both version-1 capabilities; missing or incompatible versions fail closed.
+Serving identities retain read-only access to the capability records and gain
+no enrollment or rotation authority. A modified historical migration file alone
+does not update an existing installation. Retain and verify the approved backup
+and check compatibility before starting the service. These steps do not grant
+deployment authorization.
 
 These are PostgreSQL privilege and protocol tests. They do not execute ClamAV,
 prove actual Windows/Linux host behavior, sign installation packages, approve

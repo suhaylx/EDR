@@ -15,6 +15,7 @@ import shutil
 import ssl
 import stat
 import subprocess
+import sys
 import tarfile
 import tempfile
 import threading
@@ -23,11 +24,90 @@ import unittest
 from unittest.mock import patch
 
 from linux_service import (ActivationRolledBack, Installation, MAX_ARCHIVE_BYTES, Systemd,
-                           RollbackFailed, authenticated_health, catalog, require_system_manager, sha256, verified_bundle)
-from systemd_launcher import SERVER_CREDENTIALS, launch_plan, validate_agent
+                           RollbackFailed, authenticated_health, catalog, copy_bounded, require_system_manager, sha256, verified_bundle)
+from systemd_launcher import SERVER_CREDENTIALS, launch_plan, regular_file, validate_agent
 
 
 SOURCE = Path(__file__).resolve().parents[2]
+
+
+class BoundedFileInputTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="edr-file-input-test-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def test_writerless_fifo_is_rejected_without_waiting_for_a_writer(self):
+        fifo = self.root / "input.fifo"
+        os.mkfifo(fifo, 0o600)
+        program = """
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from linux_service import copy_bounded
+from systemd_launcher import regular_file
+try:
+    if sys.argv[2] == 'copy':
+        copy_bounded(Path(sys.argv[3]), Path(sys.argv[4]), 64)
+    else:
+        regular_file(Path(sys.argv[3]))
+except ValueError:
+    print('non-regular input rejected')
+else:
+    raise SystemExit('non-regular input was accepted')
+"""
+        for reader in ("copy", "read"):
+            with self.subTest(reader=reader):
+                output = self.root / (reader + ".out")
+                # A child deadline keeps a regression from hanging the entire
+                # release gate. No writer is ever opened for this FIFO.
+                result = subprocess.run(
+                    [sys.executable, "-I", "-B", "-c", program,
+                     str(SOURCE / "scripts/release"), reader, str(fifo), str(output)],
+                    capture_output=True, text=True, check=True, timeout=5,
+                )
+                self.assertEqual(result.stdout.strip(), "non-regular input rejected")
+                self.assertFalse(output.exists())
+
+    def test_regular_file_contents_and_size_limits_are_preserved(self):
+        source = self.root / "input"
+        contents = b"bounded candidate input\n"
+        source.write_bytes(contents)
+        source.chmod(0o600)
+        target = self.root / "copied"
+        copy_bounded(source, target, len(contents))
+        self.assertEqual(target.read_bytes(), contents)
+        self.assertEqual(regular_file(source, private=True, limit=len(contents)), contents)
+        with self.assertRaises(ValueError):
+            copy_bounded(source, self.root / "oversized", len(contents) - 1)
+        with self.assertRaises(ValueError):
+            regular_file(source, limit=len(contents) - 1)
+
+    def test_directory_device_and_symlink_inputs_remain_rejected(self):
+        regular = self.root / "regular"
+        regular.write_bytes(b"candidate input")
+        link = self.root / "linked"
+        link.symlink_to(regular)
+        for source in (self.root, Path("/dev/null"), link):
+            with self.subTest(source=source):
+                target = self.root / "copied"
+                with self.assertRaises((ValueError, OSError)):
+                    copy_bounded(source, target, 64)
+                with self.assertRaises((ValueError, OSError)):
+                    regular_file(source)
+                self.assertFalse(target.exists())
+
+    def test_private_permissions_and_empty_file_rejections_are_preserved(self):
+        source = self.root / "input"
+        source.write_bytes(b"private fixture")
+        source.chmod(0o644)
+        with self.assertRaises(ValueError):
+            regular_file(source, private=True)
+        source.write_bytes(b"")
+        with self.assertRaises(ValueError):
+            copy_bounded(source, self.root / "copied", 64)
+        with self.assertRaises(ValueError):
+            regular_file(source)
 
 
 class FakeSystemd:

@@ -1,6 +1,8 @@
 name: candidate-ci
 
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

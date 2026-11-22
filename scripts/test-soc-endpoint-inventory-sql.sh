@@ -17,7 +17,9 @@ value = os.environ["EDR_TEST_DATABASE_URL"]
 try:
     target = urlsplit(value)
     safe = (
-        target.scheme == "postgresql"
+        not any(os.environ.get(name) for name in ("PGHOSTADDR", "PGSERVICE", "PGSERVICEFILE"))
+        and not any(ord(char) <= 32 or ord(char) == 127 for char in value)
+        and target.scheme == "postgresql"
         and target.hostname in ("127.0.0.1", "::1")
         and target.port == 5432
         and target.path == "/edr_chain_test"

@@ -48,7 +48,7 @@ The frontend command includes actual browser/accessibility execution. A browser 
 
 Use a separate migration administrator. Neither serving credential may own the database, schema, tables or privileged functions. Provision two distinct unprivileged `LOGIN INHERIT` identities, for example `edr_service_runtime` and `edr_service_registry`, using the organization's secret manager and database authentication policy. Do not put passwords in shell history or this repository.
 
-Connect as the migration administrator to an **empty dedicated EDR database**, then apply migrations 0001–0013 in sorted order:
+Connect as the migration administrator to an **empty dedicated EDR database**, then apply migrations 0001–0014 in sorted order:
 
 ```bash
 for migration in backend/migrations/*.up.sql; do
@@ -65,7 +65,7 @@ Choose the host/port/administrator using a protected PostgreSQL service file or 
 
 The bootstrap restricts runtime writes to audited functions and creates separate read-only registry access. It revokes default public temporary/schema/function privileges in this dedicated database. Review [RUNTIME_DATABASE_ROLES.md](backend/RUNTIME_DATABASE_ROLES.md) before applying it. Reapplication validates existing role ownership and membership; it refuses unsafe reuse.
 
-For an existing database that has already applied 0001–0012, take and verify the approved backup, stop the serving processes in the authorized maintenance window, apply only `0013_scan_lease_wallclock.up.sql` as the migration administrator, then reapply the restricted-role bootstrap using the existing serving logins. Migration 0013 atomically replaces the lease functions while preserving their ownership, grants and security settings. It records the `scan_lease_wallclock` capability; the new service refuses to listen without version 1 of that capability. Do not rerun the initial schema migrations against an existing database. Verify migration and application compatibility before restarting; the upgrade does not grant deployment authorization.
+For an existing database, take and verify the approved backup and stop the serving processes in the authorized maintenance window. If it has applied 0001–0012, apply `0013_scan_lease_wallclock.up.sql` followed by `0014_enrollment_wallclock.up.sql` as the migration administrator. If it is already at 0013, apply only `0014_enrollment_wallclock.up.sql`. Then reapply the restricted-role bootstrap using the existing serving logins. The upgrades atomically replace the lease and enrollment/challenge/rotation functions while preserving their ownership, grants and security settings. Bootstrap and service startup require version 1 of both `scan_lease_wallclock` and `enrollment_wallclock`; a missing or incompatible capability prevents listening. Do not rerun the initial schema migrations against an existing database. Verify migration and application compatibility before restarting; the upgrade does not grant deployment authorization.
 
 The current service requires both handles to reach the same explicit numeric-loopback PostgreSQL address, port and database, using different logins. Remote database deployment needs a separately reviewed transport configuration. `sslmode=disable` is permitted only for this loopback candidate; enforce the approved local-host access boundary. Remote plaintext PostgreSQL is rejected.
 

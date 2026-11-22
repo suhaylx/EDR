@@ -1,0 +1,36 @@
+[
+  {
+    "phase": "before",
+    "source_commit": "f00cab502cf04ee92fed1210fb7ba295d92e9c36",
+    "working_tree_changed": false,
+    "scope": "Three existing entrypoint files compared against their original Git versions; new regression harness and new enrollment runner held equal in both executions",
+    "test_sha256": "f8cfb7172e1ac20ac51e5c15114c2ab6928aff84253e8fb6aa2b00d614b06db3",
+    "new_runner_sha256": "9d772b1cf6978e424f06c0a4899de903c681d912746b214cd71b1eadf85be84d",
+    "started_at": "2026-11-22T02:07:08.817325+00:00",
+    "exit_code": 1,
+    "log_sha256": "9482da5ea7c64e398d0b5d9e7616d6b8b0113f7aa02a87f361a6ad200bb0c4ec",
+    "tail": [
+      "----------------------------------------------------------------------",
+      "Ran 11 tests in 0.259s",
+      "",
+      "FAILED (failures=9, errors=6)"
+    ]
+  },
+  {
+    "phase": "after",
+    "source_commit": "f00cab502cf04ee92fed1210fb7ba295d92e9c36",
+    "working_tree_changed": true,
+    "scope": "Three existing entrypoint files compared against their original Git versions; new regression harness and new enrollment runner held equal in both executions",
+    "test_sha256": "f8cfb7172e1ac20ac51e5c15114c2ab6928aff84253e8fb6aa2b00d614b06db3",
+    "new_runner_sha256": "9d772b1cf6978e424f06c0a4899de903c681d912746b214cd71b1eadf85be84d",
+    "started_at": "2026-11-22T02:07:09.168061+00:00",
+    "exit_code": 0,
+    "log_sha256": "7edc6a8e06a101fab4327fdb0d305cf64bd82b064362e8fb14b98535bcc21d52",
+    "tail": [
+      "----------------------------------------------------------------------",
+      "Ran 11 tests in 0.161s",
+      "",
+      "OK"
+    ]
+  }
+]
