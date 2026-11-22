@@ -619,3 +619,15 @@
 .soc-layout .soc-workspace .status--danger { color: #ffe8ec; background: #603039; border-color: #d18894; }
 .soc-layout .soc-connection .status--warning,
 .soc-layout .soc-workspace .status--warning { color: #fff1ca; background: #604a31; border-color: #b99c6e; }
+
+/* Avoid contrast checks with indeterminate gradient/text layers.
+   Navigation markers are decorative; accessible button names supply meaning. */
+.soc-layout .soc-mark { background: #96defb; color: #092338; box-shadow: none; }
+.soc-layout .soc-nav-glyph { display: none; }
+.soc-layout .soc-nav button::before, .soc-layout .soc-nav a::before {
+  content: ""; display: block; flex: 0 0 12px; width: 12px; height: 12px;
+  border: 2px solid #9bcee9; border-radius: 3px; background: transparent;
+}
+.soc-layout .soc-nav button[aria-current="page"]::before {
+  border-color: #d5f5ff; background: #a9ddf8;
+}
