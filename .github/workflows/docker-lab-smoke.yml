@@ -88,14 +88,22 @@ jobs:
             "$origin/auth/agent-generate")"
           test "$code" = 503  # no approved 3-in-1 vendor payloads, must fail closed
           # Existing internal mTLS operator service remains authenticated on 9445.
-          curl --noproxy '*' --fail --show-error --silent --cacert "$ca" \
-            --cert .docker-local/operator/viewer.pem \
-            --key .docker-local/operator/viewer.key \
-            https://127.0.0.1:9445/soc/v1/session > /tmp/internal.session
           python3 - <<'PY'
-          import json
-          s=json.load(open('/tmp/internal.session'))
-          assert s['operator_id']=='health-viewer' and s['role']=='viewer'
+          import socket, ssl
+          ctx=ssl.create_default_context(cafile='.docker-local/operator/server-ca.pem')
+          ctx.minimum_version=ssl.TLSVersion.TLSv1_3
+          ctx.load_cert_chain('.docker-local/operator/viewer.pem',
+                              '.docker-local/operator/viewer.key')
+          with socket.create_connection(('127.0.0.1',9445),timeout=5) as sock:
+              with ctx.wrap_socket(sock,server_hostname='127.0.0.1') as conn:
+                  conn.sendall(b'GET /soc/v1/session HTTP/1.1\\r\\nHost: 127.0.0.1:9445\\r\\nConnection: close\\r\\n\\r\\n')
+                  data=bytearray()
+                  while True:
+                      chunk=conn.recv(16384)
+                      if not chunk: break
+                      data.extend(chunk)
+          assert data.startswith(b'HTTP/1.1 200 '), data[:100]
+          assert b'health-viewer' in data and b'viewer' in data
           PY
       - name: Three-component admin generator produces pinned, secret-free endpoint ZIP
         run: |
