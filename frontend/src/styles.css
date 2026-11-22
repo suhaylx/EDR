@@ -572,3 +572,20 @@
 .soc-layout .soc-nav button:hover:not(:disabled) { background: #172940; border-color: #294660; color: #fff; }
 .soc-layout .soc-nav button[aria-current="page"] { color: #ddf1ff; background: #173652; border-color: #447395; }
 @media(max-width: 820px) { .soc-layout .soc-nav button { font-size: .78rem; min-height: 42px; padding: 8px 11px; } }
+
+/* Authenticated operator actions: current-page triage and endpoint investigation. */
+.soc-investigation { margin: 20px 0 0; padding: 20px; border: 1px solid #4f7390; border-radius: 12px; background: #0d2135; }
+.soc-investigation h3 { margin: 6px 0; overflow-wrap: anywhere; }
+.soc-investigation h4 { margin: 20px 0 9px; font-size: .86rem; }
+.soc-investigation .soc-details { margin: 16px 0; }
+.soc-investigation .soc-details > div { min-width: 0; padding: 14px; background: #183148; border: 1px solid #355a79; border-radius: 8px; }
+.soc-investigation .soc-details dd { font-size: .86rem; }
+.soc-investigation p { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.soc-triage-toolbar { display: grid; grid-template-columns: minmax(200px, 1.5fr) minmax(145px,1fr) minmax(180px,1fr); gap: 13px; margin: 18px 0; padding: 15px; background: #0d2035; border: 1px solid #365575; border-radius: 10px; }
+.soc-triage-toolbar label { display: grid; gap: 7px; color: #d5e8fa; font-size: .75rem; font-weight: 700; }
+.soc-triage-toolbar input, .soc-triage-toolbar select { width: 100%; max-width: none; min-width: 0; min-height: 42px; background: #10263e; color: #eff8ff; border: 1px solid #536f8e; }
+.soc-state--online { color: #d5ffe8; background: #1c453c; }
+.soc-state--degraded, .soc-state--stale { color: #fff0c4; background: #56432a; }
+.soc-state--revoked { color: #ffe3e8; background: #572f38; }
+@media(max-width:900px){.soc-triage-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.soc-triage-toolbar label:first-child{grid-column:1/-1}}
+@media(max-width:600px){.soc-triage-toolbar{grid-template-columns:1fr}.soc-triage-toolbar label:first-child{grid-column:auto}}
