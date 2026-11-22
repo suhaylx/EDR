@@ -95,6 +95,8 @@ func newGateway(c config)(*gateway,error){
   upstreamTLS:=&tls.Config{MinVersion:tls.VersionTLS13,RootCAs:roots,Certificates:[]tls.Certificate{cert}}
   transport:=&http.Transport{TLSClientConfig:upstreamTLS,Proxy:nil,MaxIdleConns:12,IdleConnTimeout:20*time.Second,ResponseHeaderTimeout:15*time.Second,ForceAttemptHTTP2:false}
   rp:=httputil.NewSingleHostReverseProxy(target)
+  // NewSingleHostReverseProxy installs Director by default; Rewrite must be exclusive.
+  rp.Director=nil
   rp.Transport=transport
   rp.Rewrite=func(pr *httputil.ProxyRequest){
    pr.SetURL(target)
