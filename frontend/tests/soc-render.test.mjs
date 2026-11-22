@@ -24,6 +24,18 @@ test('operator view exposes identity, accessible regions and unknown state witho
   assert.doesNotMatch(html, /type="password"|name="token"|localStorage/);
 });
 
+test('password-backed SOC presents a focused workspace with operational navigation', () => {
+  const view = { state: 'ready', snapshot };
+  const auth = { username: 'admin', role: 'admin', csrf_token: 'a'.repeat(64) };
+  const html = renderToStaticMarkup(React.createElement(OperatorSOCView, {
+    view, auth, onRefresh() {}, onClear() {}, onPage() {}, onCase() {}, onScan() {}, onMutation() {},
+  }));
+  assert.match(html, /aria-current="page"/);
+  assert.match(html, /id="soc-overview-title"/);
+  assert.match(html, /Agent packages/);
+  assert.doesNotMatch(html, /id="soc-endpoints-title"|id="soc-alerts-title"|id="soc-scans-title"/);
+});
+
 test('auth failures and pending states contain no stale snapshot identity or rows', () => {
   for (const view of [{ state: 'error', error: 'unauthorized' }, { state: 'error', error: 'forbidden' }, { state: 'loading' }, { state: 'disconnected' }]) {
     const html = render(view);
