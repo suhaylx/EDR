@@ -1,0 +1,16 @@
+test_candidate_explicit_loopback_target_reaches_only_stub_client (__main__.DisposableDatabaseTargets.test_candidate_explicit_loopback_target_reaches_only_stub_client) ... ok
+test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) ... ok
+test_enrollment_runner_explicit_loopback_target_reaches_only_stub_sql (__main__.DisposableDatabaseTargets.test_enrollment_runner_explicit_loopback_target_reaches_only_stub_sql) ... ok
+test_enrollment_runner_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_enrollment_runner_refuses_inherited_libpq_routes_before_any_sql) ... ok
+test_enrollment_runner_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_enrollment_runner_refuses_url_parser_control_character_normalization) ... ok
+test_integration_explicit_loopback_target_reaches_only_stub_sql (__main__.DisposableDatabaseTargets.test_integration_explicit_loopback_target_reaches_only_stub_sql) ... ok
+test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) ... ok
+test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) ... ok
+test_inventory_explicit_loopback_target_passes_offline_preflight (__main__.DisposableDatabaseTargets.test_inventory_explicit_loopback_target_passes_offline_preflight) ... ok
+test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) ... ok
+test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.161s
+
+OK

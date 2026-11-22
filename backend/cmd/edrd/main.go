@@ -204,12 +204,15 @@ func connectDB(ctx context.Context, path, expectedRole string) (*sql.DB, databas
 		return fail()
 	}
 	// Existing function signatures alone cannot prove that the wall-clock
-	// lease fix has been applied. Migration 0013 publishes this capability
-	// atomically with its function replacements; serving roles cannot alter it.
-	var leaseClockVersion int
-	err = db.QueryRowContext(ctx, `SELECT version FROM public.edr_schema_capabilities WHERE capability='scan_lease_wallclock'`).Scan(&leaseClockVersion)
-	if err != nil || leaseClockVersion != 1 {
-		return fail()
+	// fixes have been applied. Migrations 0013 and 0014 publish these capabilities
+	// atomically with their replacements; serving roles cannot alter them.
+	for _, capability := range []string{"scan_lease_wallclock", "enrollment_wallclock"} {
+		var capabilityVersion int
+		err = db.QueryRowContext(ctx, `SELECT version FROM public.edr_schema_capabilities WHERE capability=$1`, capability).Scan(&capabilityVersion)
+		if err != nil || capabilityVersion != 1 {
+			db.Close()
+			return nil, databaseIdentity{}, fmt.Errorf("required database capability %s version 1 is unavailable or incompatible", capability)
+		}
 	}
 	// Require the complete serving schema before opening either HTTP listener.
 	// WHERE false checks actual column privileges without reading user records.

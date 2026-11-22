@@ -1,0 +1,247 @@
+test_candidate_explicit_loopback_target_reaches_only_stub_client (__main__.DisposableDatabaseTargets.test_candidate_explicit_loopback_target_reaches_only_stub_client) ... ok
+test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) ... 
+  test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGHOSTADDR') ... FAIL
+  test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICE') ... FAIL
+  test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICEFILE') ... FAIL
+test_enrollment_runner_explicit_loopback_target_reaches_only_stub_sql (__main__.DisposableDatabaseTargets.test_enrollment_runner_explicit_loopback_target_reaches_only_stub_sql) ... ok
+test_enrollment_runner_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_enrollment_runner_refuses_inherited_libpq_routes_before_any_sql) ... ok
+test_enrollment_runner_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_enrollment_runner_refuses_url_parser_control_character_normalization) ... ok
+test_integration_explicit_loopback_target_reaches_only_stub_sql (__main__.DisposableDatabaseTargets.test_integration_explicit_loopback_target_reaches_only_stub_sql) ... ok
+test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) ... 
+  test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGHOSTADDR') ... ERROR
+  test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGSERVICE') ... ERROR
+  test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGSERVICEFILE') ... ERROR
+test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) ... 
+  test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="'\\n'") ... ERROR
+  test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="'\\t'") ... ERROR
+  test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="' '") ... ERROR
+test_inventory_explicit_loopback_target_passes_offline_preflight (__main__.DisposableDatabaseTargets.test_inventory_explicit_loopback_target_passes_offline_preflight) ... ok
+test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) ... 
+  test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGHOSTADDR') ... FAIL
+  test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICE') ... FAIL
+  test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICEFILE') ... FAIL
+test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) ... 
+  test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="'\\n'") ... FAIL
+  test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="'\\t'") ... FAIL
+  test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="' '") ... FAIL
+
+======================================================================
+ERROR: test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGHOSTADDR')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 118, in test_integration_refuses_inherited_libpq_routes_before_any_sql
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+ERROR: test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGSERVICE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 118, in test_integration_refuses_inherited_libpq_routes_before_any_sql
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+ERROR: test_integration_refuses_inherited_libpq_routes_before_any_sql (__main__.DisposableDatabaseTargets.test_integration_refuses_inherited_libpq_routes_before_any_sql) (override='PGSERVICEFILE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 118, in test_integration_refuses_inherited_libpq_routes_before_any_sql
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+ERROR: test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="'\\n'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 139, in test_integration_refuses_url_parser_control_character_normalization
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+ERROR: test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="'\\t'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 139, in test_integration_refuses_url_parser_control_character_normalization
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+ERROR: test_integration_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_integration_refuses_url_parser_control_character_normalization) (prefix="' '")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 139, in test_integration_refuses_url_parser_control_character_normalization
+    self.assert_integration_refused(env)
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 86, in assert_integration_refused
+    self.integration.run()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-integrated-candidate.py", line 120, in run
+    require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+FirstDatabaseOperation
+
+======================================================================
+FAIL: test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGHOSTADDR')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 103, in test_candidate_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 103, in test_candidate_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_candidate_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_candidate_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICEFILE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 103, in test_candidate_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGHOSTADDR')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 111, in test_inventory_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 111, in test_inventory_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_inherited_libpq_routes_before_any_client (__main__.DisposableDatabaseTargets.test_inventory_refuses_inherited_libpq_routes_before_any_client) (override='PGSERVICEFILE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 111, in test_inventory_refuses_inherited_libpq_routes_before_any_client
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="'\\n'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 133, in test_inventory_refuses_url_parser_control_character_normalization
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="'\\t'")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 133, in test_inventory_refuses_url_parser_control_character_normalization
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+======================================================================
+FAIL: test_inventory_refuses_url_parser_control_character_normalization (__main__.DisposableDatabaseTargets.test_inventory_refuses_url_parser_control_character_normalization) (prefix="' '")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 133, in test_inventory_refuses_url_parser_control_character_normalization
+    self.assert_no_client()
+  File "/tmp/edr-qa-regression-uw4kqcrr/scripts/test-qa-db-targets.py", line 80, in assert_no_client
+    self.assertFalse(self.client_log.exists(), "A database client was invoked before refusal")
+AssertionError: True is not false : A database client was invoked before refusal
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.259s
+
+FAILED (failures=9, errors=6)

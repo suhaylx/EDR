@@ -167,7 +167,8 @@ def validate_archive(archive: Path, inventory: dict[str, dict]) -> None:
 
 
 def copy_bounded(source: Path, target: Path, limit: int) -> None:
-    fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    # Open FIFOs without waiting for a writer so fstat can reject them below.
+    fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK)
     try:
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:

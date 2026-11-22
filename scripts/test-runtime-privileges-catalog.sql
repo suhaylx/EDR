@@ -112,10 +112,11 @@ BEGIN
     RAISE EXCEPTION 'runtime/registry sensitive-read separation is wrong';
   END IF;
   IF (SELECT version FROM public.edr_schema_capabilities WHERE capability='scan_lease_wallclock') IS DISTINCT FROM 1
+     OR (SELECT version FROM public.edr_schema_capabilities WHERE capability='enrollment_wallclock') IS DISTINCT FROM 1
      OR NOT has_table_privilege(runtime_name,'public.edr_schema_capabilities','SELECT')
      OR NOT has_table_privilege(registry_name,'public.edr_schema_capabilities','SELECT')
      OR has_table_privilege('edr_api_functions','public.edr_schema_capabilities','SELECT') THEN
-    RAISE EXCEPTION 'required admin-owned lease-clock capability or its read-only grants are wrong';
+    RAISE EXCEPTION 'required admin-owned clock capabilities or their read-only grants are wrong';
   END IF;
   RAISE NOTICE 'PASS: exact function allowlist, safe owners/search paths, no PUBLIC mutation execution, least-privilege role catalog';
 END;

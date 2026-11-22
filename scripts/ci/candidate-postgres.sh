@@ -17,6 +17,13 @@ cd "$(dirname "$0")/../.."
 [[ "${EDR_CANDIDATE_SHA:-}" =~ ^[0-9a-f]{40}$ ]] || {
   echo 'Full EDR_CANDIDATE_SHA is required' >&2; exit 2;
 }
+# libpq's inherited hostaddr/service settings can override an explicit URI's
+# apparent loopback target. Refuse before even the version-check connection.
+for qa_connection_override in PGHOSTADDR PGSERVICE PGSERVICEFILE; do
+  [[ -z "${!qa_connection_override:-}" ]] || {
+    echo 'Inherited PostgreSQL routing overrides are not permitted for QA' >&2; exit 2;
+  }
+done
 command -v psql >/dev/null
 command -v createdb >/dev/null
 mkdir -p .quality-evidence
@@ -55,12 +62,16 @@ apply_all_migrations() {
 case "${1:-}" in
 test)
   # Required files are intentionally not optional. A missing suite fails CI.
+  python3 scripts/test-qa-db-targets.py
   bash scripts/test-soc-inventory-preflight.sh
   bash scripts/test-runtime-privileges-preflight.sh
   new_db edr_chain_test
   bash scripts/test-postgres-migration-chain.sh
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-scan-job-results.sql
   bash scripts/test-soc-endpoint-inventory-sql.sh
+
+  new_db edr_candidate_enrollment_wallclock
+  python3 scripts/test-enrollment-wallclock-races.py
 
   for suite in enrollment-migration atomic-agent-enrollment enrollment-challenges enrollment-revocation; do
     new_db "edr_candidate_${suite//-/_}"

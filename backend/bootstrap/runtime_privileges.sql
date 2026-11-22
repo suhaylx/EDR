@@ -1,4 +1,4 @@
--- Operator bootstrap for a DEDICATED EDR database after migrations 0001..0013.
+-- Operator bootstrap for a DEDICATED EDR database after migrations 0001..0014.
 -- This is intentionally separate from portable schema migrations: PostgreSQL
 -- roles are cluster-wide and login authentication belongs to the operator.
 -- Required psql variables: runtime_login, registry_login, dedicated_edr_database.
@@ -49,14 +49,18 @@ BEGIN
     RAISE EXCEPTION 'two distinct dedicated unprivileged login roles are required';
   END IF;
   IF to_regclass('public.edr_soc_alert_activity') IS NULL THEN
-    RAISE EXCEPTION 'apply migrations 0001 through 0013 before runtime bootstrap';
+    RAISE EXCEPTION 'apply migrations 0001 through 0014 before runtime bootstrap';
   END IF;
   IF to_regclass('public.edr_schema_capabilities') IS NULL THEN
-    RAISE EXCEPTION 'apply migration 0013 before runtime bootstrap';
+    RAISE EXCEPTION 'apply migrations 0013 and 0014 before runtime bootstrap';
   END IF;
   IF (SELECT version FROM public.edr_schema_capabilities
       WHERE capability='scan_lease_wallclock') IS DISTINCT FROM 1 THEN
     RAISE EXCEPTION 'required scan_lease_wallclock capability version 1 is absent';
+  END IF;
+  IF (SELECT version FROM public.edr_schema_capabilities
+      WHERE capability='enrollment_wallclock') IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION 'required enrollment_wallclock capability version 1 is absent';
   END IF;
   IF (SELECT count(*) FROM pg_catalog.pg_proc
       WHERE oid=ANY(ARRAY[
@@ -69,6 +73,16 @@ BEGIN
       AND strpos(prosrc,'clock_timestamp()')>0
       AND strpos(prosrc,'transaction_timestamp()')=0)<>5 THEN
     RAISE EXCEPTION 'installed lease functions lack the 0013 wall-clock correction';
+  END IF;
+  IF (SELECT count(*) FROM pg_catalog.pg_proc
+      WHERE oid=ANY(ARRAY[
+        to_regprocedure('public.edr_consume_enrollment_challenge(uuid,varchar,varchar,bytea)'),
+        to_regprocedure('public.edr_complete_agent_enrollment(uuid,varchar,varchar,bytea,text,bytea,timestamptz,timestamptz,text)'),
+        to_regprocedure('public.edr_rotate_agent_certificate(varchar,varchar,bytea,bytea,timestamptz,timestamptz,text)')
+      ]::oid[])
+      AND strpos(prosrc,'clock_timestamp()')>0
+      AND strpos(prosrc,'transaction_timestamp()')=0)<>3 THEN
+    RAISE EXCEPTION 'installed enrollment functions lack the 0014 wall-clock correction';
   END IF;
 
   FOREACH role_name IN ARRAY ARRAY['edr_runtime','edr_identity_ro','edr_api_functions'] LOOP

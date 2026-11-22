@@ -77,6 +77,7 @@ EDR_GRANT_TEST_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsa
 runtime_connection="host=$test_host port=$test_port dbname=$test_database user=$runtime_login connect_timeout=5"
 registry_connection="host=$test_host port=$test_port dbname=$test_database user=$registry_login connect_timeout=5"
 test_roles_created=false
+bootstrap_error=''
 cleanup() {
   # These randomly named logins were created by this test, never supplied by an
   # operator. Drop only their grants in this disposable DB, then the logins.
@@ -89,6 +90,7 @@ SELECT format('DROP OWNED BY %I,%I', :'runtime_login', :'registry_login') \gexec
 SELECT format('DROP ROLE %I,%I', :'runtime_login', :'registry_login') \gexec
 SQL
   fi
+  [[ -z "$bootstrap_error" ]] || rm -f "$bootstrap_error"
   unset EDR_GRANT_TEST_PASSWORD
 }
 trap cleanup EXIT
@@ -106,7 +108,8 @@ for migration in \
   0010_soc_operator_scan_jobs \
   0011_soc_malware_alerts \
   0012_soc_alert_activity \
-  0013_scan_lease_wallclock; do
+  0013_scan_lease_wallclock \
+  0014_enrollment_wallclock; do
   psql "$EDR_TEST_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
     -f "backend/migrations/$migration.up.sql" >/dev/null
 done
@@ -134,6 +137,38 @@ then
   exit 1
 fi
 test_roles_created=true
+
+# A missing/future capability must be rejected before bootstrap can establish
+# runtime privileges. Expected diagnostics are checked so unrelated failures
+# cannot satisfy the regression. All mutations use this dedicated fixture DB.
+for invalid_version in missing 2; do
+  psql "$EDR_TEST_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+    -v invalid_version="$invalid_version" >/dev/null <<'SQL'
+DELETE FROM public.edr_schema_capabilities WHERE capability='enrollment_wallclock';
+INSERT INTO public.edr_schema_capabilities(capability,version)
+SELECT 'enrollment_wallclock',2 WHERE :'invalid_version'='2';
+SQL
+  bootstrap_error="$(mktemp)"
+  if psql "$EDR_TEST_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+    -v runtime_login="$runtime_login" -v registry_login="$registry_login" \
+    -v dedicated_edr_database=true -f backend/bootstrap/runtime_privileges.sql \
+    >/dev/null 2>"$bootstrap_error"; then
+    echo 'FAIL: bootstrap accepted absent/incompatible enrollment capability' >&2
+    exit 1
+  fi
+  python3 - "$bootstrap_error" <<'PY'
+import pathlib, sys
+if 'required enrollment_wallclock capability version 1 is absent' not in pathlib.Path(sys.argv[1]).read_text():
+    raise SystemExit('FAIL: bootstrap did not fail for the expected enrollment capability guard')
+PY
+  rm -f "$bootstrap_error"
+  bootstrap_error=''
+done
+psql "$EDR_TEST_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+INSERT INTO public.edr_schema_capabilities(capability,version)
+VALUES('enrollment_wallclock',1) ON CONFLICT(capability) DO UPDATE SET version=1;
+SQL
+echo 'PASS: bootstrap rejects missing and incompatible enrollment schema capability'
 
 psql "$EDR_TEST_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
   -v runtime_login="$runtime_login" -v registry_login="$registry_login" \

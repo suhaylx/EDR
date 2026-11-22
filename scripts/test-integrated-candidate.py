@@ -111,11 +111,19 @@ def denied_tls(ctx, listener, path):
 def run():
     global dburl, server_ca
     dburl = os.environ.get('EDR_TEST_DATABASE_URL', '')
-    u = urlsplit(dburl)
-    require(os.environ.get('EDR_QA_DISPOSABLE_DB') == 'yes' and
+    try:
+        u = urlsplit(dburl)
+        safe_target = (
+            os.environ.get('EDR_QA_DISPOSABLE_DB') == 'yes' and
+            not any(os.environ.get(name) for name in ('PGHOSTADDR', 'PGSERVICE', 'PGSERVICEFILE')) and
+            not any(ord(char) <= 32 or ord(char) == 127 for char in dburl) and
             u.scheme == 'postgresql' and u.hostname == '127.0.0.1' and u.port == 5432 and
             u.path == '/edr_integrated_test' and bool(u.username) and
-            u.query in ('', 'sslmode=disable') and not u.fragment,
+            u.query in ('', 'sslmode=disable') and not u.fragment
+        )
+    except (ValueError, TypeError):
+        safe_target = False
+    require(safe_target,
             'refusing a nonlocal or nondisposable integration database')
     require(sql("SELECT count(*) FROM pg_class WHERE relname LIKE 'edr_%' AND relkind='r'") == '0',
             'integration database is not empty')
@@ -157,6 +165,26 @@ def run():
                'ui_dir': str(ROOT / 'frontend/dist')}
         (p / 'config.json').write_text(json.dumps(cfg)); (p / 'config.json').chmod(0o600)
         child_env = dict(os.environ); child_env.pop('EDR_SOC_UI_DIR', None)
+        # Service startup must fail on an incomplete or incompatible schema,
+        # before serving either listener. The expected diagnostic is bounded
+        # and must identify this capability, not an unrelated startup failure.
+        capability_error = 'required database capability enrollment_wallclock version 1 is unavailable or incompatible'
+        for invalid_version in (None, 2):
+            sql("DELETE FROM public.edr_schema_capabilities WHERE capability='enrollment_wallclock'")
+            if invalid_version is not None:
+                sql("INSERT INTO public.edr_schema_capabilities(capability,version) VALUES('enrollment_wallclock',2)")
+            try:
+                rejected = subprocess.run(
+                    [str(ROOT / 'build/edrd'), '--config', str(p / 'config.json')],
+                    env=child_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    text=True, timeout=12,
+                )
+                require(rejected.returncode != 0 and capability_error in rejected.stderr,
+                        'service did not reject the missing/incompatible enrollment capability')
+            finally:
+                sql("INSERT INTO public.edr_schema_capabilities(capability,version) VALUES('enrollment_wallclock',1) "
+                    "ON CONFLICT(capability) DO UPDATE SET version=1")
+        mark('Compiled edrd rejects missing/incompatible enrollment schema capability before startup')
         with (p / 'server.log').open('w+') as log:
             service = subprocess.Popen([str(ROOT / 'build/edrd'), '--config', str(p / 'config.json')], env=child_env, stdout=log, stderr=log)
             try:

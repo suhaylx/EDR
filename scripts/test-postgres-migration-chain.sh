@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests the actual 0001..0013 migration order in an EMPTY disposable DB.
+# Tests the actual 0001..0014 migration order in an EMPTY disposable DB.
 set -euo pipefail
 : "${EDR_TEST_DATABASE_URL:?Use an empty disposable PostgreSQL database}"
 command -v psql >/dev/null
@@ -23,7 +23,8 @@ for migration in \
   0010_soc_operator_scan_jobs \
   0011_soc_malware_alerts \
   0012_soc_alert_activity \
-  0013_scan_lease_wallclock; do
+  0013_scan_lease_wallclock \
+  0014_enrollment_wallclock; do
   psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "backend/migrations/${migration}.up.sql"
 done
 
@@ -139,4 +140,4 @@ psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-scheduli
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-alerts.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-case-audit.sql
 psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-soc-endpoint-inventory.sql
-echo "Full PostgreSQL migration chain (0001..0013) integration passed"
+echo "Full PostgreSQL migration chain (0001..0014) integration passed"
