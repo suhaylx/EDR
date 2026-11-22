@@ -1,0 +1,15 @@
+.git
+.github
+.docker-local
+.env
+.env.*
+**/node_modules
+**/target
+**/dist
+**/.quality-evidence
+release-staging
+build
+*.pem
+*.key
+*.p12
+*.pfx

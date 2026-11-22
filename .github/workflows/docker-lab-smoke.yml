@@ -1,0 +1,65 @@
+name: docker-lab-smoke
+on:
+  pull_request:
+    paths:
+      - 'compose.yaml'
+      - '.dockerignore'
+      - 'deploy/docker/**'
+      - 'docs/DOCKER_QUICKSTART.md'
+      - '.github/workflows/docker-lab-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compose.yaml'
+      - '.dockerignore'
+      - 'deploy/docker/**'
+      - 'docs/DOCKER_QUICKSTART.md'
+      - '.github/workflows/docker-lab-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Start isolated Docker lab
+        run: |
+          set -euo pipefail
+          docker compose version
+          bash deploy/docker/init-lab.sh
+          docker compose config --quiet
+          docker compose up -d --build --wait
+      - name: Authenticated and unauthenticated probes
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --tlsv1.3 --max-time 15 \
+            --cacert .docker-local/operator/server-ca.pem \
+            --cert .docker-local/operator/viewer.pem \
+            --key .docker-local/operator/viewer.key \
+            https://127.0.0.1:9444/soc/v1/session > /tmp/session.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/session.json') as f: result=json.load(f)
+          assert (result['tenant_id'],result['operator_id'],result['role']) == ('lab','health-viewer','viewer')
+          PY
+          curl --fail --show-error --silent --max-time 15 \
+            --cacert .docker-local/operator/server-ca.pem \
+            --cert .docker-local/operator/analyst.pem \
+            --key .docker-local/operator/analyst.key \
+            https://127.0.0.1:9444/ > /tmp/dashboard.html
+          grep -q '<div id="root"' /tmp/dashboard.html
+          if curl --fail --silent --max-time 5 \
+            --cacert .docker-local/operator/server-ca.pem \
+            https://127.0.0.1:9444/soc/v1/session >/dev/null; then
+            echo "Unauthenticated operator request unexpectedly accepted"; exit 1
+          fi
+      - name: Logs on failure; destroy disposable database
+        if: always()
+        run: |
+          docker compose ps || true
+          docker compose logs --no-color --tail 80 || true
+          docker compose down --volumes --remove-orphans || true

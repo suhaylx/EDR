@@ -1,0 +1,51 @@
+# Linux-only isolated lab. Host networking is necessary because edrd and
+# PostgreSQL intentionally reject non-loopback destinations/listeners.
+# Never deploy this host-networked lab on an untrusted or shared host.
+name: turansec-edr-lab
+services:
+  database:
+    image: postgres:16-bookworm
+    network_mode: host
+    restart: unless-stopped
+    env_file:
+      - ./.docker-local/postgres.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: edr
+      PGPORT: "55432"
+    command: ["postgres", "-c", "listen_addresses=127.0.0.1", "-c", "port=55432"]
+    volumes:
+      - edr_database:/var/lib/postgresql/data
+      - ./deploy/docker/init-db.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./backend:/bootstrap/backend:ro
+      - ./.docker-local/fingerprints:/bootstrap/fingerprints:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 55432 -U postgres -d edr"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    security_opt:
+      - no-new-privileges:true
+  dashboard:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SOURCE_SHA: ${EDR_SOURCE_SHA:-uncommitted}
+    network_mode: host
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./.docker-local/runtime:/etc/turansec:ro
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+volumes:
+  edr_database:
