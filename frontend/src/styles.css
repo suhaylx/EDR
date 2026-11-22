@@ -611,3 +611,11 @@
 .soc-layout .soc-workspace .metric:not(.soc-metric) strong { color: #f9fcff; }
 .soc-layout .soc-workspace .soc-overview-panel > p,
 .soc-layout .soc-workspace .soc-filter-line > p { color: #cbdced; }
+
+/* Error and warning badges must meet contrast targets against dark SOC panels. */
+.soc-layout .soc-connection .status,
+.soc-layout .soc-workspace .status { color: #f6fbff; background: #284861; border: 1px solid #648aa8; }
+.soc-layout .soc-connection .status--danger,
+.soc-layout .soc-workspace .status--danger { color: #ffe8ec; background: #603039; border-color: #d18894; }
+.soc-layout .soc-connection .status--warning,
+.soc-layout .soc-workspace .status--warning { color: #fff1ca; background: #604a31; border-color: #b99c6e; }
