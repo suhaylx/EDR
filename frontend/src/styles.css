@@ -299,6 +299,15 @@
 
 /* SOC console 2026: ergonomic work area, not a collection of stacked prototypes. */
 .soc-layout {
+  /* Keep the dark SOC workspace independent of global OS light-theme variables. */
+  --bg: #0b1726;
+  --panel: #111f30;
+  --ink: #f0f7ff;
+  --muted: #c6d8ec;
+  --border: #3c5874;
+  --focus: #a3e0ff;
+  --control: #2167aa;
+  color-scheme: dark;
   --soc-bg: #090f1a;
   --soc-surface: #101c2b;
   --soc-surface-raised: #142337;
@@ -589,3 +598,16 @@
 .soc-state--revoked { color: #ffe3e8; background: #572f38; }
 @media(max-width:900px){.soc-triage-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.soc-triage-toolbar label:first-child{grid-column:1/-1}}
 @media(max-width:600px){.soc-triage-toolbar{grid-template-columns:1fr}.soc-triage-toolbar label:first-child{grid-column:auto}}
+
+/* WCAG contrast on both light and dark host themes. */
+.soc-layout .soc-connection { color: #f0f7ff; }
+.soc-layout .soc-connection p,
+.soc-layout .soc-workspace p { color: #c8d9ec; }
+.soc-layout .soc-connection strong,
+.soc-layout .soc-workspace strong { color: #f2f8ff; }
+.soc-layout .soc-connection .secondary { color: #f1f8ff; border-color: #6b90af; background: #1b3754; }
+.soc-layout .soc-connection .secondary:hover { background: #285174; }
+.soc-layout .soc-workspace .metric:not(.soc-metric) span { color: #d8e7f6; }
+.soc-layout .soc-workspace .metric:not(.soc-metric) strong { color: #f9fcff; }
+.soc-layout .soc-workspace .soc-overview-panel > p,
+.soc-layout .soc-workspace .soc-filter-line > p { color: #cbdced; }
