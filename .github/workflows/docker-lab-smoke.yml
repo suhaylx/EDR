@@ -97,6 +97,50 @@ jobs:
           s=json.load(open('/tmp/internal.session'))
           assert s['operator_id']=='health-viewer' and s['role']=='viewer'
           PY
+      - name: Three-component admin generator produces pinned, secret-free endpoint ZIP
+        run: |
+          set -euo pipefail
+          # Synthetic QA-only payloads; never mistaken for licensed vendor releases.
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.docker-local/payloads/windows')
+          names=('TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe')
+          records=[]
+          for name in names:
+              data=('SYNTHETIC-QA-ONLY-'+name).encode()
+              (root/name).write_bytes(data)
+              records.append({'name':name,'sha256':hashlib.sha256(data).hexdigest()})
+          (root/'approved.json').write_text(json.dumps({'files':records}))
+          PY
+          curl --fail --silent --show-error --cacert .docker-local/operator/server-ca.pem \
+            -b /tmp/admin.cookies https://127.0.0.1:9444/auth/agent-platforms > /tmp/platforms.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('/tmp/platforms.json'))
+          assert p['windows'] is True and p['linux'] is False
+          PY
+          csrf="$(python3 -c 'import json; print(json.load(open("/tmp/admin.login"))["csrf_token"])')"
+          curl --fail --silent --show-error --cacert .docker-local/operator/server-ca.pem \
+            -b /tmp/admin.cookies -H 'Origin: https://127.0.0.1:9444' \
+            -H 'Content-Type: application/json' -H "X-TuranSec-CSRF: $csrf" \
+            --data-binary '{"tenant_id":"lab","agent_id":"win01","platform":"windows"}' \
+            https://127.0.0.1:9444/auth/agent-generate > /tmp/generated.zip
+          python3 - <<'PY'
+          import zipfile,json
+          with zipfile.ZipFile('/tmp/generated.zip') as package:
+              assert set(package.namelist())=={'enrollment.json','TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe'}
+              identity=json.loads(package.read('enrollment.json'))
+              assert identity['agent_id']=='win01' and identity['agent_enrollment_required'] is True
+              assert identity['credential_material_not_embedded'] is True
+              assert not any(name.endswith(('.key','.pem','.p12')) for name in package.namelist())
+          PY
+          csrf_viewer="$(python3 -c 'import json; print(json.load(open("/tmp/viewer.login"))["csrf_token"])')"
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert .docker-local/operator/server-ca.pem \
+            -b /tmp/viewer.cookies -H 'Origin: https://127.0.0.1:9444' \
+            -H 'Content-Type: application/json' -H "X-TuranSec-CSRF: $csrf_viewer" \
+            --data-binary '{"tenant_id":"lab","agent_id":"win02","platform":"windows"}' \
+            https://127.0.0.1:9444/auth/agent-generate)"
+          test "$code" = 403
       - name: Logs on failure; destroy disposable database
         if: always()
         run: |

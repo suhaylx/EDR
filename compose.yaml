@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./.docker-local/runtime:/etc/turansec:ro
-      - ./.docker-local/payloads:/etc/turansec/payloads:ro
+      - ./.docker-local/payloads:/opt/turansec/payloads:ro
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=16m

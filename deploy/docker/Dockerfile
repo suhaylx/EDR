@@ -16,6 +16,7 @@ RUN CGO_ENABLED=0 go build -trimpath -o /out/socgateway ./cmd/socgateway
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-X main.sourceSHA=${SOURCE_SHA} -X main.version=docker-lab" -o /out/edrd ./cmd/edrd
 
 FROM debian:bookworm-slim
+RUN mkdir -p /opt/turansec/payloads
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=backend /out/edrd /usr/local/bin/edrd
 COPY --from=backend /out/socgateway /usr/local/bin/socgateway

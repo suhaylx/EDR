@@ -7,6 +7,11 @@ umask 077
 cd "$(dirname "$0")/../.."
 case "${1:-}" in --fresh|--upgrade) mode="$1";; *) echo "usage: bash deploy/docker/provision-passwords.sh --fresh|--upgrade" >&2;exit 2;; esac
 root="$PWD/.docker-local"
+expected_uid="$(stat -c %u "$root/runtime/edrd.json" 2>/dev/null || echo -1)"
+if [[ "$expected_uid" != "$(id -u)" ]]; then
+  echo "Run as the owner who initialized this lab; do not use sudo to change secret ownership." >&2
+  exit 1
+fi
 for name in operator-ca.key operator-ca.pem; do
   test -s "$root/private/$name" || { echo "Existing lab operator CA missing" >&2; exit 1; }
 done
@@ -68,12 +73,16 @@ gateway={
  'server_cert':'/etc/turansec/server.pem', 'server_key':'/etc/turansec/server.key',
  'server_ca':'/etc/turansec/server-ca.pem',
  'operator_dir':'/etc/turansec/operators', 'users_file':'/etc/turansec/users.json',
- 'payload_dir':'/etc/turansec/payloads'
+ 'payload_dir':'/opt/turansec/payloads'
 }
 (root/'runtime/gateway.json').write_text(json.dumps(gateway,indent=2)+'\n')
 os.chmod(root/'runtime/gateway.json',0o600)
 PY
 if [[ "$mode" == --upgrade ]]; then
+  if [[ -f .env ]]; then
+    new_sha="$(git rev-parse HEAD)"
+    sed -i "s/^EDR_SOURCE_SHA=.*/EDR_SOURCE_SHA=$new_sha/" .env
+  fi
   command -v docker >/dev/null || { echo "Docker missing: cannot register new operators" >&2; exit 1; }
   docker compose exec -T database psql -X -v ON_ERROR_STOP=1 -U postgres -d edr \
     -v admin_fp="$(cat "$root/fingerprints/admin.sha256")" \
