@@ -1,0 +1,76 @@
+name: agent-one-installer
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/agent/**'
+      - 'docs/ONE_AGENT_INSTALLER.md'
+      - '.github/workflows/agent-one-installer.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packaging/agent/**'
+      - 'docs/ONE_AGENT_INSTALLER.md'
+      - '.github/workflows/agent-one-installer.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            exe: TuranSec-Agent-Setup
+            agent: agent/target/release/turansec-edr-agent
+          - os: windows-2022
+            exe: TuranSec-Agent-Setup.exe
+            agent: agent/target/release/turansec-edr-agent.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Rust native agent tests and release binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path agent/Cargo.toml
+          TURANSEC_BUILD_SHA="$(git rev-parse HEAD)" cargo build --locked --release --manifest-path agent/Cargo.toml
+      - name: Build one-file setup executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          mkdir -p installer-dist
+          python -m PyInstaller --noconfirm --clean --onefile --name TuranSec-Agent-Setup \
+            --distpath installer-dist \
+            --add-binary "${{ matrix.agent }}:." \
+            packaging/agent/install.py
+      - name: Syntax and nonmutating failure QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile packaging/agent/install.py
+          installer="installer-dist/${{ matrix.exe }}"
+          test -f "$installer"
+          "$installer" --help > installer-help.txt
+          grep -q -- '--identity-dir' installer-help.txt
+          if "$installer" --identity-dir /nonexistent --tenant '.' --agent-id test --check-only; then
+            echo 'Invalid identity accepted' >&2
+            exit 1
+          fi
+          if "$installer" --identity-dir /nonexistent --tenant lab --agent-id test --check-only; then
+            echo 'Missing identity accepted' >&2
+            exit 1
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: unsigned-engineering-setup-${{ matrix.os }}-${{ github.sha }}
+          path: installer-dist/
+          if-no-files-found: error
+          retention-days: 14
