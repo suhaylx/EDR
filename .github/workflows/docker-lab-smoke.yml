@@ -5,6 +5,9 @@ on:
       - 'compose.yaml'
       - '.dockerignore'
       - 'deploy/docker/**'
+      - 'backend/cmd/socgateway/**'
+      - 'frontend/src/SOCLogin.tsx'
+      - 'frontend/src/OperatorSOC.tsx'
       - 'docs/DOCKER_QUICKSTART.md'
       - '.github/workflows/docker-lab-smoke.yml'
   push:
@@ -33,30 +36,67 @@ jobs:
           bash deploy/docker/init-lab.sh
           docker compose config --quiet
           docker compose up -d --build --wait
-      - name: Authenticated and unauthenticated probes
+      - name: Password login and role separation without browser certificates
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent --tlsv1.3 --max-time 15 \
-            --cacert .docker-local/operator/server-ca.pem \
-            --cert .docker-local/operator/viewer.pem \
-            --key .docker-local/operator/viewer.key \
-            https://127.0.0.1:9444/soc/v1/session > /tmp/session.json
+          ca=.docker-local/operator/server-ca.pem
+          origin=https://127.0.0.1:9444
+          # Public static app works without a client certificate.
+          curl --fail --show-error --silent --cacert "$ca" "$origin/" > /tmp/dashboard.html
+          grep -q '<div id="root"' /tmp/dashboard.html
+          # Unauthenticated SOC API must fail.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$ca" "$origin/soc/v1/session")"
+          test "$code" = 401
           python3 - <<'PY'
           import json
-          with open('/tmp/session.json') as f: result=json.load(f)
-          assert (result['tenant_id'],result['operator_id'],result['role']) == ('lab','health-viewer','viewer')
+          creds=dict(x.strip().split('=',1) for x in open('.docker-local/operator/passwords.txt') if '=' in x)
+          for user in ('admin','analyst','viewer'):
+              with open('/tmp/login-'+user+'.json','w') as f:
+                  json.dump({'username':user,'password':creds[user]},f)
           PY
-          curl --fail --show-error --silent --max-time 15 \
-            --cacert .docker-local/operator/server-ca.pem \
-            --cert .docker-local/operator/analyst.pem \
-            --key .docker-local/operator/analyst.key \
-            https://127.0.0.1:9444/ > /tmp/dashboard.html
-          grep -q '<div id="root"' /tmp/dashboard.html
-          if curl --fail --silent --max-time 5 \
-            --cacert .docker-local/operator/server-ca.pem \
-            https://127.0.0.1:9444/soc/v1/session >/dev/null; then
-            echo "Unauthenticated operator request unexpectedly accepted"; exit 1
-          fi
+          for user in admin analyst viewer; do
+            curl --fail --show-error --silent --cacert "$ca" -c "/tmp/$user.cookies" \
+              -H 'Origin: https://127.0.0.1:9444' -H 'Content-Type: application/json' \
+              --data-binary "@/tmp/login-$user.json" "$origin/auth/login" > "/tmp/$user.login"
+            curl --fail --show-error --silent --cacert "$ca" -b "/tmp/$user.cookies" \
+              "$origin/soc/v1/session" > "/tmp/$user.session"
+          done
+          python3 - <<'PY'
+          import json
+          for user,role in (('admin','scanner'),('analyst','scanner'),('viewer','viewer')):
+              data=json.load(open('/tmp/'+user+'.session'))
+              assert (data['tenant_id'],data['operator_id'],data['role'])==('lab',user,role)
+              account=json.load(open('/tmp/'+user+'.login'))
+              assert account['username']==user and account['role']==user
+              assert len(account['csrf_token'])==64
+          PY
+          # Viewer lacks admin generation permission, even when signed in.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$ca" -b /tmp/viewer.cookies \
+            "$origin/auth/agent-platforms")"
+          test "$code" = 403
+          # CSRF and cross-origin requests are rejected.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$ca" -b /tmp/admin.cookies \
+            -H 'Origin: https://evil.example' -H 'Content-Type: application/json' \
+            --data-binary '{"tenant_id":"lab","agent_id":"win01","platform":"windows"}' \
+            "$origin/auth/agent-generate")"
+          test "$code" = 403
+          csrf="$(python3 -c 'import json; print(json.load(open("/tmp/admin.login"))["csrf_token"])')"
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$ca" -b /tmp/admin.cookies \
+            -H "Origin: https://127.0.0.1:9444" -H "X-TuranSec-CSRF: $csrf" \
+            -H 'Content-Type: application/json' \
+            --data-binary '{"tenant_id":"lab","agent_id":"win01","platform":"windows"}' \
+            "$origin/auth/agent-generate")"
+          test "$code" = 503  # no approved 3-in-1 vendor payloads, must fail closed
+          # Existing internal mTLS operator service remains authenticated on 9445.
+          curl --fail --show-error --silent --cacert "$ca" \
+            --cert .docker-local/operator/viewer.pem \
+            --key .docker-local/operator/viewer.key \
+            https://127.0.0.1:9445/soc/v1/session > /tmp/internal.session
+          python3 - <<'PY'
+          import json
+          s=json.load(open('/tmp/internal.session'))
+          assert s['operator_id']=='health-viewer' and s['role']=='viewer'
+          PY
       - name: Logs on failure; destroy disposable database
         if: always()
         run: |

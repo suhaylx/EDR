@@ -9,7 +9,7 @@ for variable in EDR_RUNTIME_PASSWORD EDR_REGISTRY_PASSWORD; do
     exit 1
   fi
 done
-for file in /bootstrap/fingerprints/analyst.sha256 /bootstrap/fingerprints/viewer.sha256; do
+for file in /bootstrap/fingerprints/analyst.sha256 /bootstrap/fingerprints/viewer.sha256 /bootstrap/fingerprints/admin.sha256 /bootstrap/fingerprints/viewer-login.sha256; do
   test -r "$file" || { echo "Missing public operator fingerprint" >&2; exit 1; }
   [[ "$(cat "$file")" =~ ^[a-f0-9]{64}$ ]] || exit 1
 done
@@ -36,13 +36,17 @@ db -v runtime_login=edr_service_runtime \
    -v dedicated_edr_database=true \
    -f /bootstrap/backend/bootstrap/runtime_privileges.sql >/dev/null
 db -v analyst_fp="$(cat /bootstrap/fingerprints/analyst.sha256)" \
-   -v viewer_fp="$(cat /bootstrap/fingerprints/viewer.sha256)" <<'SQL'
+   -v viewer_fp="$(cat /bootstrap/fingerprints/viewer.sha256)" \
+   -v admin_fp="$(cat /bootstrap/fingerprints/admin.sha256)" \
+   -v viewer_login_fp="$(cat /bootstrap/fingerprints/viewer-login.sha256)" <<'SQL'
 BEGIN;
 INSERT INTO public.edr_tenants(tenant_id,display_name) VALUES ('lab','Local Docker lab');
 INSERT INTO public.edr_enrollment_audit(tenant_id,event_type,actor_id)
 VALUES ('lab','tenant_created','docker_lab_init');
 INSERT INTO public.edr_soc_operators(tenant_id,operator_id,fingerprint_sha256,role)
-VALUES ('lab','analyst',decode(:'analyst_fp','hex'),'scanner'),
+VALUES ('lab','admin',decode(:'admin_fp','hex'),'scanner'),
+       ('lab','analyst',decode(:'analyst_fp','hex'),'scanner'),
+       ('lab','viewer',decode(:'viewer_login_fp','hex'),'viewer'),
        ('lab','health-viewer',decode(:'viewer_fp','hex'),'viewer');
 COMMIT;
 SQL

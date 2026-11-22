@@ -59,13 +59,26 @@ certificate store using the password file; trust
 `.docker-local/operator/server-ca.pem` as a **local lab-only** server CA.
 Open **https://127.0.0.1:9444/** and select the analyst certificate.
 
-Or verify the authenticated endpoint from the Ubuntu shell:
+For an existing Docker lab already running the old certificate-only dashboard,
+update without deleting the database volume:
+```bash
+git pull --ff-only
+bash deploy/docker/provision-passwords.sh --upgrade
+sudo docker compose up -d --build --wait
+cat .docker-local/operator/passwords.txt
+```
+Run provisioning as the original lab-file owner with Docker access. If your
+shell needs `sudo` for Docker, grant access only through your approved
+administration procedure; don't loosen the password-file permissions.
+
+For backward-compatibility tests, the original certificate-only operator service
+is now internal-only at **https://127.0.0.1:9445/**. Verify it on the server:
 
 ```bash
 curl --fail --show-error --silent --cacert .docker-local/operator/server-ca.pem \
   --cert .docker-local/operator/viewer.pem \
   --key .docker-local/operator/viewer.key \
-  https://127.0.0.1:9444/soc/v1/session
+  https://127.0.0.1:9445/soc/v1/session
 ```
 
 Expected JSON identifies tenant `lab`, operator `health-viewer`, role `viewer`.
@@ -95,3 +108,30 @@ to repair migration errors.
 
 This lab does not establish Windows service installation, package signatures,
 live endpoint signature evidence, installed rollback or production approval.
+
+
+### Generate a per-endpoint package (admin)
+
+The admin account can request a Windows or Ubuntu endpoint bootstrap ZIP from
+the SOC dashboard. Generation requires **three approved offline payloads** in
+the host's ignored `.docker-local/payloads/<platform>/` directory.
+
+Windows requires `TuranSec-Agent-Setup.exe`, `ClamAV.zip`, `Sysmon64.exe`.
+Linux requires `TuranSec-Agent-Setup`, `ClamAV.deb`, `SysmonForLinux.deb`.
+Each directory must contain `approved.json` with a separately reviewed
+SHA-256 pin for every exact filename, for example:
+
+```json
+{"files":[
+  {"name":"TuranSec-Agent-Setup.exe","sha256":"APPROVED_SHA256"},
+  {"name":"ClamAV.zip","sha256":"APPROVED_SHA256"},
+  {"name":"Sysmon64.exe","sha256":"APPROVED_SHA256"}
+]}
+```
+
+Until the required payloads are reviewed and staged, the button remains
+disabled. Generated ZIPs contain public enrollment metadata and approved
+payloads, **not client certificates, CA private keys or automatic enrollment**.
+The supplied third-party components have separate license and vendor signature
+review requirements. A generated ZIP is not yet a signed, fully self-installing
+3-in-1 EDR package.
