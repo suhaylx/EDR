@@ -69,61 +69,116 @@ export function PasswordLogin({ onAuthenticated }: { onAuthenticated: (session: 
     </div>
   </main>;
 }
+type AgentPlatformReadiness = Readonly<{
+  windows: boolean;
+  linux: boolean;
+  setup_kit: boolean;
+  missing: Readonly<Record<'windows' | 'linux', readonly string[]>>;
+}>;
+
 export function AdminPackageGenerator({ session }: { session: PasswordSession }) {
   const [platform, setPlatform] = useState<'windows'|'linux'>('windows');
   const [agentID, setAgentID] = useState('');
-  const [available, setAvailable] = useState<Record<string, boolean>>({});
+  const [readiness, setReadiness] = useState<AgentPlatformReadiness | null>(null);
+  const [checking, setChecking] = useState(false);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void fetch('/auth/agent-platforms', { credentials: 'same-origin', cache: 'no-store' })
-      .then(res => res.ok ? res.json() as Promise<Record<string, boolean>> : Promise.reject())
-      .then(data => { if (!cancelled) setAvailable(data); })
-      .catch(() => { if (!cancelled) setMessage('Package generation service is unavailable.'); });
-    return () => { cancelled = true; };
-  }, []);
-  if (session.role !== 'admin') return null;
-  const generate = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!/^[A-Za-z0-9_.-]{1,96}$/.test(agentID) || ['.', '..'].includes(agentID)) { setMessage('Enter a valid endpoint ID.'); return; }
+  const refresh = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch('/auth/agent-platforms', {
+        credentials: 'same-origin', cache: 'no-store', redirect: 'error',
+      });
+      if (!res.ok) throw new Error('Unreachable package service');
+      const result: unknown = await res.json();
+      if (!result || typeof result !== 'object') throw new Error('Unexpected package status');
+      const obj = result as Record<string, unknown>;
+      const missing = obj.missing;
+      if (typeof obj.windows !== 'boolean' || typeof obj.linux !== 'boolean' ||
+        !missing || typeof missing !== 'object' ||
+        !Array.isArray((missing as Record<string, unknown>).windows) ||
+        !Array.isArray((missing as Record<string, unknown>).linux)) {
+        throw new Error('Unexpected package status');
+      }
+      setReadiness(result as AgentPlatformReadiness);
+      setMessage('');
+    } catch {
+      setReadiness(null);
+      setMessage('Could not check approved package files. The setup kit can still be requested.');
+    } finally { setChecking(false); }
+  };
+  useEffect(() => { void refresh(); }, []);
+  const generate = async (bundleType: 'setup_kit' | 'complete') => {
+    if (busy) return;
+    if (!/^[A-Za-z0-9_.-]{1,96}$/.test(agentID) || ['.', '..'].includes(agentID)) {
+      setMessage('Enter a valid endpoint ID.'); return;
+    }
+    if (bundleType === 'complete' && !readiness?.[platform]) {
+      setMessage('A complete 3-in-1 package needs the three approved vendor and TuranSec binaries first.'); return;
+    }
     setBusy(true);
     setMessage('');
     try {
       const response = await fetch('/auth/agent-generate', {
         method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error',
         headers: { 'Content-Type': 'application/json', 'X-TuranSec-CSRF': session.csrf_token },
-        body: JSON.stringify({ tenant_id: 'lab', agent_id: agentID, platform }),
+        body: JSON.stringify({ tenant_id: 'lab', agent_id: agentID, platform, bundle_type: bundleType }),
       });
-      if (response.status !== 200 || !response.headers.get('content-type')?.startsWith('application/zip')) {
-        setMessage(response.status === 503 ? 'Missing approved TuranSec, ClamAV or Sysmon payloads on the server.' : 'Generation was denied.');
+      if (!response.ok || !response.headers.get('content-type')?.startsWith('application/zip')) {
+        setMessage(response.status === 503
+          ? 'Approved binaries are missing or invalid; refresh package status to see what is required.'
+          : response.status === 401 || response.status === 403
+            ? 'Sign in again with an administrator account.'
+            : 'The package service rejected this request.');
         return;
       }
       const blob = await response.blob();
       const objectURL = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectURL;
-      a.download = 'TuranSec-' + platform + '-' + agentID + '.zip';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(objectURL), 500);
-      setMessage('Endpoint bootstrap bundle generated. Issuer enrollment and signing checks remain required.');
-    } catch { setMessage('Generation failed; no package was confirmed.'); }
+      const link = document.createElement('a');
+      link.href = objectURL;
+      link.download = 'TuranSec-' + (bundleType === 'complete' ? '3in1-' : 'setup-kit-') + platform + '-' + agentID + '.zip';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(objectURL), 1000);
+      setMessage(bundleType === 'complete'
+        ? 'Complete offline 3-in-1 ZIP downloaded. Independently verify vendor signatures and enroll the endpoint before installation.'
+        : 'Preparation kit downloaded. It is NOT an installable agent: the TuranSec, ClamAV and Sysmon executables must be approved and staged first.');
+    } catch { setMessage('Download failed; no package was confirmed.'); }
     finally { setBusy(false); }
   };
+  if (session.role !== 'admin') return null;
+  const missing = readiness?.missing[platform] ?? [];
   return <section className="panel" aria-labelledby="agent-gen-title">
-    <h2 id="agent-gen-title">Generate endpoint agent package (admin)</h2>
-    <p>Packages include the TuranSec setup and pinned, independently approved ClamAV and Sysmon payloads. The server never embeds CA private keys or agent credentials.</p>
-    <form className="form" onSubmit={e => { void generate(e); }}>
-      <label htmlFor="agent-gen-os">Platform</label>
+    <h2 id="agent-gen-title">Endpoint package generator</h2>
+    <p>Prepare a Windows or Linux endpoint immediately, or download the complete TuranSec + ClamAV + Sysmon offline bundle once all three approved binaries have been staged.</p>
+    <form className="form" onSubmit={event => { event.preventDefault(); void generate('setup_kit'); }}>
+      <label htmlFor="agent-gen-os">Target operating system</label>
       <select id="agent-gen-os" value={platform} onChange={e => setPlatform(e.target.value as typeof platform)}>
-        <option value="windows">Windows x64 — agent + ClamAV + Sysmon</option>
-        <option value="linux">Ubuntu 24.04 — agent + ClamAV + Sysmon for Linux</option>
+        <option value="windows">Windows x64 — TuranSec + ClamAV + Sysmon</option>
+        <option value="linux">Ubuntu 24.04 — TuranSec + ClamAV + Sysmon for Linux</option>
       </select>
       <label htmlFor="agent-gen-id">Endpoint ID</label>
-      <input id="agent-gen-id" value={agentID} onChange={e => setAgentID(e.target.value)} placeholder="win-001" maxLength={96} required />
-      <button type="submit" disabled={busy || !available[platform] || !agentID}>{busy ? 'Generating…' : available[platform] ? 'Generate 3-in-1 bundle' : 'Approved payloads not yet staged'}</button>
-      <p role="status">{message}</p>
-      <p className="minor">This is a staged deployment bundle, not an automatically enrolled or independently signed installer. A security administrator must approve all three payloads before generation is enabled.</p>
+      <input id="agent-gen-id" value={agentID} onChange={e => setAgentID(e.target.value)} placeholder={platform === 'windows' ? 'win-001' : 'linux-001'} maxLength={96} required />
+      <div className="actions">
+        <button type="submit" disabled={busy || !agentID.trim()}>
+          {busy ? 'Preparing download…' : 'Download preparation kit'}
+        </button>
+        <button type="button" disabled={busy || !agentID.trim() || !readiness?.[platform]}
+          onClick={() => { void generate('complete'); }}>
+          Download complete 3-in-1 agent
+        </button>
+      </div>
+      <p role="status" aria-live="polite">{message}</p>
     </form>
+    <div className="soc-package-readiness">
+      <div className="heading"><h3>Full package readiness: {readiness?.[platform] ? 'Ready' : checking ? 'Checking…' : 'Not ready'}</h3>
+        <button className="secondary" type="button" disabled={checking} onClick={() => { void refresh(); }}>Recheck files</button></div>
+      {readiness && !readiness[platform] && <>
+        <p>Missing or invalid approved files on the SOC host:</p>
+        <ul>{missing.map(name => <li key={name}><code>{name}</code></li>)}</ul>
+        <p className="minor">Stage approved binaries and <code>approved.json</code> in <code>.docker-local/payloads/{platform}/</code> on the server. Verify vendor origin, signatures and hashes independently. Recheck files to enable the complete ZIP.</p>
+      </>}
+      {readiness?.[platform] && <p>All three staged binaries passed manifest checks. Publisher verification, endpoint certificate issuance, and on-device acceptance remain mandatory.</p>}
+      <p className="minor">The preparation kit includes endpoint metadata, a platform-specific installation script and a component checklist, but NO executable agent or vendor binaries. It cannot be installed until a complete package is generated. Neither kit contains private CA keys, passwords, or enrollment credentials.</p>
+    </div>
   </section>;
 }

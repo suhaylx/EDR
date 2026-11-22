@@ -206,7 +206,7 @@ func (g *gateway) handleAuth(w http.ResponseWriter,r *http.Request)bool{
   if s.role!="admin"{deny(w,403);return true}
   if r.URL.Path=="/auth/agent-platforms"&&r.Method=="GET"{
    w.Header().Set("Content-Type","application/json")
-   _=json.NewEncoder(w).Encode(map[string]bool{"windows":g.payloadReady("windows"),"linux":g.payloadReady("linux")})
+   _=json.NewEncoder(w).Encode(g.platformReadiness())
    return true
   }
   if r.URL.Path=="/auth/agent-generate"&&r.Method=="POST"{
@@ -240,6 +240,35 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter,r *http.Request){
  if ok{user=s.username}
  g.proxy[user].ServeHTTP(w,r)
 }
+// platformReadiness reports diagnostics only to authenticated administrators.
+// A fresh lab always offers a noninstallable setup kit. Complete 3-in-1 ZIPs
+// remain fail-closed until all three approved vendor artifacts are present.
+func (g *gateway) platformReadiness() map[string]any {
+  status:=map[string]bool{}
+  missing:=map[string][]string{}
+  for _,platform:=range []string{"windows","linux"}{
+    ready:=g.payloadReady(platform)
+    status[platform]=ready
+    pending:=make([]string,0)
+    if !ready{
+      directory:=filepath.Join(g.cfg.PayloadDir,platform)
+      if _,e:=regular(filepath.Join(directory,"approved.json"),false,16384);e!=nil{
+        pending=append(pending,"approved.json (approved SHA-256 manifest)")
+      }
+      for _,name:=range requiredAssets(platform){
+        if _,e:=os.Lstat(filepath.Join(directory,name));e!=nil{
+          pending=append(pending,name)
+        }
+      }
+      if len(pending)==0{pending=append(pending,"Approved SHA-256 verification failed")}
+    }
+    missing[platform]=pending
+  }
+  return map[string]any{
+    "windows":status["windows"],"linux":status["linux"],
+    "missing":missing,"setup_kit":true,
+  }
+}
 func (g *gateway) payloadReady(platform string)bool{
  _,e:=g.payload(platform);return e==nil
 }
@@ -268,34 +297,83 @@ func (g *gateway) payload(platform string)([]string,error){
  }
  return out,nil
 }
+// generate supports a preparation kit on empty installations and a complete
+// offline 3-in-1 bundle only when approved binaries have been staged. A setup
+// kit is NOT an executable TuranSec agent or a substitute for enrollment.
 func (g *gateway) generate(w http.ResponseWriter,r *http.Request){
- var input struct{Platform string `json:"platform"`;TenantID string `json:"tenant_id"`;AgentID string `json:"agent_id"`}
- if readJSON(r,1024,&input)!=nil||input.TenantID!="lab"||!safeID.MatchString(input.AgentID)||input.AgentID=="."||input.AgentID==".."{deny(w,400);return}
- paths,e:=g.payload(input.Platform);if e!=nil{deny(w,503);return}
- approved,e:=regular(filepath.Join(g.cfg.PayloadDir,input.Platform,"approved.json"),false,16384)
- if e!=nil{deny(w,503);return}
+ var input struct{
+  Platform string `json:"platform"`
+  TenantID string `json:"tenant_id"`
+  AgentID string `json:"agent_id"`
+  BundleType string `json:"bundle_type"`
+ }
+ if readJSON(r,1024,&input)!=nil||input.TenantID!="lab"||!safeID.MatchString(input.AgentID)||
+    input.AgentID=="."||input.AgentID==".."||requiredAssets(input.Platform)==nil{
+    deny(w,400);return
+ }
+ if input.BundleType==""{input.BundleType="complete"} // compatible with existing clients
+ if input.BundleType!="complete"&&input.BundleType!="setup_kit"{deny(w,400);return}
+ complete:=input.BundleType=="complete"
+ var paths []string
+ var approved []byte
+ if complete{
+    var err error
+    paths,err=g.payload(input.Platform);if err!=nil{deny(w,503);return}
+    approved,err=regular(filepath.Join(g.cfg.PayloadDir,input.Platform,"approved.json"),false,16384)
+    if err!=nil{deny(w,503);return}
+ }
  installerName:="install-turansec.sh"
  installer:=linuxBundleInstaller
  if input.Platform=="windows"{installerName="Install-TuranSec.ps1";installer=windowsBundleInstaller}
  if len(installer)==0{deny(w,503);return}
+ namePrefix:="TuranSec-setup-kit-"
+ if complete{namePrefix="TuranSec-3in1-"}
  w.Header().Set("Content-Type","application/zip")
- w.Header().Set("Content-Disposition",fmt.Sprintf("attachment; filename=%q","TuranSec-"+input.Platform+"-"+input.AgentID+".zip"))
- w.WriteHeader(200)
+ w.Header().Set("Content-Disposition",fmt.Sprintf("attachment; filename=%q",namePrefix+input.Platform+"-"+input.AgentID+".zip"))
+ w.Header().Set("X-TuranSec-Bundle-Type",input.BundleType)
+ w.WriteHeader(http.StatusOK)
  writer:=zip.NewWriter(w)
  meta,_:=writer.Create("enrollment.json")
- _=json.NewEncoder(meta).Encode(map[string]any{"tenant_id":input.TenantID,"agent_id":input.AgentID,"platform":input.Platform,
+ _=json.NewEncoder(meta).Encode(map[string]any{
+  "tenant_id":input.TenantID,"agent_id":input.AgentID,"platform":input.Platform,
+  "bundle_type":input.BundleType,"components_included":complete,
   "agent_enrollment_required":true,"approved_publisher_verification_required":true,
   "credential_material_not_embedded":true,"manual_issuer_enrollment_required":true,
-  "endpoint_telemetry_ingest_not_yet_complete":true})
- hashes,_:=writer.Create("approved.json")
- _,_ = hashes.Write(approved)
+  "endpoint_telemetry_ingest_not_yet_complete":true,
+ })
+ requirements:=strings.Join(requiredAssets(input.Platform),"\n")+"\napproved.json (SHA-256 manifest)\n"
+ dependencies,_:=writer.Create("REQUIRED-COMPONENTS.txt")
+ _,_=io.WriteString(dependencies,requirements)
+ var instructions string
+ if complete{
+    instructions="TuranSec 3-in-1 OFFLINE PILOT BUNDLE\n"+
+      "The ZIP contains all three approved SHA-256-pinned payloads.\n"+
+      "Verify vendor publisher signatures and licenses independently.\n"+
+      "Device enrollment is NOT included; install only with separately issued credentials.\n"+
+      "Read docs/THREE_IN_ONE_DEPLOYMENT.md from the TuranSec EDR repository before deploying.\n"
+ }else{
+    instructions="TuranSec ENDPOINT PREPARATION KIT ONLY - NOT AN INSTALLABLE AGENT\n"+
+      "The download contains endpoint metadata and a future installation orchestrator.\n"+
+      "It does NOT contain the TuranSec executable, ClamAV, Sysmon or signed certificates.\n"+
+      "An administrator must first stage all files listed in REQUIRED-COMPONENTS.txt\n"+
+      "with an independently verified SHA-256 approval manifest on the SOC server.\n"+
+      "Then refresh Admin > Agent packages and download a COMPLETE 3-in-1 bundle.\n"+
+      "Never run the included installer from this incomplete kit.\n"
+ }
+ readme,_:=writer.Create("README-FIRST.txt")
+ _,_=io.WriteString(readme,instructions)
  scriptHeader:=&zip.FileHeader{Name:installerName,Method:zip.Deflate}
  if input.Platform=="linux"{scriptHeader.SetMode(0755)}
  script,_:=writer.CreateHeader(scriptHeader)
- _,_ = script.Write(installer)
- for _,path:=range paths{
-  f,e:=os.Open(path);if e!=nil{break}
-  entry,e:=writer.Create(filepath.Base(path));if e==nil{_,_=io.Copy(entry,f)};_ = f.Close()
+ _,_=script.Write(installer)
+ if complete{
+    hashes,_:=writer.Create("approved.json")
+    _,_=hashes.Write(approved)
+    for _,path:=range paths{
+      f,e:=os.Open(path);if e!=nil{break}
+      entry,e:=writer.Create(filepath.Base(path));if e==nil{_,_=io.Copy(entry,f)}
+      _=f.Close()
+    }
  }
  _=writer.Close()
 }

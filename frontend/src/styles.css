@@ -631,3 +631,55 @@
 .soc-layout .soc-nav button[aria-current="page"]::before {
   border-color: #d5f5ff; background: #a9ddf8;
 }
+
+/* Explicit distinction between a preparation kit and a complete 3-component endpoint package. */
+.soc-layout .soc-package-readiness {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid #375875;
+  border-radius: 12px;
+  background: #0c2136;
+  color: #e5f2ff;
+}
+.soc-layout .soc-package-readiness h3 {
+  font-size: .98rem;
+  margin: 0;
+  color: #f0f8ff;
+}
+.soc-layout .soc-package-readiness p {
+  font-size: .82rem;
+  line-height: 1.6;
+  color: #cadcf0;
+}
+.soc-layout .soc-package-readiness ul {
+  margin: 10px 0 18px;
+  padding-left: 20px;
+  color: #e7f1ff;
+}
+.soc-layout .soc-package-readiness li {
+  padding: 3px 0;
+  font-size: .8rem;
+}
+.soc-layout .soc-package-readiness code {
+  color: #d3ebff;
+  overflow-wrap: anywhere;
+}
+.soc-layout #agent-gen-title { scroll-margin-top: 24px; }
+.soc-layout #agent-gen-os, .soc-layout #agent-gen-id {
+  width: 100%;
+  max-width: 440px;
+}
+.soc-layout .soc-package-readiness .heading {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.soc-layout [aria-labelledby="agent-gen-title"] .actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.soc-layout [aria-labelledby="agent-gen-title"] .actions button {
+  flex: 1 1 215px;
+}
+.soc-layout [aria-labelledby="agent-gen-title"] .actions button:disabled {
+  opacity: .72;
+}

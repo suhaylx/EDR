@@ -3,12 +3,26 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { OperatorSOCView, filterSOCAlerts } from '../.test-dist/OperatorSOC.js';
+import { AdminPackageGenerator } from '../.test-dist/SOCLogin.js';
 import { alert as caseAlert, job as scanJob, result as scanResult, endpoint as scanEndpoint } from './soc-workflow-fixture.mjs';
 
 const session = { tenant_id: 'tenant-a', operator_id: 'operator-a', role: 'viewer', server_time: '2026-11-21T18:00:00Z' };
 const empty = { items: [], limit: 25, offset: 0 };
 const snapshot = { session, endpoints: empty, endpointStats: { total: 0, windows: 0, linux: 0, online: 0, degraded: 0, stale: 0, unseen: 0, revoked: 0 }, alerts: empty, alertStats: { open: 0, acknowledged: 0, resolved: 0 }, mine: empty, jobs: empty, results: empty, scanStats: { total: 0, pending: 0, leased: 0, succeeded: 0, failed: 0, cancelled: 0, malicious: 0 } };
 const render = view => renderToStaticMarkup(React.createElement(OperatorSOCView, { view, onRefresh() {}, onClear() {}, onPage() {}, onCase() {}, onScan() {}, onMutation() {} }));
+
+test('admin generator always offers a preparation kit while full bundle is gated', () => {
+  const session={username:'admin',role:'admin',csrf_token:'a'.repeat(64)};
+  const html=renderToStaticMarkup(React.createElement(AdminPackageGenerator,{session}));
+  assert.match(html,/Download preparation kit/);
+  assert.match(html,/Download complete 3-in-1 agent/);
+  assert.match(html,/Full package readiness:/);
+  assert.match(html,/type="submit"/);
+  const viewer=renderToStaticMarkup(React.createElement(AdminPackageGenerator,{
+    session:{username:'viewer',role:'viewer',csrf_token:'b'.repeat(64)}
+  }));
+  assert.equal(viewer,'');
+});
 
 test('operator view exposes identity, accessible regions and unknown state without a token/private-key input', () => {
   const html = render({ state: 'ready', snapshot });

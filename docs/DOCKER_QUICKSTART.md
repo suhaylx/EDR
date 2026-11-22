@@ -57,9 +57,14 @@ From the server, visit **https://127.0.0.1:9444/**; from your laptop, first run 
 
 ## Generate a 3-component endpoint ZIP (admin)
 
-Open **Admin → Generate endpoint agent package**. Select Windows or Linux, enter the endpoint ID, then generate the ZIP.
+Open **Admin → Agent packages**, select Windows or Linux, and enter an endpoint ID.
 
-**Prerequisite:** Stage **approved** vendor components plus their SHA-256 manifest under `.docker-local/payloads/windows/` or `.docker-local/payloads/linux/`. Windows requires `TuranSec-Agent-Setup.exe`, `ClamAV.zip`, `Sysmon64.exe`. Linux requires `TuranSec-Agent-Setup`, `ClamAV.deb`, `SysmonForLinux.deb`. The button remains disabled until all three approved files match `approved.json`.
+- **Download preparation kit** works immediately, even on a fresh Docker lab. It contains `enrollment.json`, the appropriate setup script, and a list of missing components. **This is not an installable TuranSec agent.** No executable, vendor payload, or private enrollment credential is embedded.
+- **Download complete 3-in-1 agent** becomes available after all three approved binaries and their SHA-256 manifest have been staged. Use **Recheck files** in the dashboard to refresh availability without restarting Docker.
+
+**To enable the complete bundle:** Place **independently approved** vendor and TuranSec artifacts in `.docker-local/payloads/windows/` or `.docker-local/payloads/linux/`. Windows requires `TuranSec-Agent-Setup.exe`, `ClamAV.zip`, `Sysmon64.exe`; Linux requires `TuranSec-Agent-Setup`, `ClamAV.deb`, `SysmonForLinux.deb`. Each platform also requires `approved.json` with exactly three `{"name":"...","sha256":"..."}` records in a `files` array. Verify official publisher/download signatures before approving those hashes. Use the helper documented in [three-component deployment](THREE_IN_ONE_DEPLOYMENT.md) to avoid accidental ownership and file-permission problems.
+
+The dashboard now shows **exactly which files are missing**, or whether the SHA-256 approval check failed. The complete bundle **does not** bypass vendor licensing or device enrollment.
 
 **Important:** The ZIP now includes an integrity-checking **single-command platform installer** (`install-turansec.sh` for Linux, `Install-TuranSec.ps1` for Windows), plus all three staged components. It still requires independently issued/enrolled agent credentials, approved vendor signatures/EULA, and internet for signature updates. Native installed-host QA, telemetry ingestion, code signing and rollback are not complete. This is an **engineering pilot**, not an approved EDR production release. Endpoint mTLS remains enabled; browser operators use password login over HTTPS. See [three-component deployment](THREE_IN_ONE_DEPLOYMENT.md).
 

@@ -97,6 +97,22 @@ jobs:
             --data-binary '{"tenant_id":"lab","agent_id":"win01","platform":"windows"}' \
             "$origin/auth/agent-generate")"
           test "$code" = 503  # no approved 3-in-1 vendor payloads, must fail closed
+          # A fresh lab must still generate an honest, noninstallable preparation kit.
+          curl --fail --show-error --silent --cacert "$ca" -b /tmp/admin.cookies \
+            -H "Origin: https://127.0.0.1:9444" -H "X-TuranSec-CSRF: $csrf" \
+            -H 'Content-Type: application/json' \
+            --data-binary '{"tenant_id":"lab","agent_id":"win01","platform":"windows","bundle_type":"setup_kit"}' \
+            "$origin/auth/agent-generate" > /tmp/agent-setup-kit.zip
+          python3 - <<'PY'
+          import json, zipfile
+          with zipfile.ZipFile('/tmp/agent-setup-kit.zip') as z:
+              assert set(z.namelist()) == {'enrollment.json','Install-TuranSec.ps1','README-FIRST.txt','REQUIRED-COMPONENTS.txt'}
+              meta=json.loads(z.read('enrollment.json'))
+              assert meta['bundle_type']=='setup_kit' and meta['components_included'] is False
+              assert meta['credential_material_not_embedded'] is True
+              assert b'NOT AN INSTALLABLE AGENT' in z.read('README-FIRST.txt')
+              assert not any(name.endswith(('.pem','.key','.p12')) for name in z.namelist())
+          PY
           # Existing internal mTLS operator service remains authenticated on 9445.
           python3 - <<'PY'
           import socket, ssl
@@ -146,10 +162,11 @@ jobs:
           python3 - <<'PY'
           import zipfile,json
           with zipfile.ZipFile('/tmp/generated.zip') as package:
-              assert set(package.namelist())=={'enrollment.json','approved.json','Install-TuranSec.ps1','TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe'}
+              assert set(package.namelist())=={'enrollment.json','approved.json','Install-TuranSec.ps1','TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe','README-FIRST.txt','REQUIRED-COMPONENTS.txt'}
               identity=json.loads(package.read('enrollment.json'))
               assert identity['agent_id']=='win01' and identity['agent_enrollment_required'] is True
               assert identity['credential_material_not_embedded'] is True
+              assert identity['bundle_type'] == 'complete' and identity['components_included'] is True
               assert not any(name.endswith(('.key','.pem','.p12')) for name in package.namelist())
               assert b'Get-FileHash' in package.read('Install-TuranSec.ps1')
               approvals=json.loads(package.read('approved.json'))
