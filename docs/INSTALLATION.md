@@ -1215,7 +1215,7 @@ runtime/registry bootstrap from the backend section.
 | Endpoint input | Required meaning |
 | --- | --- |
 | `server-ca.pem` | Approved CA that authenticates the Go server; this is not a release-signing key. |
-| `agent.pem` | Current client-authentication leaf and any required chain, with one URI SAN `spiffe://turansec.local/tenants/ENROLLED_TENANT/agents/ENROLLED_AGENT`. |
+| `agent.pem` | Current client-authentication leaf and any required chain, with the exact single agent URI SAN defined in Endpoint enrollment. |
 | `agent.key` | Matching private PEM key, provisioned locally through the approved process and protected by reviewed Windows ACLs. |
 | Tenant/device IDs | Exact already enrolled identifiers matching the certificate SAN and backend registration. |
 | Scan root | Administrator-controlled local directory with reviewed ancestors and no reparse-point traversal; never a whole volume or network share. |
@@ -1389,9 +1389,14 @@ operator-API and installed-service inputs remain `NOT_RUN`, and the collector
 returns 2 for incomplete checks as well as failures: read each recorded status.
 Each invocation chooses a fresh filename and reads it only after new output
 exists; both collectors refuse to overwrite an existing evidence record.
-For the signed-package route, add `--package-root $Release --manifest $Manifest
---manifest-signature $Signature --trusted-release-key $TrustedReleaseKey` to
-measure package files and signing too. Do not invent a TuranSec Windows service
+For the signed-package route, add all four arguments below to the same collector invocation to measure package files and signing too. Use PowerShell continuation backticks if breaking the invocation across lines.
+
+- `--package-root $Release`
+- `--manifest $Manifest`
+- `--manifest-signature $Signature`
+- `--trusted-release-key $TrustedReleaseKey`
+
+ Do not invent a TuranSec Windows service
 name for `--service`. The report always keeps `host_acceptance_complete=false`.
 A separate actual queued job is required to prove the Rust → daemon → mTLS →
 PostgreSQL → SOC flow.
