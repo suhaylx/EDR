@@ -7,11 +7,13 @@ on:
       - "packaging/agent/**"
       - ".github/workflows/agent-bundle-qa.yml"
       - "docs/THREE_IN_ONE_DEPLOYMENT.md"
+      - "deploy/docker/stage-agent-payloads.py"
   push:
     branches: [main]
     paths:
       - "backend/cmd/socgateway/**"
       - "packaging/agent/**"
+      - "deploy/docker/stage-agent-payloads.py"
       - ".github/workflows/agent-bundle-qa.yml"
 
 permissions:
@@ -57,6 +59,46 @@ jobs:
           printf 'tampered' >> "$work/ClamAV.deb"
           if (cd "$work" && bash install-turansec.sh --identity-dir "$work/issued" --accept-sysmon-eula --check-only); then
             echo 'Modified vendor payload passed checksum verification' >&2; exit 1
+          fi
+          rm -rf "$work"
+      - name: Approved vendor staging verifies external hash pins and rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          source="$work/source"
+          lab="$work/lab"
+          mkdir -p "$source" "$lab/.docker-local/runtime" "$lab/.docker-local/payloads"
+          printf 'fresh-lab' > "$lab/.docker-local/runtime/edrd.json"
+          python3 - "$source" <<'PY'
+          import hashlib,json,pathlib,sys
+          base=pathlib.Path(sys.argv[1])
+          names=('TuranSec-Agent-Setup','ClamAV.deb','SysmonForLinux.deb')
+          rows=[]
+          for name in names:
+              data=('SYNTHETIC-STAGING-QA-'+name).encode()
+              (base/name).write_bytes(data)
+              rows.append({'name':name,'sha256':hashlib.sha256(data).hexdigest()})
+          (base/'approved.json').write_text(json.dumps({'files':rows}))
+          PY
+          printf 'tamper' >> "$source/ClamAV.deb"
+          if (cd "$lab" && python3 "$GITHUB_WORKSPACE/deploy/docker/stage-agent-payloads.py" \
+              --platform linux --source-dir "$source" --manifest "$source/approved.json"); then
+            echo 'Tampered vendor file passed independent approved hash comparison' >&2
+            exit 1
+          fi
+          test ! -e "$lab/.docker-local/payloads/linux/approved.json"
+          python3 - "$source" <<'PY'
+          import pathlib,sys
+          (pathlib.Path(sys.argv[1])/'ClamAV.deb').write_bytes(b'SYNTHETIC-STAGING-QA-ClamAV.deb')
+          PY
+          (cd "$lab" && python3 "$GITHUB_WORKSPACE/deploy/docker/stage-agent-payloads.py" \
+              --platform linux --source-dir "$source" --manifest "$source/approved.json")
+          test -s "$lab/.docker-local/payloads/linux/approved.json"
+          if (cd "$lab" && python3 "$GITHUB_WORKSPACE/deploy/docker/stage-agent-payloads.py" \
+              --platform linux --source-dir "$source" --manifest "$source/approved.json"); then
+            echo 'Staging unexpectedly overwrote existing files without explicit approval' >&2
+            exit 1
           fi
           rm -rf "$work"
   windows-bundle:

@@ -8,7 +8,7 @@ entry point per OS:
 | Windows x64 | TuranSec native agent + ClamAV + Microsoft Sysmon | `Install-TuranSec.ps1` |
 | Ubuntu 24.04 x64 | TuranSec native agent + ClamAV + Sysmon for Linux | `install-turansec.sh` |
 
-The **Admin → Agent packages** page can generate a per-endpoint ZIP when the
+The **Admin → Agent packages** page always allows a noninstallable setup-kit ZIP with endpoint metadata and an installer script, but no agent executable. It enables a complete 3-in-1 ZIP when the
 organization's approved payloads and `approved.json` SHA-256 manifest are
 staged on the **dashboard host**. A SHA-256 value stored next to a binary does
 not, by itself, prove a publisher's identity: verify supplier releases and
@@ -77,3 +77,32 @@ The default local-lab protocol still requires a protected 127.0.0.1 tunnel.
 Until these are demonstrated against real enrolled endpoints, label this
 **engineering pilot**, not a Kaspersky-equivalent or production protection
 platform.
+
+## Fresh-install generator troubleshooting
+
+For a new Docker lab, the admin can immediately download a **preparation kit**.
+It includes only the requested endpoint ID/platform, a checklist and an
+installer script. It deliberately cannot be installed because all three vendor
+and TuranSec executables are absent. No key, certificate or enrollment ticket
+is embedded.
+
+To generate a **complete 3-in-1 offline agent**, first approve and stage the
+three actual distribution binaries and `approved.json` with independently
+verified SHA-256 pins. Use the deployment helper instead of running Docker as
+root to change ownership of secret files:
+
+```bash
+cd /home/uz-user/EDR
+sudo -u uz-user -H python3 deploy/docker/stage-agent-payloads.py \
+  --platform linux --source-dir /absolute/approved/linux \
+  --manifest /absolute/approved/linux/approved.json
+```
+
+For Windows, use `--platform windows` and the Windows approved source
+directory. The manifest must already contain three independently verified
+SHA-256 values matching the expected filenames. The helper will not invent
+hash approvals or download arbitrary executable files from third parties.
+Review the supplier's signed releases, product licenses and platform support
+before staging. Afterwards, click **Recheck files** and **Download complete
+3-in-1 agent**. The complete ZIP still needs separately provisioned mTLS
+identity and issuer enrollment before installation.
