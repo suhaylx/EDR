@@ -96,7 +96,7 @@ jobs:
                               '.docker-local/operator/viewer.key')
           with socket.create_connection(('127.0.0.1',9445),timeout=5) as sock:
               with ctx.wrap_socket(sock,server_hostname='127.0.0.1') as conn:
-                  conn.sendall(b'GET /soc/v1/session HTTP/1.1\\r\\nHost: 127.0.0.1:9445\\r\\nConnection: close\\r\\n\\r\\n')
+                  conn.sendall(b'GET /soc/v1/session HTTP/1.1\r\nHost: 127.0.0.1:9445\r\nConnection: close\r\n\r\n')
                   data=bytearray()
                   while True:
                       chunk=conn.recv(16384)
