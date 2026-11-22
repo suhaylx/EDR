@@ -63,7 +63,7 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
         <button type="button" className="secondary" onClick={onClear} disabled={view.state === 'disconnected'}>Clear displayed records</button>
       </div></div>
       <p>The password-enabled Docker gateway uses a secure login session. Legacy internal SOC mTLS stays restricted to the server.</p>
-      <p className="minor">Clearing this view removes displayed records. Use Sign out to end a password session.</p>
+      <p className="minor">Clearing this view removes displayed records; it does not revoke it or sign out of an installed legacy browser certificate. Use Sign out to end a password session.</p>
       <div role="status" aria-live="polite" aria-atomic="true">
         {view.state === 'disconnected' && <p>No records loaded. Endpoint condition is unknown until the authenticated service returns evidence.</p>}
         {view.state === 'disconnected' && view.interrupted && <p>An operation was interrupted while clearing the view. It may already have been accepted by the server. Reconnect and inspect the current state before acting again. No automatic retry was sent.</p>}

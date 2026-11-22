@@ -30,6 +30,9 @@ services:
   login:
     # Password-only browser gateway. Legacy mTLS SOC runs internally at 9445.
     image: turansec-edr-lab-dashboard:local
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
     entrypoint: ["/usr/local/bin/socgateway","--config","/etc/turansec/gateway.json"]
     user: "${EDR_HOST_UID:?Run init-lab.sh}:${EDR_HOST_GID:?Run init-lab.sh}"
     network_mode: host
