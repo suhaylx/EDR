@@ -146,11 +146,15 @@ jobs:
           python3 - <<'PY'
           import zipfile,json
           with zipfile.ZipFile('/tmp/generated.zip') as package:
-              assert set(package.namelist())=={'enrollment.json','TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe'}
+              assert set(package.namelist())=={'enrollment.json','approved.json','Install-TuranSec.ps1','TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe'}
               identity=json.loads(package.read('enrollment.json'))
               assert identity['agent_id']=='win01' and identity['agent_enrollment_required'] is True
               assert identity['credential_material_not_embedded'] is True
               assert not any(name.endswith(('.key','.pem','.p12')) for name in package.namelist())
+              assert b'Get-FileHash' in package.read('Install-TuranSec.ps1')
+              approvals=json.loads(package.read('approved.json'))
+              assert len(approvals['files'])==3
+              assert approvals['files'][0]['sha256'] and len(approvals['files'][0]['sha256'])==64
           PY
           csrf_viewer="$(python3 -c 'import json; print(json.load(open("/tmp/viewer.login"))["csrf_token"])')"
           code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert .docker-local/operator/server-ca.pem \

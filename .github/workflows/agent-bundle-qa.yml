@@ -1,0 +1,95 @@
+name: agent-bundle-qa
+
+on:
+  pull_request:
+    paths:
+      - "backend/cmd/socgateway/**"
+      - "packaging/agent/**"
+      - ".github/workflows/agent-bundle-qa.yml"
+      - "docs/THREE_IN_ONE_DEPLOYMENT.md"
+  push:
+    branches: [main]
+    paths:
+      - "backend/cmd/socgateway/**"
+      - "packaging/agent/**"
+      - ".github/workflows/agent-bundle-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Shell syntax and nonmutating checksum rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n backend/cmd/socgateway/installers/install-turansec.sh
+          python3 -m py_compile packaging/agent/install.py
+          work="$(mktemp -d)"
+          cp backend/cmd/socgateway/installers/install-turansec.sh "$work/install-turansec.sh"
+          mkdir -p "$work/issued"
+          cat > "$work/TuranSec-Agent-Setup" <<'MOCK'
+          #!/usr/bin/env bash
+          if [[ "$*" != *"--check-only"* ]]; then exit 7; fi
+          exit 0
+          MOCK
+          chmod 0755 "$work/TuranSec-Agent-Setup"
+          printf 'synthetic-ubuntu-clamav' > "$work/ClamAV.deb"
+          printf 'synthetic-linux-sysmon' > "$work/SysmonForLinux.deb"
+          python3 - "$work" <<'PY'
+          import hashlib, json, pathlib, sys
+          root=pathlib.Path(sys.argv[1])
+          names=('TuranSec-Agent-Setup','ClamAV.deb','SysmonForLinux.deb')
+          entries=[{'name':name,'sha256':hashlib.sha256((root/name).read_bytes()).hexdigest()} for name in names]
+          (root/'approved.json').write_text(json.dumps({'files':entries}))
+          (root/'enrollment.json').write_text(json.dumps({'platform':'linux','tenant_id':'lab',
+            'agent_id':'linux01','credential_material_not_embedded':True}))
+          PY
+          (cd "$work" && bash install-turansec.sh --identity-dir "$work/issued" --accept-sysmon-eula --check-only)
+          test ! -e /opt/turansec-endpoint/agent
+          printf 'tampered' >> "$work/ClamAV.deb"
+          if (cd "$work" && bash install-turansec.sh --identity-dir "$work/issued" --accept-sysmon-eula --check-only); then
+            echo 'Modified vendor payload passed checksum verification' >&2; exit 1
+          fi
+          rm -rf "$work"
+  windows-bundle:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: PowerShell parser and tampered-payload rejection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $script=Resolve-Path backend/cmd/socgateway/installers/Install-TuranSec.ps1
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($script,[ref]$tokens,[ref]$errors)|Out-Null
+          if ($errors.Count -gt 0) { throw "Windows bundle parser errors: $($errors.Count)" }
+          $dir=Join-Path $env:RUNNER_TEMP 'bundle-tamper-qa'
+          New-Item -ItemType Directory -Force -Path $dir|Out-Null
+          Copy-Item $script (Join-Path $dir 'Install-TuranSec.ps1')
+          $names=@('TuranSec-Agent-Setup.exe','ClamAV.zip','Sysmon64.exe')
+          foreach($name in $names){ [IO.File]::WriteAllText((Join-Path $dir $name),"SYNTHETIC-QA-$name") }
+          $records=@($names | ForEach-Object {
+            @{name=$_;sha256=(Get-FileHash -LiteralPath (Join-Path $dir $_) -Algorithm SHA256).Hash.ToLowerInvariant()}
+          })
+          @{ files=$records }|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $dir 'approved.json')
+          @{ platform='windows';tenant_id='lab';agent_id='win01';credential_material_not_embedded=$true }|
+            ConvertTo-Json|Set-Content -LiteralPath (Join-Path $dir 'enrollment.json')
+          Add-Content -LiteralPath (Join-Path $dir 'ClamAV.zip') 'tamper'
+          $denied=$false
+          try {
+            & (Join-Path $dir 'Install-TuranSec.ps1') -IdentityDir $dir -ApprovedAgentSigner ('A'*40) -AcceptSysmonEula -CheckOnly
+          } catch { $denied=($_.Exception.Message -match 'checksum mismatch') }
+          if (-not $denied) { throw 'Tampered ClamAV payload was not rejected before executing anything' }
+          if (Test-Path "$env:ProgramData\TuranSec\Endpoint") { throw 'Preflight performed persistent endpoint installation' }

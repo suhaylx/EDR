@@ -13,6 +13,7 @@ import (
  "encoding/hex"
  "encoding/json"
  "errors"
+ _ "embed"
  "flag"
  "fmt"
  "io"
@@ -27,6 +28,13 @@ import (
  "sync"
  "time"
 )
+
+// The installer sources are bundled into gateway binaries at build time.
+// They never embed customer credentials or license-restricted vendor binaries.
+//go:embed installers/install-turansec.sh
+var linuxBundleInstaller []byte
+//go:embed installers/Install-TuranSec.ps1
+var windowsBundleInstaller []byte
 
 const cookieName="__Host-turansec-soc"
 const sessionTTL=6*time.Hour
@@ -264,6 +272,12 @@ func (g *gateway) generate(w http.ResponseWriter,r *http.Request){
  var input struct{Platform string `json:"platform"`;TenantID string `json:"tenant_id"`;AgentID string `json:"agent_id"`}
  if readJSON(r,1024,&input)!=nil||input.TenantID!="lab"||!safeID.MatchString(input.AgentID)||input.AgentID=="."||input.AgentID==".."{deny(w,400);return}
  paths,e:=g.payload(input.Platform);if e!=nil{deny(w,503);return}
+ approved,e:=regular(filepath.Join(g.cfg.PayloadDir,input.Platform,"approved.json"),false,16384)
+ if e!=nil{deny(w,503);return}
+ installerName:="install-turansec.sh"
+ installer:=linuxBundleInstaller
+ if input.Platform=="windows"{installerName="Install-TuranSec.ps1";installer=windowsBundleInstaller}
+ if len(installer)==0{deny(w,503);return}
  w.Header().Set("Content-Type","application/zip")
  w.Header().Set("Content-Disposition",fmt.Sprintf("attachment; filename=%q","TuranSec-"+input.Platform+"-"+input.AgentID+".zip"))
  w.WriteHeader(200)
@@ -271,7 +285,14 @@ func (g *gateway) generate(w http.ResponseWriter,r *http.Request){
  meta,_:=writer.Create("enrollment.json")
  _=json.NewEncoder(meta).Encode(map[string]any{"tenant_id":input.TenantID,"agent_id":input.AgentID,"platform":input.Platform,
   "agent_enrollment_required":true,"approved_publisher_verification_required":true,
-  "credential_material_not_embedded":true})
+  "credential_material_not_embedded":true,"manual_issuer_enrollment_required":true,
+  "endpoint_telemetry_ingest_not_yet_complete":true})
+ hashes,_:=writer.Create("approved.json")
+ _,_ = hashes.Write(approved)
+ scriptHeader:=&zip.FileHeader{Name:installerName,Method:zip.Deflate}
+ if input.Platform=="linux"{scriptHeader.SetMode(0755)}
+ script,_:=writer.CreateHeader(scriptHeader)
+ _,_ = script.Write(installer)
  for _,path:=range paths{
   f,e:=os.Open(path);if e!=nil{break}
   entry,e:=writer.Create(filepath.Base(path));if e==nil{_,_=io.Copy(entry,f)};_ = f.Close()
