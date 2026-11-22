@@ -9,7 +9,7 @@ deployment. Don't run on a shared, publicly exposed or production host.
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y git curl openssl docker.io docker-compose-v2
+sudo apt-get install -y git curl openssl python3 docker.io docker-compose-v2
 sudo systemctl enable --now docker
 ```
 
@@ -33,11 +33,11 @@ services listening on TCP 55432, 9443 or 9444.
 bash deploy/docker/init-lab.sh
 ```
 
-This creates short-lived disposable CAs, operator identities and separate
-PostgreSQL passwords in ignored `.docker-local/`. It will **not** overwrite
-existing lab secrets. Don't commit, upload or reuse these credentials. The
-browser's analyst identity is `.docker-local/operator/analyst.p12` and its
-import password is in `.docker-local/operator/p12-password.txt`.
+This creates short-lived disposable server/operator CAs, three randomly
+generated password accounts (admin, analyst, viewer), and separate PostgreSQL
+credentials in ignored `.docker-local/`. It refuses to overwrite existing lab
+secrets. Review passwords locally with `cat .docker-local/operator/passwords.txt`.
+Never upload this file, the database secrets, or CA private keys.
 
 ## 4 — Start the dashboard
 
@@ -46,18 +46,26 @@ sudo docker compose up -d --build --wait
 ```
 
 The first start creates and migrates the dedicated database, installs restricted
-roles, and enrolls only the two sample SOC operators. It does **not** enroll
+roles, and registers admin, analyst, viewer and the legacy health-viewer identities. It does **not** enroll
 endpoint agents. The existing backend requires loopback for both TLS listeners
 and database connections, so Compose uses **Linux host networking**. TCP 55432,
-9443 and 9444 remain bound to 127.0.0.1; never change these binds to
+9443, 9444 and the internal 9445 remain bound to 127.0.0.1; never change these binds to
 `0.0.0.0`. The database uses a persistent Docker volume.
 
 ## 5 — Open and verify
 
-Import `.docker-local/operator/analyst.p12` into the browser's client
-certificate store using the password file; trust
-`.docker-local/operator/server-ca.pem` as a **local lab-only** server CA.
-Open **https://127.0.0.1:9444/** and select the analyst certificate.
+Open **https://127.0.0.1:9444/** and sign in with `admin`, `analyst`,
+or `viewer` and the account's generated password shown by:
+
+```bash
+cat .docker-local/operator/passwords.txt
+```
+
+**No browser client certificate or private key is required.** HTTPS remains
+enabled. Trust `.docker-local/operator/server-ca.pem` as a **local lab-only**
+server CA in a dedicated browser profile, or use the browser's one-time
+self-signed-certificate exception for local testing. Never expose port 9444
+publicly; use an SSH tunnel from your desktop.
 
 For an existing Docker lab already running the old certificate-only dashboard,
 update without deleting the database volume:
