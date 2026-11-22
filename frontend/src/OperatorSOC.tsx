@@ -18,6 +18,14 @@ export type OperatorViewState = Readonly<{ state: 'disconnected'; interrupted?: 
   Readonly<{ state: 'loading'; operation?: SOCMutationCommand['kind'] }> |
   Readonly<{ state: 'error'; error: SOCFailure; receipt?: SOCMutationReceipt }> |
   Readonly<{ state: 'ready'; snapshot: SOCSnapshot; selection?: Selection; receipt?: SOCMutationReceipt }>;
+export function filterSOCAlerts(page: SOCPage<SOCAlert>, query: string,
+  state: 'all'|'open'|'acknowledged'|'resolved', order: 'newest'|'oldest'): SOCPage<SOCAlert> {
+  const needle=query.trim().toLowerCase();
+  const filtered=page.items.filter(a=>(state==='all'||a.state===state)&&
+    (!needle||[a.agent_id,a.alert_id,a.signature_name,a.assigned_to].some(field=>field.toLowerCase().includes(needle))));
+  return {...page,items:[...filtered].sort((a,b)=>order==='newest'?
+    b.updated_at.localeCompare(a.updated_at):a.updated_at.localeCompare(b.updated_at))};
+}
 type ViewProps = Readonly<{
   view: OperatorViewState;
   onRefresh: () => void;
@@ -26,6 +34,9 @@ type ViewProps = Readonly<{
   onCase: (alertID: string, offset?: number) => void;
   onScan: (jobID: string) => void;
   onMutation: (command: SOCMutationCommand) => void;
+  auth?: PasswordSession | null;
+  onSignOut?: () => void;
+  logoutError?: string;
 }>;
 
 function AlertTable({ page, label, canAcknowledge, onCase, onMutation }: {
@@ -38,8 +49,8 @@ function AlertTable({ page, label, canAcknowledge, onCase, onMutation }: {
       <thead><tr><th scope="col">Alert / endpoint</th><th scope="col">Reported detection</th><th scope="col">Case state / owner</th><th scope="col">Last update (UTC)</th><th scope="col">Case actions</th></tr></thead>
       <tbody>{page.items.map(alert => <tr key={alert.alert_id}>
         <th scope="row"><span className="soc-reference">{alert.alert_id}</span><span className="minor">{alert.agent_id}</span></th>
-        <td>High · malware signature<span className="minor">{alert.signature_name}</span></td>
-        <td>{alert.state}<span className="minor">{alert.assigned_to ? 'Assigned to ' + alert.assigned_to : 'Unassigned'}</span></td>
+        <td><span className="soc-severity">High</span><span className="soc-signature">Malware signature</span><span className="minor">{alert.signature_name}</span></td>
+        <td><span className={'soc-state soc-state--' + alert.state}>{alert.state}</span><span className="minor">{alert.assigned_to ? 'Assigned to ' + alert.assigned_to : 'Unassigned'}</span></td>
         <td><time dateTime={alert.updated_at}>{utc(alert.updated_at)}</time></td>
         <td><div className="actions">
           <button type="button" className="secondary" onClick={() => onCase(alert.alert_id)} aria-label={'Read case and activity for alert ' + alert.alert_id}>Read case and activity</button>
@@ -50,20 +61,37 @@ function AlertTable({ page, label, canAcknowledge, onCase, onMutation }: {
   </div>;
 }
 
-export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onScan, onMutation }: ViewProps) {
+export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onScan, onMutation, auth, onSignOut, logoutError }: ViewProps) {
+  const [endpointQuery, setEndpointQuery] = useState('');
+  const [selectedEndpointID,setSelectedEndpointID]=useState('');
+  const [scanTarget,setScanTarget]=useState('');
+  const [alertQuery,setAlertQuery]=useState('');
+  const [alertState,setAlertState]=useState<'all'|'open'|'acknowledged'|'resolved'>('all');
+  const [alertOrder,setAlertOrder]=useState<'newest'|'oldest'>('newest');
+  // Full legacy test rendering stays intact; real password sessions get focused workspaces.
+  const [workspace, setWorkspace] = useState<'all' | 'overview' | 'endpoints' | 'alerts' | 'cases' | 'scans' | 'packages'>(auth ? 'overview' : 'all');
+  const visibleEndpoints = view.state === 'ready' ? view.snapshot.endpoints.items.filter(item =>
+    (item.agent_id + ' ' + item.platform + ' ' + item.health).toLowerCase().includes(endpointQuery.trim().toLowerCase())) : [];
+  const selectedEndpoint = view.state === 'ready' ? view.snapshot.endpoints.items.find(item=>item.agent_id===selectedEndpointID) : undefined;
+  const triagePage = view.state === 'ready' ? filterSOCAlerts(view.snapshot.alerts,alertQuery,alertState,alertOrder) : undefined;
   return <div className="layout soc-layout">
     <a className="skip-link" href="#soc-content">Skip to SOC records</a>
-    <header className="masthead"><div><p className="eyebrow">TuranSec EDR</p><h1>Operator SOC</h1>
-      <p>Review endpoint evidence, request path scans and manage detection cases through the authenticated service.</p></div>
-      <span className="lab-indicator">{view.state === 'ready' ? 'Authenticated operator' : 'Authentication required'}</span>
+    <header className="masthead soc-topbar">
+      <div className="soc-topbar-name"><span className="soc-mark" aria-hidden="true">T</span><div>
+        <p className="eyebrow">TURANSEC / SECURITY OPERATIONS</p><h1>Operator SOC</h1>
+      </div></div>
+      <div className="soc-topbar-right"><span className="soc-environment">LOCAL LAB</span>
+        <span className={'soc-live-status ' + (view.state === 'ready' ? 'soc-live-status--ready' : '')}><span className="soc-pulse" aria-hidden="true" />{view.state === 'ready' ? 'Session connected' : 'Awaiting data'}</span>
+      </div>
     </header>
-    <section className="panel" aria-labelledby="soc-connection-title">
-      <div className="heading"><h2 id="soc-connection-title">Operator connection</h2><div className="actions">
+    <div className="soc-shell">
+    <section className="panel soc-connection" aria-labelledby="soc-connection-title">
+      <div className="heading"><div><p className="soc-section-label">CONTROL CENTER</p><h2 id="soc-connection-title">Operational overview</h2></div><div className="actions">
         <button type="button" onClick={onRefresh} disabled={view.state === 'loading'}>{view.state === 'ready' ? 'Refresh SOC records' : 'Connect to SOC'}</button>
         <button type="button" className="secondary" onClick={onClear} disabled={view.state === 'disconnected'}>Clear displayed records</button>
       </div></div>
-      <p>The password-enabled Docker gateway uses a secure login session. Legacy internal SOC mTLS stays restricted to the server.</p>
-      <p className="minor">Clearing this view removes displayed records; it does not revoke it or sign out of an installed legacy browser certificate. Use Sign out to end a password session.</p>
+      <p className="soc-context-line">Live server records only. No simulated endpoints, fabricated detections, or cached security state.</p>
+      <p className="minor">Clearing displayed records does not revoke your login session. Use Sign out to end password access.</p>
       <div role="status" aria-live="polite" aria-atomic="true">
         {view.state === 'disconnected' && <p>No records loaded. Endpoint condition is unknown until the authenticated service returns evidence.</p>}
         {view.state === 'disconnected' && view.interrupted && <p>An operation was interrupted while clearing the view. It may already have been accepted by the server. Reconnect and inspect the current state before acting again. No automatic retry was sent.</p>}
@@ -77,10 +105,28 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
       </div>
       {view.state === 'ready' && <p className="minor">Server time after these reads: <time dateTime={view.snapshot.session.server_time}>{utc(view.snapshot.session.server_time)}</time>. Pages and summaries are separate reads, not an atomic database snapshot. Refresh to recheck authorization and current state.</p>}
     </section>
-    <main id="soc-content" tabIndex={-1} aria-busy={view.state === 'loading'}>
+    <aside className="soc-sidebar">
+      <div className="soc-sidebar-intro"><span className="soc-side-overline">WORKSPACES</span><strong>Detection &amp; response</strong></div>
+      <nav className="soc-nav" aria-label="SOC workspaces">
+        <button type="button" aria-current={workspace === 'overview' ? 'page' : undefined} onClick={() => setWorkspace('overview')}><span aria-hidden="true" className="soc-nav-glyph">◫</span>Overview</button>
+        <button type="button" aria-current={workspace === 'endpoints' ? 'page' : undefined} onClick={() => setWorkspace('endpoints')}><span aria-hidden="true" className="soc-nav-glyph">▦</span>Endpoints</button>
+        <button type="button" aria-current={workspace === 'alerts' ? 'page' : undefined} onClick={() => setWorkspace('alerts')}><span aria-hidden="true" className="soc-nav-glyph">◇</span>Alerts &amp; triage</button>
+        <button type="button" aria-current={workspace === 'cases' ? 'page' : undefined} onClick={() => setWorkspace('cases')}><span aria-hidden="true" className="soc-nav-glyph">☰</span>My cases</button>
+        <button type="button" aria-current={workspace === 'scans' ? 'page' : undefined} onClick={() => setWorkspace('scans')}><span aria-hidden="true" className="soc-nav-glyph">◎</span>Scan operations</button>
+        {auth?.role === 'admin' && <button type="button" aria-current={workspace === 'packages' ? 'page' : undefined} onClick={() => setWorkspace('packages')}><span aria-hidden="true" className="soc-nav-glyph">⊞</span>Agent packages</button>}
+      </nav>
+      <div className="soc-sidebar-foot"><span className="soc-side-overline">CURRENT IDENTITY</span>
+        <strong>{auth?.username ?? (view.state === 'ready' ? view.snapshot.session.operator_id : 'Not connected')}</strong>
+        <span className="soc-side-role">{auth?.role ?? (view.state === 'ready' ? view.snapshot.session.role : 'Local lab')}</span>
+        {auth && onSignOut && <button type="button" className="soc-signout" onClick={onSignOut}>Sign out</button>}
+        {logoutError && <p role="alert" className="soc-signout-error">{logoutError}</p>}
+      </div>
+    </aside>
+    <main className="soc-workspace" id="soc-content" tabIndex={-1} aria-busy={view.state === 'loading'}>
       {view.state === 'ready' ? <>
-        <section className="panel" aria-labelledby="soc-overview-title"><h2 id="soc-overview-title">Returned fleet and alert summary</h2>
-          <div className="metric-grid">{[
+        {(workspace === 'overview' || workspace === 'all') && <section className="panel soc-overview-panel" aria-labelledby="soc-overview-title">
+          <div className="soc-panel-heading"><div><p className="soc-section-label">FLEET POSTURE</p><h2 id="soc-overview-title">Returned fleet and alert summary</h2></div><span className="soc-panel-chip">Server reported</span></div>
+          <div className="metric-grid soc-kpi-grid">{[
             ['Enrolled endpoints', view.snapshot.endpointStats.total, 'Registry records, not verified installations'],
             ['Recent heartbeat', view.snapshot.endpointStats.online, 'Scanner readiness is endpoint-reported'],
             ['Degraded readiness', view.snapshot.endpointStats.degraded, 'Recent heartbeat; reported scanner unavailable'],
@@ -90,35 +136,81 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
             ['Open alerts', view.snapshot.alertStats.open, 'Reported signature detections awaiting triage'],
             ['Acknowledged alerts', view.snapshot.alertStats.acknowledged, 'Analyst workflow state'],
             ['Resolved alerts', view.snapshot.alertStats.resolved, 'Resolution does not prove endpoint remediation'],
-          ].map(([label, count, detail]) => <div className="metric" key={label}><span>{label}</span><strong>{count}</strong><small>{detail}</small></div>)}</div>
+          ].map(([label, count, detail], index) => <div className={'metric soc-metric soc-metric--' + index} key={label}><span>{label}</span><strong>{count}</strong><small>{detail}</small></div>)}</div>
           <p>Heartbeat and scanner metadata do not attest endpoint protection. An empty page or zero alert count does not establish that the fleet is safe.</p>
-        </section>
-        <section className="panel" aria-labelledby="soc-endpoints-title"><h2 id="soc-endpoints-title">Endpoint inventory</h2>
+        </section>}
+        {(workspace === 'endpoints' || workspace === 'all') && <section className="panel soc-data-panel" aria-labelledby="soc-endpoints-title">
+          <div className="soc-panel-heading"><div><p className="soc-section-label">ASSET VISIBILITY</p><h2 id="soc-endpoints-title">Endpoint inventory</h2></div><span className="soc-panel-chip">{view.snapshot.endpointStats.total} enrolled</span></div>
+          <div className="soc-filter-line"><p>Search the loaded page by endpoint, OS or health.</p>
+            <label htmlFor="soc-endpoint-search">Filter endpoints
+              <input id="soc-endpoint-search" type="search" value={endpointQuery} onChange={event => setEndpointQuery(event.target.value)} placeholder="Search current page" autoComplete="off" />
+            </label>
+          </div>
           {view.snapshot.endpoints.items.length ? <div className="table-scroll" tabIndex={0} role="region" aria-label="Endpoint inventory table"><table>
             <caption>Enrolled Windows and Linux agents. Health is derived from server-received heartbeats and endpoint-reported readiness.</caption>
-            <thead><tr><th scope="col">Endpoint</th><th scope="col">Platform</th><th scope="col">Heartbeat / evidence</th><th scope="col">Reported versions</th><th scope="col">Reported scanner readiness</th></tr></thead>
-            <tbody>{view.snapshot.endpoints.items.map(endpoint => <tr key={endpoint.agent_id}>
+            <thead><tr><th scope="col">Endpoint</th><th scope="col">Platform</th><th scope="col">Heartbeat / evidence</th><th scope="col">Reported versions</th><th scope="col">Reported scanner readiness</th><th scope="col">Investigate</th></tr></thead>
+            <tbody>{visibleEndpoints.map(endpoint => <tr key={endpoint.agent_id}>
               <th scope="row">{endpoint.agent_id}</th><td>{endpoint.platform}</td>
               <td><strong>{endpoint.health}</strong><span className="minor">{operatorHealthLabel(endpoint)}</span><span className="minor">{endpoint.last_seen ? 'Last server receipt: ' + utc(endpoint.last_seen) : 'No server receipt time'}</span></td>
               <td>Agent: {endpoint.agent_version || 'Not reported'}<span className="minor">ClamAV: {endpoint.clamav_version || 'Not reported'}</span><span className="minor">Signatures: {endpoint.signature_version || 'Not reported'}</span></td>
               <td>{endpoint.scan_ready ? 'Reported ready; not verified' : 'Not reported ready; current protection unknown'}</td>
+              <td><button type="button" className="secondary" aria-label={'Inspect endpoint ' + endpoint.agent_id}
+                onClick={() => setSelectedEndpointID(endpoint.agent_id)}>Inspect endpoint</button></td>
             </tr>)}</tbody>
-          </table></div> : <p className="empty">No enrolled endpoints were returned on this page. No protection state can be inferred.</p>}
+          </table>{visibleEndpoints.length === 0 && <p className="empty">No endpoints match the current page filter.</p>}</div> : <p className="empty">No enrolled endpoints were returned on this page. No protection state can be inferred.</p>}
           <Paging page={view.snapshot.endpoints} label="endpoints" onChange={offset => onPage('endpoints', offset)} />
-        </section>
-        <section className="panel" aria-labelledby="soc-alerts-title"><h2 id="soc-alerts-title">Detection alerts</h2>
+          {selectedEndpoint && <section className="soc-investigation" aria-labelledby="soc-endpoint-detail-title">
+            <div className="soc-panel-heading"><div><p className="soc-section-label">ENDPOINT INVESTIGATION</p>
+              <h3 id="soc-endpoint-detail-title">{selectedEndpoint.agent_id} · {selectedEndpoint.platform}</h3></div>
+              <button type="button" className="secondary" onClick={() => setSelectedEndpointID('')}>Close details</button>
+            </div>
+            <p><span className={'soc-state soc-state--'+selectedEndpoint.health}>{selectedEndpoint.health}</span>{operatorHealthLabel(selectedEndpoint)}</p>
+            <dl className="soc-details">
+              <div><dt>Agent version</dt><dd>{selectedEndpoint.agent_version||'Not reported'}</dd></div>
+              <div><dt>ClamAV version</dt><dd>{selectedEndpoint.clamav_version||'Not reported'}</dd></div>
+              <div><dt>Signature database</dt><dd>{selectedEndpoint.signature_version||'Not reported'}</dd></div>
+              <div><dt>Heartbeat count</dt><dd>{selectedEndpoint.heartbeat_count}</dd></div>
+              <div><dt>Last seen</dt><dd>{selectedEndpoint.last_seen ? utc(selectedEndpoint.last_seen) : 'No heartbeat observed'}</dd></div>
+              <div><dt>Scanner</dt><dd>{selectedEndpoint.scan_ready?'Endpoint reported ready, not attested':'Unknown or unavailable'}</dd></div>
+            </dl>
+            <h4>Linked alerts on the loaded page</h4>
+            {view.snapshot.alerts.items.filter(a=>a.agent_id===selectedEndpoint.agent_id).map(a=>
+              <p key={a.alert_id}>{a.signature_name} · {a.state} <button type="button" className="secondary"
+                onClick={() => {setWorkspace('alerts'); onCase(a.alert_id);}}>Investigate case</button></p>)}
+            {!view.snapshot.alerts.items.some(a=>a.agent_id===selectedEndpoint.agent_id) && <p>No matching alerts in the loaded page; other pages may contain evidence.</p>}
+            <h4>Related scan jobs on the loaded page</h4>
+            {view.snapshot.jobs.items.filter(j=>j.agent_id===selectedEndpoint.agent_id).map(j=>
+              <p key={j.job_id}><span className="soc-reference">{j.job_id}</span> · {j.state}
+                <button type="button" className="secondary" onClick={() => {setWorkspace('scans');onScan(j.job_id);}}>Review scan</button></p>)}
+            {!view.snapshot.jobs.items.some(j=>j.agent_id===selectedEndpoint.agent_id) && <p>No matching scan jobs in this loaded page.</p>}
+            {view.snapshot.session.role==='scanner' && selectedEndpoint.health!=='revoked' &&
+              <button type="button" onClick={() => {setScanTarget(selectedEndpoint.agent_id);setWorkspace('scans');}}>Request path scan</button>}
+            <p className="minor">Related evidence is limited to currently loaded pages. This does not prove complete endpoint history or protection.</p>
+          </section>}
+        </section>}
+        {(workspace === 'alerts' || workspace === 'all') && <section className="panel soc-data-panel" aria-labelledby="soc-alerts-title"><div className="soc-panel-heading"><div><p className="soc-section-label">THREAT MONITORING</p><h2 id="soc-alerts-title">Detection alerts</h2></div><span className="soc-panel-chip">{view.snapshot.alertStats.open} open</span></div>
           <p>{view.snapshot.session.role === 'scanner'
             ? 'Acknowledge an open alert to record that triage has started. This does not resolve the case or change the endpoint.'
             : 'Viewer role: read-only access. A scanner-role operator is required to acknowledge an alert.'}</p>
-          <AlertTable page={view.snapshot.alerts} label="Detection alerts" canAcknowledge={view.snapshot.session.role === 'scanner'} onCase={onCase} onMutation={onMutation} />
+          <div className="soc-triage-toolbar">
+            <label>Search alerts <input type="search" value={alertQuery} onChange={event=>setAlertQuery(event.target.value)}
+              placeholder="Endpoint, detection or case ID" /></label>
+            <label>Case state <select value={alertState} onChange={event=>setAlertState(event.target.value as typeof alertState)}>
+              <option value="all">All states</option><option value="open">Open</option>
+              <option value="acknowledged">Acknowledged</option><option value="resolved">Resolved</option></select></label>
+            <label>Order loaded page <select value={alertOrder} onChange={event=>setAlertOrder(event.target.value as typeof alertOrder)}>
+              <option value="newest">Newest updated first</option><option value="oldest">Oldest updated first</option></select></label>
+          </div>
+          <p className="minor">{triagePage?.items.length ?? 0} matching alerts on the loaded server page; this is not a full tenant search.</p>
+          {triagePage && <AlertTable page={triagePage} label="Detection alerts" canAcknowledge={view.snapshot.session.role === 'scanner'} onCase={onCase} onMutation={onMutation} />}
           <Paging page={view.snapshot.alerts} label="alerts" onChange={offset => onPage('alerts', offset)} />
-        </section>
-        <section className="panel" aria-labelledby="soc-mine-title"><h2 id="soc-mine-title">My assigned cases</h2>
+        </section>}
+        {(workspace === 'cases' || workspace === 'all') && <section className="panel soc-data-panel" aria-labelledby="soc-mine-title"><div className="soc-panel-heading"><div><p className="soc-section-label">ANALYST QUEUE</p><h2 id="soc-mine-title">My assigned cases</h2></div><span className="soc-panel-chip">{view.snapshot.mine.items.length} on page</span></div>
           <p>Active alerts assigned by the server to the authenticated operator. Open a case to review its current state, notes and assignment before taking an action.</p>
           <AlertTable page={view.snapshot.mine} label="Assigned active cases" canAcknowledge={view.snapshot.session.role === 'scanner'} onCase={onCase} onMutation={onMutation} />
           <Paging page={view.snapshot.mine} label="assigned cases" onChange={offset => onPage('mine', offset)} />
-        </section>
-        {view.selection?.kind === 'case' && <section className="panel" aria-labelledby="soc-activity-title" aria-busy={view.selection.state === 'loading'}>
+        </section>}
+        {(workspace === 'alerts' || workspace === 'cases' || workspace === 'all') && view.selection?.kind === 'case' && <section className="panel" aria-labelledby="soc-activity-title" aria-busy={view.selection.state === 'loading'}>
           <h2 id="soc-activity-title">Case details and activity</h2><p>Alert <span className="soc-reference">{view.selection.alertID}</span></p>
           <div role="status" aria-live="polite">{view.selection.state === 'loading' ? 'Loading the selected case details and activity.' : `${view.selection.detail.activity.items.length} activity record(s) returned.`}</div>
           {view.selection.state === 'ready' && <>
@@ -138,14 +230,16 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
           </>}
           <p className="minor">Database activity is workflow evidence. It is not a cryptographic audit log or proof that an endpoint action occurred.</p>
         </section>}
-        <SOCScanWorkspace snapshot={view.snapshot} onPage={onPage} onScan={onScan} onMutation={onMutation} />
-        {view.selection?.kind === 'scan' && <section className="panel" aria-labelledby="soc-scan-detail-title" aria-busy={view.selection.state === 'loading'}>
+        {(workspace === 'scans' || workspace === 'all') && <SOCScanWorkspace snapshot={view.snapshot} onPage={onPage} onScan={onScan} onMutation={onMutation} preferredAgentID={scanTarget} />}
+        {(workspace === 'scans' || workspace === 'all') && view.selection?.kind === 'scan' && <section className="panel" aria-labelledby="soc-scan-detail-title" aria-busy={view.selection.state === 'loading'}>
           <h2 id="soc-scan-detail-title">Selected scan details</h2><p>Job <span className="soc-reference">{view.selection.jobID}</span></p>
           <div role="status" aria-live="polite">{view.selection.state === 'loading' ? 'Loading the selected scan job and optional reported result.' : 'Current scan details loaded.'}</div>
           {view.selection.state === 'ready' && <SOCScanDetailView detail={view.selection.detail} canWrite={view.snapshot.session.role === 'scanner'} onMutation={onMutation} />}
         </section>}
-      </> : <section className="panel"><h2>SOC records unavailable</h2><p>Connect to the operator service to load records. No cached endpoint health or alert data is displayed.</p></section>}
+      </> : <section className="panel soc-unavailable"><span className="soc-unavailable-icon" aria-hidden="true">⌁</span><h2>SOC records unavailable</h2><p>Connect to the operator service to load records. No cached endpoint health or alert data is displayed.</p></section>}
+      {auth?.role === 'admin' && (workspace === 'packages' || workspace === 'all') && <AdminPackageGenerator session={auth} />}
     </main>
+    </div>
   </div>;
 }
 
@@ -286,19 +380,9 @@ export function OperatorSOC() {
   if (authMode === 'checking') return <main className="layout"><p role="status">Checking the secured SOC login…</p></main>;
   if (authMode === 'error') return <main className="layout"><h1>SOC login unavailable</h1><p>Refresh after checking the login gateway service. No SOC data is displayed.</p></main>;
   if (authMode === 'password' && !auth) return <PasswordLogin onAuthenticated={authenticated} />;
-  return <>
-    {auth && <div className="layout">
-      <div className="panel">
-        <div className="heading"><strong>Signed in as {auth.username} ({auth.role})</strong>
-          <button type="button" className="secondary" onClick={() => { void signOut(); }}>Sign out</button></div>
-        <p role="alert">{logoutError}</p>
-      </div>
-      {auth.role === 'admin' && <AdminPackageGenerator session={auth} />}
-    </div>}
-    <OperatorSOCView view={view} onRefresh={() => { void refresh(); }} onClear={clear}
+  return <OperatorSOCView view={view} auth={auth} onSignOut={() => { void signOut(); }} logoutError={logoutError} onRefresh={() => { void refresh(); }} onClear={clear}
       onPage={(section, offset) => { void refresh({ ...offsets.current, [section]: offset }); }}
       onCase={(alertID, offset) => { void readCase(alertID, offset); }}
       onScan={jobID => { void readScan(jobID); }}
-      onMutation={command => { void mutate(command); }} />
-  </>;
+      onMutation={command => { void mutate(command); }} />;
 }

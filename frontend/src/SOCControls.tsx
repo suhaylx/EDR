@@ -15,8 +15,8 @@ export function SOCPaging({ page, label, onChange }: { page: SOCPage<unknown>; l
   </div>;
 }
 
-function ScanRequestForm({ snapshot, onMutation }: { snapshot: SOCSnapshot; onMutation: Mutate }) {
-  const [agentID, setAgentID] = useState('');
+function ScanRequestForm({ snapshot, onMutation, preferredAgentID }: { snapshot: SOCSnapshot; onMutation: Mutate; preferredAgentID?: string }) {
+  const [agentID, setAgentID] = useState(preferredAgentID && snapshot.endpoints.items.some(item=>item.agent_id===preferredAgentID&&item.health!=='revoked') ? preferredAgentID : '');
   const [path, setPath] = useState('');
   const [error, setError] = useState('');
   const endpoint = snapshot.endpoints.items.find(item => item.agent_id === agentID);
@@ -57,8 +57,8 @@ function ScanRequestForm({ snapshot, onMutation }: { snapshot: SOCSnapshot; onMu
   </form>;
 }
 
-export function SOCScanWorkspace({ snapshot, onPage, onScan, onMutation }: {
-  snapshot: SOCSnapshot; onPage: (section: keyof SOCOffsets, offset: number) => void; onScan: (jobID: string) => void; onMutation: Mutate;
+export function SOCScanWorkspace({ snapshot, onPage, onScan, onMutation, preferredAgentID }: {
+  snapshot: SOCSnapshot; onPage: (section: keyof SOCOffsets, offset: number) => void; onScan: (jobID: string) => void; onMutation: Mutate; preferredAgentID?: string;
 }) {
   const canWrite = snapshot.session.role === 'scanner';
   return <section className="panel" aria-labelledby="soc-scans-title">
@@ -69,7 +69,7 @@ export function SOCScanWorkspace({ snapshot, onPage, onScan, onMutation }: {
       ['Cancelled before delivery', snapshot.scanStats.cancelled], ['Reported signature matches', snapshot.scanStats.malicious],
     ].map(([label, count]) => <div className="metric" key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
     <p>{snapshot.scanStats.total} total job record(s). Delivery state and scanner verdict are separate evidence. Successful delivery is not a clean scan or proof of endpoint protection.</p>
-    {canWrite ? <ScanRequestForm snapshot={snapshot} onMutation={onMutation} /> : <p>Viewer role: read-only access. A scanner-role operator is required to request or cancel a scan.</p>}
+    {canWrite ? <ScanRequestForm key={preferredAgentID ?? ''} snapshot={snapshot} onMutation={onMutation} preferredAgentID={preferredAgentID} /> : <p>Viewer role: read-only access. A scanner-role operator is required to request or cancel a scan.</p>}
     <h3>Scan jobs</h3>
     {snapshot.jobs.items.length ? <div className="table-scroll" tabIndex={0} role="region" aria-label="Scan jobs table"><table>
       <caption>Tenant scan queue. Only pending requests created by the authenticated operator can be cancelled; the server enforces ownership.</caption>

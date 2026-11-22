@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { OperatorSOCView } from '../.test-dist/OperatorSOC.js';
+import { OperatorSOCView, filterSOCAlerts } from '../.test-dist/OperatorSOC.js';
 import { alert as caseAlert, job as scanJob, result as scanResult, endpoint as scanEndpoint } from './soc-workflow-fixture.mjs';
 
 const session = { tenant_id: 'tenant-a', operator_id: 'operator-a', role: 'viewer', server_time: '2026-11-21T18:00:00Z' };
@@ -20,7 +20,33 @@ test('operator view exposes identity, accessible regions and unknown state witho
   assert.match(html, /Skip to SOC records/);
   assert.match(html, /No protection state can be inferred/);
   assert.match(html, /does not establish the absence of threats/);
-  assert.doesNotMatch(html, /<input|<form|type="password"|localStorage/);
+  assert.match(html, /type="search"/); // The endpoint filter is intentionally available.
+  assert.doesNotMatch(html, /type="password"|name="token"|localStorage/);
+});
+
+test('password-backed SOC presents a focused workspace with operational navigation', () => {
+  const view = { state: 'ready', snapshot };
+  const auth = { username: 'admin', role: 'admin', csrf_token: 'a'.repeat(64) };
+  const html = renderToStaticMarkup(React.createElement(OperatorSOCView, {
+    view, auth, onRefresh() {}, onClear() {}, onPage() {}, onCase() {}, onScan() {}, onMutation() {},
+  }));
+  assert.match(html, /aria-current="page"/);
+  assert.match(html, /id="soc-overview-title"/);
+  assert.match(html, /Agent packages/);
+  assert.doesNotMatch(html, /id="soc-endpoints-title"|id="soc-alerts-title"|id="soc-scans-title"/);
+});
+
+test('triage filter and sorting never expand current server page', () => {
+  const page={items:[
+    {agent_id:'win-1',alert_id:'a',signature_name:'Test Alpha',assigned_to:'analyst',state:'open',updated_at:'2026-01-02T00:00:00Z'},
+    {agent_id:'lin-1',alert_id:'b',signature_name:'Test Beta',assigned_to:'',state:'resolved',updated_at:'2026-01-04T00:00:00Z'},
+    {agent_id:'win-2',alert_id:'c',signature_name:'Test Gamma',assigned_to:'',state:'open',updated_at:'2026-01-01T00:00:00Z'}],
+    offset:25,limit:25};
+  assert.deepEqual(filterSOCAlerts(page,'','open','newest').items.map(a=>a.alert_id),['a','c']);
+  assert.deepEqual(filterSOCAlerts(page,'','open','oldest').items.map(a=>a.alert_id),['c','a']);
+  assert.deepEqual(filterSOCAlerts(page,'LIN','all','newest').items.map(a=>a.alert_id),['b']);
+  assert.equal(filterSOCAlerts(page,'missing','all','newest').items.length,0);
+  assert.equal(filterSOCAlerts(page,'','all','newest').offset,25);
 });
 
 test('auth failures and pending states contain no stale snapshot identity or rows', () => {
@@ -53,7 +79,7 @@ test('untrusted signature and case notes render as text with no executable marku
 test('clear-view wording does not claim to revoke the native browser certificate', () => {
   const html = render({ state: 'ready', snapshot });
   assert.match(html, /Clear displayed records/);
-  assert.match(html, /does not revoke it or sign out/);
+  assert.match(html, /does not revoke your login session/);
   assert.doesNotMatch(html, />Logout<|>Sign out</);
 });
 

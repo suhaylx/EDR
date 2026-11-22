@@ -36,3 +36,20 @@ SOC ingest pipeline. ClamAV signature freshness, signed Windows and Linux
 installer packages, enterprise PKI/enrollment, installed-host rollback and
 deployment owner approval remain independent gates. Native CI packaging and
 negative-input tests do not close those gates.
+
+## Generated 3-in-1 deployment ZIPs
+
+The admin console builds a ZIP from three SHA-256-pinned approved components
+plus an installation orchestrator; no endpoint private keys or CA secrets are
+embedded. Windows runs `Install-TuranSec.ps1`, Linux runs `install-turansec.sh`.
+An issuer-provided, already-enrolled endpoint identity remains a mandatory
+precondition. Each launcher validates component checksums and fails closed
+before installing missing/unapproved payloads. Windows additionally requires
+an approved signer for the **outer** TuranSec setup executable and a valid
+Microsoft Sysmon signature. Linux requires explicit Sysmon EULA approval.
+
+These are **one-entrypoint provisioning workflows**, not yet fully automatic
+enterprise EDR installers. Windows agent execution is a bounded task, Linux is
+a systemd timer; Sysmon-to-SOC event ingestion, remote network tunneling,
+production signing, installed-host rollback and false-positive monitoring
+remain incomplete. See [the 3-in-1 deployment guide](THREE_IN_ONE_DEPLOYMENT.md).

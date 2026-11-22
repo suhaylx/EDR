@@ -70,17 +70,46 @@ def prepare(args):
               ("server-ca.pem", "agent.pem", "agent.key")}
     if os.name != "nt" and stat.S_IMODE(inputs["agent.key"].stat().st_mode) & 0o077:
         raise ValueError("Private key must be owner-only")
-    cert_details = run(["openssl", "x509", "-in", str(inputs["agent.pem"]),
-                        "-noout", "-ext", "subjectAltName", "-checkend", "0"]).stdout
-    required = "URI:spiffe://turansec.local/tenants/" + args.tenant + "/agents/" + args.agent_id
-    if required not in cert_details:
-        raise ValueError("Agent certificate does not match enrollment identity")
+    expected_uri = "spiffe://turansec.local/tenants/" + args.tenant + "/agents/" + args.agent_id
+    if os.name == "nt":
+        # Windows does not normally ship openssl.exe. The frozen installer
+        # includes the audited Python cryptography implementation instead.
+        from datetime import datetime, timezone
+        from cryptography import x509
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.x509.oid import ExtendedKeyUsageOID
+        pem = inputs["agent.pem"].read_bytes()
+        if len(pem) > 1024 * 1024:
+            raise ValueError("Certificate exceeds private size limit")
+        certificate = x509.load_pem_x509_certificate(pem)
+        now = datetime.now(timezone.utc)
+        if not (certificate.not_valid_before_utc <= now < certificate.not_valid_after_utc):
+            raise ValueError("Agent certificate is not currently valid")
+        san = certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+        if expected_uri not in san.get_values_for_type(x509.UniformResourceIdentifier):
+            raise ValueError("Agent certificate SAN does not match enrollment identity")
+        eku = certificate.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
+        if ExtendedKeyUsageOID.CLIENT_AUTH not in eku:
+            raise ValueError("Client authentication EKU is required")
+        key = serialization.load_pem_private_key(inputs["agent.key"].read_bytes(), password=None)
+        public = lambda k: k.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+        if public(key.public_key()) != public(certificate.public_key()):
+            raise ValueError("Issued agent private key does not match its certificate")
+    else:
+        cert_details = run(["openssl", "x509", "-in", str(inputs["agent.pem"]),
+                            "-noout", "-ext", "subjectAltName", "-checkend", "0"]).stdout
+        if "URI:" + expected_uri not in cert_details:
+            raise ValueError("Agent certificate does not match enrollment identity")
     if os.name == "nt":
         if not args.agent_signer:
             raise ValueError("Independent approved TuranSec publisher thumbprint required")
         if not re.fullmatch(r"[A-Fa-f0-9]{40,64}", args.agent_signer):
             raise ValueError("Invalid Windows publisher thumbprint")
-        signed_windows(agent, thumbprint=args.agent_signer)
+        # Authenticode signs the complete one-file PyInstaller EXE, including
+        # the embedded Rust agent. An unsigned extracted Rust file is expected.
+        if not getattr(sys, "frozen", False):
+            raise ValueError("Approved signed Windows setup executable required")
+        signed_windows(Path(sys.executable), thumbprint=args.agent_signer)
         sysmon = real_file(args.sysmon)
         signed_windows(sysmon, microsoft=True)
         if not args.accept_sysmon_eula:

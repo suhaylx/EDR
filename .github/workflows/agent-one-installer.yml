@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0 cryptography==46.0.3
           mkdir -p installer-dist
           python -m PyInstaller --noconfirm --clean --onefile --name TuranSec-Agent-Setup \
             --distpath installer-dist \
