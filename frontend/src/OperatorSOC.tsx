@@ -74,6 +74,7 @@ export function OperatorSOCView({ view, onRefresh, onClear, onPage, onCase, onSc
         <button type="button" className="secondary" onClick={onClear} disabled={view.state === 'disconnected'}>Clear displayed records</button>
       </div></div>
       <p className="soc-context-line">Live server records only. No simulated endpoints, fabricated detections, or cached security state.</p>
+      <p className="minor">Clearing displayed records does not revoke your login session. Use Sign out to end password access.</p>
       <div role="status" aria-live="polite" aria-atomic="true">
         {view.state === 'disconnected' && <p>No records loaded. Endpoint condition is unknown until the authenticated service returns evidence.</p>}
         {view.state === 'disconnected' && view.interrupted && <p>An operation was interrupted while clearing the view. It may already have been accepted by the server. Reconnect and inspect the current state before acting again. No automatic retry was sent.</p>}

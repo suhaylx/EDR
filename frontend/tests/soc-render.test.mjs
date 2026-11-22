@@ -20,7 +20,8 @@ test('operator view exposes identity, accessible regions and unknown state witho
   assert.match(html, /Skip to SOC records/);
   assert.match(html, /No protection state can be inferred/);
   assert.match(html, /does not establish the absence of threats/);
-  assert.doesNotMatch(html, /<input|<form|type="password"|localStorage/);
+  assert.match(html, /type="search"/); // The endpoint filter is intentionally available.
+  assert.doesNotMatch(html, /type="password"|name="token"|localStorage/);
 });
 
 test('auth failures and pending states contain no stale snapshot identity or rows', () => {
@@ -53,7 +54,7 @@ test('untrusted signature and case notes render as text with no executable marku
 test('clear-view wording does not claim to revoke the native browser certificate', () => {
   const html = render({ state: 'ready', snapshot });
   assert.match(html, /Clear displayed records/);
-  assert.match(html, /does not revoke it or sign out/);
+  assert.match(html, /does not revoke your login session/);
   assert.doesNotMatch(html, />Logout<|>Sign out</);
 });
 
