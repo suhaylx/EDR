@@ -326,6 +326,5 @@ export function OperatorSOC() {
       onPage={(section, offset) => { void refresh({ ...offsets.current, [section]: offset }); }}
       onCase={(alertID, offset) => { void readCase(alertID, offset); }}
       onScan={jobID => { void readScan(jobID); }}
-      onMutation={command => { void mutate(command); }} />
-  </>;
+      onMutation={command => { void mutate(command); }} />;
 }
