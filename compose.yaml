@@ -6,7 +6,8 @@ services:
   database:
     image: postgres:16-bookworm
     network_mode: host
-    restart: unless-stopped
+    # Preserve first-boot errors instead of restarting an initialized but broken database.
+    restart: "no"
     env_file:
       - ./.docker-local/postgres.env
     environment:
@@ -20,7 +21,7 @@ services:
       - ./backend:/bootstrap/backend:ro
       - ./.docker-local/fingerprints:/bootstrap/fingerprints:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 55432 -U postgres -d edr"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 55432 -U postgres -d edr && psql -U postgres -d edr -p 55432 -Atqc \"SELECT count(*) FROM public.edr_schema_capabilities WHERE version=1 AND capability IN ('scan_lease_wallclock','enrollment_wallclock')\" | grep -qx 2"]
       interval: 5s
       timeout: 3s
       retries: 30

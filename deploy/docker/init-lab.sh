@@ -49,6 +49,7 @@ for kind in analyst viewer; do
   openssl x509 -in "$root/operator/${kind}.pem" -outform DER |
     openssl dgst -sha256 -r | awk '{print $1}' > "$root/fingerprints/${kind}.sha256"
 done
+chmod 755 "$root/fingerprints"
 chmod 644 "$root/fingerprints/"*.sha256
 pw="$(openssl rand -hex 32)"
 rt="$(openssl rand -hex 32)"
