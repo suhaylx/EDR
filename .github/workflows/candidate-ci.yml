@@ -1,0 +1,261 @@
+name: candidate-ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  GIT_TERMINAL_PROMPT: '0'
+  EDR_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+# Pin official actions. Every job checks out the event's exact PR head (not
+# the synthetic merge commit) and refuses a dirty tracked source tree.
+# This workflow establishes engineering evidence, not host/release approval.
+jobs:
+  backend:
+    name: Go build, tests, race and vet
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: python scripts/ci/candidate-check.py backend
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-backend-${{ env.EDR_CANDIDATE_SHA }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  rust:
+    name: Rust native ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - run: python scripts/ci/candidate-check.py rust
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-rust-${{ matrix.os }}-${{ env.EDR_CANDIDATE_SHA }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  frontend:
+    name: React build, tests and browser accessibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: python scripts/ci/candidate-check.py frontend
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-frontend-${{ env.EDR_CANDIDATE_SHA }}
+          path: |
+            .quality-evidence/
+            frontend/playwright-report/
+            frontend/test-results/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  postgres:
+    name: PostgreSQL 16 security, concurrency and actual restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EDR_QA_DISPOSABLE_DB: 'yes'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: edr_candidate_ci
+      PGPASSWORD: disposable-ci-only
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edr_candidate_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: postgres
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edr_candidate_ci -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - run: python scripts/ci/candidate-check.py postgres
+      - run: python scripts/ci/candidate-check.py postgres-seed
+      - name: Restart only this job's disposable PostgreSQL service
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          test -n "$POSTGRES_CONTAINER_ID"
+          docker restart "$POSTGRES_CONTAINER_ID"
+          ready=0
+          for attempt in $(seq 1 30); do
+            if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+      - run: python scripts/ci/candidate-check.py postgres-verify
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-postgres-${{ env.EDR_CANDIDATE_SHA }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  integration:
+    name: Go, PostgreSQL, Rust and React integrated candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EDR_QA_DISPOSABLE_DB: 'yes'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: edr_candidate_ci
+      PGPASSWORD: disposable-ci-only
+      EDR_TEST_DATABASE_URL: postgresql://edr_candidate_ci@127.0.0.1:5432/edr_integrated_test?sslmode=disable
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edr_candidate_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: edr_integrated_test
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edr_candidate_ci -d edr_integrated_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - run: python scripts/ci/candidate-check.py integration
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-integration-${{ env.EDR_CANDIDATE_SHA }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  release-tools:
+    name: Package verification and rollback primitive
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - run: python scripts/ci/candidate-check.py release-tools
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: candidate-release-tools-${{ env.EDR_CANDIDATE_SHA }}
+          path: .quality-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  candidate-checks:
+    name: Required candidate engineering checks
+    if: always()
+    needs: [backend, rust, frontend, postgres, integration, release-tools]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every component and integration result
+        env:
+          CHECK_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json, os
+          results = json.loads(os.environ['CHECK_RESULTS'])
+          summary = [
+              '# Candidate engineering checks',
+              '',
+              'Candidate: ' + os.environ['EDR_CANDIDATE_SHA'],
+              '',
+          ]
+          for name, check in results.items():
+              summary.append(f"- {name}: {check['result']}")
+          summary += [
+              '',
+              'Native CI tests do not establish Windows/Linux deployment-host acceptance.',
+              'InfoSec review, independent QA verdict, trusted package signatures,',
+              'validated host rollback and deployment authorization remain separate gates.',
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('\n'.join(summary) + '\n')
+          if any(check['result'] != 'success' for check in results.values()):
+              raise SystemExit('A required candidate job failed, was cancelled, or was skipped')
+          PY

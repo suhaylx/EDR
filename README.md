@@ -1,33 +1,98 @@
 # TuranSec EDR
 
-**Status:** Pre-production engineering project. Not a production antivirus or endpoint detection and response product.
+TuranSec combines a Go/PostgreSQL control service, one Rust endpoint binary and
+the original React SOC. The current code provides authenticated engineering
+workflows; release acceptance and deployment authorization depend on the exact
+candidate evidence. Read the [installation manual](docs/INSTALLATION.md) and
+[release file guide](docs/release/BUILD_RELEASE_FILES.md) before staging a package.
 
-TuranSec EDR is an original Windows/Linux endpoint-security platform under development.
+## Current components
 
-- **One managed endpoint agent**: Rust service/daemon orchestrating ClamAV signature scanning, static file analysis and Sysmon telemetry, with separately supervised vendor components and an optional non-privileged local UI.
-- **Go backend**: authenticated API and future mTLS agent enrollment, durable events, central policy control and deployment coordination.
-- **SOC dashboard**: current laboratory interface, with an original React + TypeScript design planned.
-- **Enterprise roadmap**: tamper protection with scoped maintenance authorization, safe Sysmon policy rollout, AD/LDAPS discovery and approved Windows/Linux deployment, tenant isolation, QA release gates.
+| Component | Implemented behavior |
+|---|---|
+| Go `edrd` service | Separate agent and operator TLS 1.3/mTLS listeners, enrolled certificate/tenant checks, restricted PostgreSQL logins, transactional authorization and commit-before-response behavior |
+| PostgreSQL | Enrollment and revocation records, persistent scan jobs and results, heartbeats, alert/case activity, ordered migrations and a mandatory lease-clock capability marker |
+| Rust endpoint | One binary for authenticated heartbeat, job claim/renew/result operations and bounded regular-file ClamAV scans; separately labelled legacy telemetry modes |
+| React SOC | Same-origin operator authentication, fleet/endpoint/alert/case views, explicit unknown/degraded/error states and role-aware controls backed by the existing API |
+| Linux operation | Versioned release staging and service tooling; approved PKI, database identities, scanner dependencies and host acceptance must be provisioned separately |
+| Verification | Exact-commit Go/Rust/React/PostgreSQL checks, integrated mTLS harness, independent review records, package-integrity and rollback tests |
 
-**Security notice:** The initial demo backend may use a development-only shared token, and must only run on localhost in an isolated lab. Do not expose it to production endpoints. No automatic malware execution, irreversible deletion, or unapproved remote deployment.
+The authenticated service uses numeric loopback listeners. Authorized remote
+endpoints require a reviewed encrypted tunnel and valid enrolled certificates.
+Do not expose the legacy shared-token demonstration or the unauthenticated clamd
+protocol to the network.
 
-## Engineering roles
+## Build and test one source commit
 
-1. **InfoSec / Security Functionality** — owns malware-detection and response requirements, original detection rules, safe fixtures, security reviews.
-2. **Backend & Deployment** — owns Go/Rust implementation, CI/CD, packaging, infrastructure, deployment and rollback.
-3. **QA** — owns acceptance, negative/security testing, compatibility and release gates.
-4. **PM** — owns prioritized technical assignments, reviews and evidence-based reports.
-5. **Frontend/UX** — owns React SOC dashboard and local Windows/Linux UI; follows human-centered design principles adapted to the host OS.
+Required tools: Go 1.25+, the committed Rust toolchain and `Cargo.lock`, Node
+22.12+ with the npm lockfile, PostgreSQL 16, Python 3 and OpenSSL. Native Windows
+testing requires an actual Windows runner; a Linux build does not establish it.
 
-Architecture and task backlog: [TuranSec EDR project specification](https://chatgpt.com/space/page_dec24f52e8a88191baead60bf5ef9a56).
+```sh
+git checkout --detach FULL_REVIEWED_COMMIT_SHA
+export EDR_CANDIDATE_SHA="$(git rev-parse HEAD)"
+python3 scripts/ci/candidate-check.py backend
+python3 scripts/ci/candidate-check.py rust
+python3 scripts/ci/candidate-check.py frontend
+python3 scripts/ci/candidate-check.py release-tools
+```
 
-## Local development
+The wrappers require a clean checkout and retain command exit statuses. Use the
+documented disposable PostgreSQL setup for the SQL, restart and integration
+phases. Missing runners, denied Unix sockets and unavailable browsers remain
+failed or blocked checks; they are not converted into passes.
 
-Initial proposed layout:
-- `backend/`: Go API, tests, browser-based lab dashboard
-- `agent/`: Rust agent scaffold
-- `rules/`: original detection rules, deliberately low confidence until corroborated
-- `config/sysmon/`: non-production, OS-specific Sysmon lab templates
-- `docs/`: architecture, role assignments, security functionality, testing and lab runbook
+## Generate a release file
 
-**Do not treat README or documentation as a claim that the full EDR is implemented.**
+Build from the reviewed committed source on the target native OS:
+
+```sh
+python3 scripts/release/package-candidate.py build \
+  --candidate-sha "$EDR_CANDIDATE_SHA" --target linux-x86_64 \
+  --output /absolute/empty/release-files --stage-only
+python3 scripts/release/prepare-release.py \
+  --directory /absolute/empty/release-files --version v0.1.0-rc.1 \
+  --source-sha "$EDR_CANDIDATE_SHA" --require-target linux-x86_64
+```
+
+This creates an explicitly **unsigned engineering archive**, its file manifest,
+checksums and release notes. Both binary version strings identify the source
+commit. The release workflow can build native Linux and Windows packages and,
+when explicitly requested, attach them to a draft prerelease. Approved publisher
+signatures and native service acceptance are separate requirements.
+
+## Acceptance boundaries
+
+The current candidate must not be represented as a feature-complete enterprise
+EDR or approved production release. Remaining acceptance includes real authorized
+Windows/Ubuntu service and Sysmon evidence, complete verified ClamAV databases,
+the actual scanner-to-backend-to-SOC path, browser accessibility/authentication,
+trusted package signatures and installed-service/database rollback.
+
+Path scanning is bounded and preserves clean-by-signature, malicious, error and
+unscanned distinctions. A daemon PONG is only a liveness observation. Quick/full
+scan profiles, quarantine/restore, tamper protection, signed policy maintenance,
+native tray/privileged IPC and AD/LDAPS deployment are not established by the
+current integration or package. The manual identifies implemented operations
+and the required approval gates.
+
+## Separate development demonstrations
+
+`backend/cmd/server`, `backend/web` and the explicit React `/lab/` UI retain
+legacy loopback development behavior. Their shared-token/in-memory telemetry
+does not acquire the authenticated service's persistence or identity guarantees.
+The lab quickstarts remain useful for those demonstrations only; use
+`backend/cmd/edrd` and the installation manual for the PostgreSQL/mTLS candidate.
+
+## Delivery records
+
+- [Remaining Days 4–7 checklist](docs/sprints/REMAINING_DAYS_4_7.md)
+- [Installation and rollback](docs/INSTALLATION.md)
+- [Exact-candidate CI](docs/qa/CANDIDATE_CI.md)
+- [Host acceptance](docs/HOST_ACCEPTANCE.md)
+- [Security functionality requirements](docs/security/security-functionality-spec.md)
+- [Project management and authorization](docs/PM_MANUAL.md)
+
+Historical daily reports and accelerated-sprint documents describe their named
+snapshots. Current completion requires the reviewed commit, actual tests and
+explicit acceptance, followed by the deployment owner's authorization.

@@ -1,0 +1,84 @@
+name: postgres-scan-job-queue
+on:
+  pull_request:
+    paths:
+      - "backend/migrations/**"
+      - "scripts/test-scan-job-*.sh"
+      - ".github/workflows/postgres-scan-job-queue.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  queue-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EDR_TEST_DATABASE_URL: postgresql://edr_queue_ci@127.0.0.1:5432/edr_queue_test?sslmode=disable
+      EDR_QA_DISPOSABLE_DB: 'yes'
+      PGPASSWORD: disposable-ci-only
+      EDR_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edr_queue_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: edr_queue_test
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edr_queue_ci -d edr_queue_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.EDR_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Verify exact candidate checkout
+        run: test "$(git rev-parse HEAD)" = "$EDR_CANDIDATE_SHA"
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Test queue, renewal, contention, revocation and replay
+        run: |
+          set -euo pipefail
+          bash scripts/test-scan-job-queue.sh
+          bash scripts/test-scan-job-lease-renewal.sh
+          bash scripts/test-scan-job-postcommit-revocation.sh
+          bash scripts/test-scan-job-concurrent-claims.sh
+          bash scripts/test-scan-job-replay-exhaustion.sh
+          bash scripts/test-scan-job-claim-revocation-race.sh
+          bash scripts/test-scan-job-completion-revocation-race.sh
+      - name: Seed committed queue state
+        run: |
+          set -euo pipefail
+          bash scripts/test-scan-job-db-restart.sh seed
+          psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c 'SELECT pg_postmaster_start_time()::text' > "$RUNNER_TEMP/edr-postgres-start-before.txt"
+      - name: Restart only this job's disposable PostgreSQL service
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          test -n "$POSTGRES_CONTAINER_ID"
+          docker restart "$POSTGRES_CONTAINER_ID"
+          ready=0
+          for attempt in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U edr_queue_ci -d edr_queue_test; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+      - name: Verify actual restart and committed queue state
+        run: |
+          set -euo pipefail
+          before="$(cat "$RUNNER_TEMP/edr-postgres-start-before.txt")"
+          after="$(psql "$EDR_TEST_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c 'SELECT pg_postmaster_start_time()::text')"
+          test -n "$before"
+          test -n "$after"
+          test "$before" != "$after"
+          bash scripts/test-scan-job-db-restart.sh verify

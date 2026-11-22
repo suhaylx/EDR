@@ -1,0 +1,54 @@
+name: postgres-migration-chain
+on:
+  pull_request:
+    paths:
+      - "backend/migrations/**"
+      - "backend/internal/edr/soc_*.go"
+      - "backend/internal/edr/agent_scan_queue_http.go"
+      - "backend/internal/edr/scan_queue_postgres.go"
+      - "backend/internal/edr/agent_heartbeat_postgres.go"
+      - "scripts/test-scan-job-lease-renewal.sh"
+      - "scripts/test-postgres-migration-chain.sh"
+      - "scripts/test-scan-job-results.sql"
+      - "scripts/test-agent-heartbeats.sql"
+      - "scripts/test-soc-scheduling.sql"
+      - "scripts/test-soc-alerts.sql"
+      - "scripts/test-soc-case-audit.sql"
+      - "scripts/test-soc-endpoint-inventory.sql"
+      - ".github/workflows/postgres-migration-chain.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  migration-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edr_chain_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: edr_chain_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edr_chain_ci -d edr_chain_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Verify ordered migrations and enrollment-to-scan lifecycle
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_chain_ci:disposable-ci-only@127.0.0.1:5432/edr_chain_test?sslmode=disable
+        run: |
+          bash scripts/test-postgres-migration-chain.sh
+          psql "$EDR_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/test-scan-job-results.sql

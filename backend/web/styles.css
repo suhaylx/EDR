@@ -1,0 +1,111 @@
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#eaf2fe;background:#0b1120;font-size:14px}*{box-sizing:border-box}body{margin:0}header{height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #26334b;padding:0 30px;background:#111a2a;gap:24px}.brand{display:flex;align-items:center;gap:12px}.brand strong{display:block;font-size:18px;letter-spacing:.2px}.brand small{color:#8fa6c4}.shield{display:grid;place-items:center;width:40px;height:42px;clip-path:polygon(50% 0,95% 20%,88% 75%,50% 100%,12% 75%,5% 20%);background:#126cb4;color:white;font-weight:900;font-size:22px}.auth{display:flex;align-items:center;gap:10px}.auth label{font-size:12px;color:#9eb2c7}input,select,textarea{background:#111b2c;color:#eaf2fe;border:1px solid #364661;border-radius:8px;padding:10px;min-width:100px}textarea{font-family:ui-monospace,monospace;width:100%;min-height:160px}input:focus,select:focus,textarea:focus{outline:2px solid #4298eb}button{cursor:pointer;background:#1c5da3;color:white;border:1px solid #377bc2;border-radius:8px;padding:10px 14px;font-weight:600}button:hover{background:#246dbb}.shell{display:grid;grid-template-columns:235px 1fr;min-height:calc(100vh - 78px)}nav{background:#10192a;padding:24px 14px;border-right:1px solid #26334b;display:flex;flex-direction:column;gap:8px}.nav{text-align:left;background:transparent;border:0;color:#b2c6df}.nav.active{background:#193458;color:white}.footnote{color:#7185a2;margin-top:auto;padding:12px;line-height:1.7;font-size:12px}main{padding:36px;min-width:0;max-width:1600px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:20px}.kicker{font-size:11px;color:#58b8f9;letter-spacing:2px;font-weight:800}h1{font-size:29px;margin:8px 0}p{color:#9eb2c7;margin:8px 0 20px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:22px 0}.card,.panel{border:1px solid #2d405c;background:#141f32;border-radius:13px;padding:20px}.card strong{font-size:30px;display:block;margin-top:10px}.card small{color:#9eb2c7}.panel{overflow-x:auto;margin:16px 0}.panel h2{margin:0 0 18px;font-size:17px}table{width:100%;border-collapse:collapse}th{text-align:left;color:#9fb7d5;font-size:11px;text-transform:uppercase;letter-spacing:.6px}th,td{padding:12px 10px;border-bottom:1px solid #2a3a51;vertical-align:top}td{overflow-wrap:anywhere}.muted{color:#92a8c3}.pill{border:1px solid #36736a;color:#86e0c4;padding:4px 9px;border-radius:999px;display:inline-block;font-size:12px}.pill.warn{border-color:#936f3e;color:#f0c782}.stack{display:grid;gap:12px;max-width:760px}.field{display:grid;gap:5px}.field label{font-size:12px;color:#a8bdd7}.field input,.field select{width:100%}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}#notice{border:1px solid #3b5271;border-radius:9px;color:#b4cae2;padding:13px;margin-top:22px}.empty{padding:22px;color:#96aac6}.danger{color:#f1a8a8}.tag{display:inline-block;background:#243851;border-radius:5px;padding:4px 7px;font-size:12px}code{color:#c6e3ff}@media(max-width:950px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.shell{grid-template-columns:180px 1fr}main{padding:20px}header{padding:12px;height:auto;flex-wrap:wrap}}@media(max-width:620px){.shell{display:block}nav{display:flex;flex-direction:row;overflow-x:auto;border:0;padding:8px}.footnote{display:none}.cards{grid-template-columns:1fr 1fr}.top{align-items:start}.auth{width:100%;flex-wrap:wrap}.auth input{flex:1}}
+/* Original TuranSec SOC analytics widgets. No third-party UI asset copies. */
+.stat-card{text-align:left;cursor:pointer;min-height:158px;background:#15253b;display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:100%}
+.stat-card span:first-child{font-size:12px;font-weight:700;color:#aebfda}
+.stat-card strong{font-size:34px;margin:0;font-variant-numeric:tabular-nums}
+.stat-card small{font-size:11px;line-height:1.45;max-width:100%}
+.card-link{color:#7acafa;font-size:11px;margin-top:auto;opacity:.9}
+.stat-card:hover{background:#1c3150;border-color:#6099cf}
+.stat-card:focus-visible,.text-link:focus-visible,.nav:focus-visible{outline:3px solid #8ecbff;outline-offset:3px}
+.overview-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
+.overview-grid>.panel{min-width:0;margin:0 0 18px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.toolbar-panel{margin-bottom:8px}
+.toolbar h2{margin:0 0 8px}
+.toolbar p{margin-bottom:0;line-height:1.6;max-width:850px}
+.compact-field{min-width:172px}
+.compact-field select{width:100%}
+.section-heading{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.section-heading h2{margin:0}
+.section-meta{color:#9eb2c7;font-size:12px;white-space:nowrap}
+.text-link{background:transparent;padding:2px 4px;border:0;color:#83ccfc;font-size:12px;text-decoration:underline;white-space:nowrap}
+.text-link:hover{background:transparent;color:white}
+.section-note{font-size:12px;line-height:1.6;margin:14px 0 0}
+.bar-list{display:grid;gap:14px}
+.bar-row{min-width:0}
+.bar-title{display:flex;justify-content:space-between;gap:16px;font-size:12px;margin-bottom:6px}
+.bar-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d0e1fa}
+.bar-title strong{font-variant-numeric:tabular-nums}
+.bar-track{background:#263953;border-radius:999px;height:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#2879c0,#58c2fa)}
+.severity-bar{background:linear-gradient(90deg,#bc6f56,#efb36d)}
+.daily-chart{height:180px;display:flex;align-items:end;gap:3px;border-bottom:1px solid #465977;padding:6px 4px 22px;margin:24px 0 20px}
+.daily-col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;flex:1;min-width:0;gap:4px}
+.daily-col>span{font-size:10px;color:#b6cde4}
+.daily-bar{width:min(70%,24px);background:#2786ce;min-height:0;flex-shrink:0;border-radius:5px 5px 0 0}
+.daily-col>small{position:absolute;bottom:-20px;font-size:9px;color:#9aadc5;white-space:nowrap}
+.table-wrap{overflow:auto;max-width:100%}
+.table-wrap table{min-width:560px}
+.status-summary{display:flex;gap:30px;margin:18px 0 4px}
+.status-summary div{display:flex;flex-direction:column;gap:3px}
+.status-summary strong{font-size:23px}
+.status-summary small{color:#8fa7c4}
+.scan-health{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.scan-health>div{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:8px;background:#1c2e48}
+.scan-health span{font-size:12px;color:#a7bedb}
+.scan-health strong{font-size:25px}
+.gap-list{display:flex;flex-wrap:wrap;gap:8px}
+.gap-item{border:1px solid #6c573c;border-radius:7px;background:#3b302a;color:#f5cf9d;padding:7px 10px;font-size:11px;line-height:1.4}
+.data-stamp{font-size:12px;color:#9bafc8;margin:2px 0 28px}
+@media(max-width:1150px){.overview-grid{grid-template-columns:1fr}.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-height:158px}.toolbar{flex-wrap:wrap}.compact-field{width:100%}.daily-chart{gap:2px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Incident evidence graph uses original TuranSec components, not vendor UI assets. */
+.process-tree,.process-tree ul{list-style:none;margin:8px 0;padding-left:20px;border-left:1px solid #3c5777}
+.process-tree>li{padding:5px 0}
+.process-node{background:#1a2a41;border:1px solid #385674;border-radius:10px;padding:13px;margin:9px 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.process-node strong{max-width:100%;overflow-wrap:anywhere}
+.process-node small{width:100%;color:#9fb6d0;overflow-wrap:anywhere}
+.graph-tag{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#bad9ec;background:#213954;border:1px solid #416083;border-radius:6px;padding:4px 7px}
+.graph-warning{padding:12px;border-left:3px solid #d8a451;background:#3d3023;color:#f1d2a2}
+.evidence-timeline{margin:0;padding:0 0 0 18px;display:grid;gap:12px}
+.evidence-timeline li{padding:11px;background:#1a2a41;border-radius:8px;border:1px solid #324963}
+.evidence-timeline li time,.evidence-timeline li strong,.evidence-timeline li span,.evidence-timeline li small{display:block;margin-bottom:5px;overflow-wrap:anywhere}
+.evidence-timeline li time,.evidence-timeline li small{font-size:11px;color:#a9c0da}
+.coverage-gaps{padding-left:20px;color:#e8bd86;line-height:1.7}
+.graph-actions{display:flex;gap:10px;flex-wrap:wrap}.graph-actions button{max-width:100%;overflow-wrap:anywhere}
+.graph-search{max-width:860px;grid-template-columns:repeat(2,minmax(0,1fr))}.graph-search button{grid-column:1/-1}
+@media(max-width:650px){.graph-search{grid-template-columns:1fr}.process-tree,.process-tree ul{padding-left:11px}}
+
+/* Investigation disclosure and evidence controls: original, keyboard-first lab UI. */
+.graph-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.graph-controls button{min-height:44px;max-width:100%;white-space:normal}
+.process-branch{min-width:0}
+.process-branch>summary{cursor:pointer;min-height:44px;list-style:none;position:relative;padding-left:34px}
+.process-branch>summary::-webkit-details-marker{display:none}
+.process-branch>summary::before{content:"";position:absolute;left:14px;top:20px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:8px solid #8ecbff}
+.process-branch[open]>summary::before{transform:rotate(90deg)}
+.process-branch>summary:hover{border-color:#6a9bd0;background:#1e3552}
+.process-branch>summary:focus-visible,.graph-controls button:focus-visible,.graph-filter input:focus-visible,.graph-source-link:focus-visible{outline:3px solid #8ecbff;outline-offset:3px}
+.graph-filter{display:grid;gap:7px;margin:12px 0 16px;max-width:820px}
+.graph-filter label{color:#d3e3fa;font-weight:600}
+.graph-filter input{width:100%;max-width:100%;min-height:44px}
+.graph-filter p{font-size:12px;line-height:1.6;margin:0;color:#b1c8e7}
+.graph-source-link{display:inline-block;margin:0 0 12px 14px;color:#8bd4ff;font-weight:600;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.graph-source-link:hover{color:#fff}
+.evidence-timeline li[hidden]{display:none!important}
+.evidence-timeline li:focus{outline:3px solid #8ecbff;outline-offset:3px}
+@media(max-width:650px){.graph-controls{display:grid;grid-template-columns:1fr 1fr}.graph-controls button{font-size:12px;padding:9px}.process-branch>summary{padding-left:32px}.graph-source-link{margin-left:9px}}
+@media(max-width:390px){.graph-controls{grid-template-columns:1fr}}
+
+/* Day 2 integration: opt-in tab-scoped lab token with explicit disabled controls. */
+.auth-remember{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#b5c7dd;white-space:nowrap}
+.auth-remember input{width:auto;min-width:0;accent-color:#55a9ec}
+.auth input:disabled,.auth button:disabled{opacity:.55;cursor:not-allowed}
+
+
+/* TuranSec lab: multi-event Sysmon source visibility (observed != enabled). */
+.source-class-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:20px 0}
+.source-class{display:grid;grid-template-columns:auto 1fr;align-content:start;align-items:start;text-align:left;column-gap:10px;row-gap:6px;min-width:0;min-height:104px;padding:13px;background:#192b42;border:1px solid #344966;border-radius:11px;color:#deebff}
+.source-class b{display:grid;place-items:center;min-width:30px;height:30px;padding:0 4px;background:#102236;border:1px solid #45678b;border-radius:8px;font-variant-numeric:tabular-nums}
+.source-class span{overflow-wrap:anywhere;font-size:12px;line-height:1.5;font-weight:700}
+.source-class small{grid-column:2;color:#9cb7d6;font-size:11px}
+.source-class:hover,.source-class.selected{border-color:#74b9f9;background:#24405d}
+.source-class:focus-visible{outline:3px solid #8ecbff;outline-offset:2px}
+.source-class[aria-pressed=true]{box-shadow:inset 0 0 0 1px #70b6ef}
+@media(max-width:1250px){.source-class-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:910px){.source-class-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:590px){.source-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:380px){.source-class-grid{grid-template-columns:1fr}}

@@ -1,14 +1,40 @@
-# TuranSec EDR — Initial priority backlog
+# TuranSec EDR - Prioritized Delivery Backlog
 
-**Status: assigned, not implemented.** Verify changes using code, tests, CI and PR evidence. Canonical architecture: https://chatgpt.com/space/page_dec24f52e8a88191baead60bf5ef9a56
+Baseline: 2026-11-21. Evidence: local lab starter; these entries are planned,
+not shipped. Project Manager owns prioritization; agents own implementation
+and signoff. Change status only with a commit/PR, test and target evidence.
 
-| ID | Priority | Owner | Deliverable | Acceptance |
-| --- | --- | --- | --- | --- |
-| SEC-001 | P0 | InfoSec (Agent 1) | `docs/security/agent-enrollment-threat-model.md` and security-function spec for unified Rust/ClamAV/Sysmon agent | Threats include device identity, mTLS, tenant scope, replay, offline, cross-component failures; specific security gates |
-| BE-001 | P0 | Backend/Deployment (Agent 2) | Go mTLS enrollment/device identity API with PostgreSQL schema, migration, tests | Cross-tenant and revoked/expired/replay cases reject; restart persists device identity; CI passes |
-| QA-001 | P0 | QA (Agent 3) | `docs/qa/p0-test-matrix.md` plus executable API negative tests where code exists | Every scenario has expected/observed result, pass/fail/not-run, and release blocker classification |
-| UX-001 | P1 | Frontend/UX (Agent 5) | `docs/ux/design-system.md` and React dashboard/local agent status/scan screens | Accessible keyboard/contrast, clear configured vs active states, no privileged GUI policy bypass |
-| SEC-002 | P1 | InfoSec (Agent 1) | Original `rules/windows/dll-sideloading.yaml` and safe fixtures | Distinguishes file create Event 11 from real module load Event 7; documents false positives and coverage |
-| BE-002 | P1 | Backend/Deployment (Agent 2) | One Windows/Linux TuranSec Rust agent supervising ClamAV and Sysmon | Single identity, policy, packaging; worker fault does not stop core; tested on both OSes |
+| ID | Priority | Owner | Task | Dependency / acceptance gate | Status |
+| --- | --- | --- | --- | --- | --- |
+| SEC-001 | P0 | Agent 1 | Agent/control-plane threat model, certificates, signed command policy, tenant boundary | Document reviewed misuse/replay and cross-tenant cases | Planned |
+| BE-001 | P0 | Agent 2 | mTLS device enrollment + per-device identity and scoped API auth | SEC-001; unit/integration auth tests, no dev bearer token in production | Planned |
+| BE-002 | P0 | Agent 2 | PostgreSQL persistence, schema migrations, durable event queue and audit | DB backup/restart/replay tests, schema provenance | Planned |
+| DEVOPS-001 | P0 | Agent 2 | Private repository, CI, branch protection and documented release workflow | Owner/private-repo access, CI green, no secrets | Blocked: repository not yet identified |
+| QA-001 | P0 | Agent 3 | Automated backend, agent and deployment acceptance matrix | Evidence for access abuse, failure, restart and rollback | Planned |
+| AG-001 | P1 | Agent 2 | Rust agent heartbeats, durable offline queue, secure API integration | BE-001/002, QA fixtures for Windows/Linux | Planned |
+| AV-001 | P1 | Agents 1 + 2 | ClamAV official signature scanning and safe update management | AV QA incl. EICAR and limits; bounded scanning | Planned |
+| DFIR-001 | P1 | Agents 1 + 2 | Static PE/DLL/ELF inspection, hash, signer and metadata | Never execute unknown sample; test malformed files | Planned |
+| SYS-001 | P1 | Agents 1 + 2 | Windows Sysmon process/file/load events and Linux capability-aware events | DLL load != file create; persist bookmarks | Planned |
+| SYS-002 | P1 | Agent 2 | Dashboard Sysmon policy versions, targeting and safe apply/rollback | Independent worker, canary, QA regression and event-loss reporting | Planned |
+| AD-001 | P2 | Agent 2 | Secure LDAPS discovery and signed MSI/GPO deployment plans | PKI validation, delegated permissions, owner approval | Planned |
+| UI-001 | P2 | Agent 2 | React + TypeScript dashboard with SOC/endpoint/AV controls | Backend RBAC, data integrity and QA accessibility | Planned |
+| TAMPER-001 | P2 | Agents 1 + 2 | Managed maintenance authorization and local tamper protection | Threat model, OS limits, emergency recovery, QA gates | Planned |
 
-The initial intended repository is **private** `suhaylx/EDR`. Do not push to unrelated repositories. Security and QA release gates must be satisfied before deployment.
+## First work cycle (next engineering day)
+
+- Agent 1: review enrollment trust boundaries and command authorization,
+  then produce a testable threat-model checklist for SEC-001.
+- Agent 2: implement the next secure backend work increment; set up private
+  repository and CI once the intended destination is available; verify Go
+  tests and capture exact commit/PR evidence. Do not deploy to real hosts.
+- Agent 3: define and run negative authentication/integrity tests and design
+  a Windows/Linux agent and Sysmon test matrix.
+- Agent 4: verify artifacts, ensure each task has owner/test/dependency,
+  update this backlog, and publish the PM-led four-role daily status.
+
+## Release gates
+
+No production deployment until all applicable gates have evidence: InfoSec
+approval, QA passed on specified Windows/Linux versions, signed artifacts,
+RBAC/mTLS and tenant isolation, rollback exercise, persistent audit and
+service health. Prefer reversible staged changes and stop on test failures.

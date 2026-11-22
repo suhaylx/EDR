@@ -1,0 +1,12 @@
+{
+  "origin": "https://127.0.0.1:9443",
+  "tenant_id": "ENROLLED_TENANT",
+  "agent_id": "ENROLLED_AGENT",
+  "ca_file": "/etc/turansec/endpoint/server-ca.pem",
+  "cert_file": "/etc/turansec/endpoint/agent.pem",
+  "key_file": "/etc/turansec/endpoint/agent.key",
+  "scan_root": "/var/lib/turansec/scan-root",
+  "clamd_socket": "/run/clamav/clamd.ctl",
+  "max_jobs": 1,
+  "read_groups": ["clamav", "turansec-scan"]
+}

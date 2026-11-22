@@ -1,0 +1,66 @@
+name: postgres-enrollment-challenges
+on:
+  pull_request:
+    paths:
+      - "backend/migrations/**"
+      - "scripts/test-enrollment-challenges.sh"
+      - "scripts/test-enrollment-challenge-db-restart.sh"
+      - ".github/workflows/postgres-enrollment-challenges.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  challenge-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edr_challenge_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: edr_challenge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edr_challenge_ci -d edr_challenge_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Test single-use enrollment challenges
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_challenge_ci:disposable-ci-only@127.0.0.1:5432/edr_challenge_test?sslmode=disable
+        run: bash scripts/test-enrollment-challenges.sh
+      - name: Seed committed single-use enrollment challenges
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_challenge_ci:disposable-ci-only@127.0.0.1:5432/edr_challenge_test?sslmode=disable
+          EDR_QA_DISPOSABLE_DB: 'yes'
+        run: bash scripts/test-enrollment-challenge-db-restart.sh seed
+      - name: Restart disposable PostgreSQL CI service (never a real server)
+        run: |
+          container_id="${{ job.services.postgres.id }}"
+          test -n "$container_id"
+          docker restart "$container_id"
+          ready=0
+          for i in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U edr_challenge_ci -d edr_challenge_test; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+      - name: Verify replay denial after actual database restart
+        env:
+          EDR_TEST_DATABASE_URL: postgresql://edr_challenge_ci:disposable-ci-only@127.0.0.1:5432/edr_challenge_test?sslmode=disable
+          EDR_QA_DISPOSABLE_DB: 'yes'
+        run: bash scripts/test-enrollment-challenge-db-restart.sh verify

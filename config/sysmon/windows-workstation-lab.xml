@@ -1,0 +1,21 @@
+<!-- Lab-only Sysmon starting point; test/validate with matching Sysmon build before deployment. -->
+<Sysmon schemaversion="4.90">
+  <HashAlgorithms>sha256</HashAlgorithms>
+  <EventFiltering>
+    <RuleGroup name="Process execution" groupRelation="or">
+      <ProcessCreate onmatch="exclude"/>
+    </RuleGroup>
+    <RuleGroup name="File creation - demo" groupRelation="or">
+      <FileCreate onmatch="include">
+        <TargetFilename condition="end with">.dll</TargetFilename>
+        <TargetFilename condition="end with">.exe</TargetFilename>
+      </FileCreate>
+    </RuleGroup>
+    <RuleGroup name="Selected module loads - demo" groupRelation="or">
+      <ImageLoad onmatch="include">
+        <Image condition="end with">\powershell.exe</Image>
+        <Image condition="end with">\rundll32.exe</Image>
+      </ImageLoad>
+    </RuleGroup>
+  </EventFiltering>
+</Sysmon>
