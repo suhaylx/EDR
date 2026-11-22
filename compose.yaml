@@ -39,6 +39,13 @@ services:
     depends_on:
       - dashboard
     restart: unless-stopped
+    # A running gateway is not healthy until the mTLS backend serves the SPA.
+    healthcheck:
+      test: ["CMD","curl","--fail","--silent","--show-error","--max-time","3","--cacert","/etc/turansec/server-ca.pem","https://127.0.0.1:9444/"]
+      interval: 3s
+      timeout: 4s
+      retries: 20
+      start_period: 5s
     volumes:
       - ./.docker-local/runtime:/etc/turansec:ro
       - ./.docker-local/payloads:/opt/turansec/payloads:ro

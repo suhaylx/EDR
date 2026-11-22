@@ -42,8 +42,17 @@ jobs:
           ca=.docker-local/operator/server-ca.pem
           origin=https://127.0.0.1:9444
           # Public static app works without a client certificate.
-          curl --fail --show-error --silent --cacert "$ca" "$origin/" > /tmp/dashboard.html
+          ready=0
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --max-time 5 --cacert "$ca" "$origin/" > /tmp/dashboard.html; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
           grep -q '<div id="root"' /tmp/dashboard.html
+          echo 'Dashboard static root is ready'
           # Unauthenticated SOC API must fail.
           code="$(curl -sS -o /dev/null -w '%{http_code}' --cacert "$ca" "$origin/soc/v1/session")"
           test "$code" = 401
@@ -61,6 +70,7 @@ jobs:
             curl --fail --show-error --silent --cacert "$ca" -b "/tmp/$user.cookies" \
               "$origin/soc/v1/session" > "/tmp/$user.session"
           done
+          echo 'All three password login requests and authenticated sessions returned'
           python3 - <<'PY'
           import json
           for user,role in (('admin','scanner'),('analyst','scanner'),('viewer','viewer')):
