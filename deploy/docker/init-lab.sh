@@ -74,7 +74,11 @@ cat > "$root/runtime/edrd.json" <<'JSON'
   "ui_dir": "/opt/turansec/web"
 }
 JSON
-printf '%s\n' "$(git rev-parse HEAD)" | sed 's/^/EDR_SOURCE_SHA=/' > .env
+{
+ printf 'EDR_SOURCE_SHA=%s\n' "$(git rev-parse HEAD)"
+ printf 'EDR_HOST_UID=%s\n' "$(id -u)"
+ printf 'EDR_HOST_GID=%s\n' "$(id -g)"
+} > .env
 openssl rand -hex 16 > "$root/operator/p12-password.txt"
 openssl pkcs12 -export -inkey "$root/operator/analyst.key" \
   -in "$root/operator/analyst.pem" -certfile "$root/private/operator-ca.pem" \

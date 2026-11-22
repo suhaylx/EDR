@@ -28,6 +28,8 @@ services:
     security_opt:
       - no-new-privileges:true
   dashboard:
+    # Match the owner of the protected bind-mounted configuration without DAC bypass.
+    user: "${EDR_HOST_UID:?Run init-lab.sh}:${EDR_HOST_GID:?Run init-lab.sh}"
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile
