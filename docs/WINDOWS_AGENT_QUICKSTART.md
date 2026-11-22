@@ -1,5 +1,7 @@
 # TuranSec Windows Server 2022 — quick start (LAB ONLY)
 
+**Historical development guide.** For the current PostgreSQL and mTLS dashboard and authenticated Windows or Linux agents, use the [installation manual](INSTALLATION.md). The older shared-token or port 8080 procedures below describe the separate development demonstration.
+
 This portable `TuranSec-EDR-Lab-Agent.exe` is **not an installer** and **not a Windows service**. It does not currently collect Sysmon events, run continuously, provide active protection, or automatically enroll the device. It can run a basic CLI smoke test and request **one** existing scan job from the development Go API when configured. A genuine ClamAV scan requires a separately installed and working `clamd` bound to local `127.0.0.1:3310`.
 
 ## Install / run (PowerShell on the isolated Windows test VM)

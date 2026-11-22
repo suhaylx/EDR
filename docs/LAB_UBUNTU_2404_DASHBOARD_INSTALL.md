@@ -1,5 +1,7 @@
 # TuranSec EDR: Ubuntu 24.04 dashboard/backend lab installation
 
+**Historical development guide.** For the current PostgreSQL and mTLS dashboard and authenticated Windows or Linux agents, use the [installation manual](INSTALLATION.md). The older shared-token or port 8080 procedures below describe the separate development demonstration.
+
 **Status:** development lab only; not an enterprise-ready EDR deployment. Updated 2026-11-21.
 
 **Target:** Ubuntu Server 24.04, as little as **8 GiB RAM**, separate Windows Server 2022 test endpoint. This manual installs the existing **Go HTTP backend plus the built-in plain-JavaScript SOC dashboard**. No Docker, ClickHouse, PostgreSQL, React build, AV daemon or Windows agent is needed on this Ubuntu host for the first smoke test. Backend events and jobs are **in-memory** and vanish on restart.

@@ -11,7 +11,7 @@ candidate evidence. Read the [installation manual](docs/INSTALLATION.md) and
 | Component | Implemented behavior |
 |---|---|
 | Go `edrd` service | Separate agent and operator TLS 1.3/mTLS listeners, enrolled certificate/tenant checks, restricted PostgreSQL logins, transactional authorization and commit-before-response behavior |
-| PostgreSQL | Enrollment and revocation records, persistent scan jobs and results, heartbeats, alert/case activity, ordered migrations and a mandatory lease-clock capability marker |
+| PostgreSQL | Enrollment and revocation records, persistent scan jobs and results, heartbeats, alert/case activity, ordered migrations and mandatory scan-lease and enrollment clock capabilities |
 | Rust endpoint | One binary for authenticated heartbeat, job claim/renew/result operations and bounded regular-file ClamAV scans; separately labelled legacy telemetry modes |
 | React SOC | Same-origin operator authentication, fleet/endpoint/alert/case views, explicit unknown/degraded/error states and role-aware controls backed by the existing API |
 | Linux operation | Versioned release staging and service tooling; approved PKI, database identities, scanner dependencies and host acceptance must be provisioned separately |
@@ -87,7 +87,10 @@ The lab quickstarts remain useful for those demonstrations only; use
 ## Delivery records
 
 - [Remaining Days 4–7 checklist](docs/sprints/REMAINING_DAYS_4_7.md)
-- [Installation and rollback](docs/INSTALLATION.md)
+- [Dashboard and Windows and Linux installation manual](docs/INSTALLATION.md)
+- [Dashboard setup](docs/INSTALLATION.md#dashboard-and-backend-installation)
+- [Linux endpoint setup](docs/INSTALLATION.md#linux-endpoint-installation)
+- [Windows endpoint setup](docs/INSTALLATION.md#windows-endpoint-installation)
 - [Exact-candidate CI](docs/qa/CANDIDATE_CI.md)
 - [Host acceptance](docs/HOST_ACCEPTANCE.md)
 - [Security functionality requirements](docs/security/security-functionality-spec.md)

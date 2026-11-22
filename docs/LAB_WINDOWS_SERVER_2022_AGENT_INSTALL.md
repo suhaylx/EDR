@@ -1,5 +1,7 @@
 # TuranSec EDR: Windows Server 2022 test-agent installation and lab validation
 
+**Historical development guide.** For the current PostgreSQL and mTLS dashboard and authenticated Windows or Linux agents, use the [installation manual](INSTALLATION.md). The older shared-token or port 8080 procedures below describe the separate development demonstration.
+
 **Status:** laboratory smoke test only, **NOT** an installed EDR Windows background service, complete Sysmon collector, production AV, or automatic quarantine. Updated 2026-11-21.
 
 **Topology:** one dedicated/disposable Windows Server 2022 endpoint and Ubuntu 24.04 backend. **Windows repo branch:** `feat/windows-server-2022-lab-preflight-20261121` (draft PR #18, based on Rust worker PR #16). Ubuntu SOC graph/dashboard is on **different** draft branch `feat/process-incident-graph-20261121` (PR #13). Do not assume these feature branches were merged into `main`.

@@ -1,5 +1,7 @@
 # TuranSec EDR Linux agent — Ubuntu 24.04, quick lab test
 
+**Historical development guide.** For the current PostgreSQL and mTLS dashboard and authenticated Windows or Linux agents, use the [installation manual](INSTALLATION.md). The older shared-token or port 8080 procedures below describe the separate development demonstration.
+
 **Status: development prototype.** This portable Rust binary does **not** install
 a service, do real-time event capture, prevent malware, quarantine files, or
 identify compromise. It polls a read-only, bounded sample of Linux **/proc**

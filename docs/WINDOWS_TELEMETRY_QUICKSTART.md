@@ -1,5 +1,7 @@
 # TuranSec Windows -> Ubuntu live Sysmon lab quick start
 
+**Historical development guide.** For the current PostgreSQL and mTLS dashboard and authenticated Windows or Linux agents, use the [installation manual](INSTALLATION.md). The older shared-token or port 8080 procedures below describe the separate development demonstration.
+
 **Lab-only, unsigned portable EXE.** Not an EDR installer, Windows service, mTLS-authenticated agent, prevention engine or production telemetry pipeline.
 
 ## Prerequisites (after both test servers are rebuilt)
